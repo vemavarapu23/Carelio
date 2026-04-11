@@ -20,7 +20,7 @@ def get_base64_image(image_path: str) -> str:
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data/mn_food_access_data.csv")
+    df = pd.read_csv("mn_food_access_data.csv")
     df.columns = [col.strip() for col in df.columns]
     return df
 
@@ -45,8 +45,8 @@ def urgency_badge(urgency):
 # -----------------------------
 # Images
 # -----------------------------
-header_banner = get_base64_image("images/header_banner.avif")
-page_bg = get_base64_image("images/page_bg.jpg")
+header_banner = get_base64_image("header_banner.avif")
+page_bg = get_base64_image("page_bg.jpg")
 
 # -----------------------------
 # CSS
