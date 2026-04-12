@@ -1,6 +1,9 @@
 ## Carelio | Minnesota Food Support Prioritization Tool 
 Carelio is the live website extension of my Minnesota Food Access Priority Analysis project. It is a Minnesota food support prioritization website built using **Python, Pandas, and Streamlit**. The project combines **food need** and **health risk** indicators to highlight counties that may need more attention for food support planning and outreach. Carelio was designed to make county-level insights more accessible for **sponsors, nonprofits, and community organizations** through an interactive and easy-to-use website.
 ## Live Website: https://carelio-mn.streamlit.app/ 
+##Preview
+![Carelio Homepage] (carelio-homepage.png)
+![Carelio Dashboard] (carelio-dashboard.png)
 ## Project Background : 
 This project began as a county-level food access priority analysis focused on ranking Minnesota counties based on indicators related to food support need. It was later extended into a live website, **Carelio**, to make the analysis more practical, accessible, and user-focused. 
 ## Features:
