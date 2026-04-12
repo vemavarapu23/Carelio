@@ -136,7 +136,7 @@ st.markdown(
 
     .hero-title {{
         color: #ffffff !important;
-        font-size: 96px !important;
+        font-size: 98px !important;
         font-weight: 900 !important;
         letter-spacing: 0.8px !important;
         margin-bottom: 10px !important;
@@ -167,34 +167,7 @@ st.markdown(
         margin: 0 auto 28px auto !important;
     }}
 
-    div.stButton {{
-        display: flex;
-        justify-content: center;
-        margin-top: 8px;
-    }}
-
-    div.stButton > button:first-child {{
-        background: linear-gradient(135deg, #f59e0b, #f97316) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 999px !important;
-        padding: 0.9rem 2.8rem !important;
-        font-size: 1.05rem !important;
-        font-weight: 800 !important;
-        box-shadow: 0 14px 30px rgba(249, 115, 22, 0.28) !important;
-        transition: transform 0.25s ease, box-shadow 0.25s ease !important;
-    }}
-
-    div.stButton > button:first-child:hover {{
-        transform: translateY(-3px) scale(1.03) !important;
-        box-shadow: 0 18px 34px rgba(249, 115, 22, 0.34) !important;
-    }}
-
-    div.stButton > button:first-child:active {{
-        animation: clickPop 0.22s ease;
-    }}
-
-    .dashboard-hero {{
+    .section-hero {{
         position: relative;
         overflow: hidden;
         background:
@@ -203,7 +176,7 @@ st.markdown(
         background-size: cover;
         background-position: center;
         border-radius: 30px;
-        min-height: 250px;
+        min-height: 235px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -214,7 +187,7 @@ st.markdown(
         animation: heroRise 0.9s ease-out;
     }}
 
-    .dashboard-hero::before {{
+    .section-hero::before {{
         content: "";
         position: absolute;
         inset: 0;
@@ -223,21 +196,21 @@ st.markdown(
         pointer-events: none;
     }}
 
-    .dashboard-hero-inner {{
+    .section-hero-inner {{
         position: relative;
         z-index: 2;
     }}
 
-    .dashboard-hero h1 {{
+    .section-hero h1 {{
         color: white !important;
-        font-size: 70px !important;
+        font-size: 68px !important;
         margin: 0 0 8px 0 !important;
         font-weight: 900 !important;
         letter-spacing: 0.5px !important;
         animation: softPulse 3.8s ease-in-out infinite;
     }}
 
-    .dashboard-hero .tagline {{
+    .section-hero .tagline {{
         color: #fffaf2 !important;
         font-size: 22px !important;
         margin: 6px 0 !important;
@@ -245,7 +218,7 @@ st.markdown(
         line-height: 1.4 !important;
     }}
 
-    .dashboard-hero .subnote {{
+    .section-hero .subnote {{
         color: #fff8ef !important;
         font-size: 17px !important;
         margin: 12px 0 0 0 !important;
@@ -314,8 +287,15 @@ st.markdown(
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     }}
 
-    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .contact-box h3, .chart-card h3 {{
+    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .chart-card h3 {{
         color: #111827 !important;
+        font-size: 24px !important;
+        margin: 0 0 10px 0 !important;
+        font-weight: 700 !important;
+    }}
+
+    .contact-box h3 {{
+        color: #4c9a6a !important;
         font-size: 24px !important;
         margin: 0 0 10px 0 !important;
         font-weight: 700 !important;
@@ -463,18 +443,10 @@ st.markdown(
     }}
 
     .contact-name {{
-        color: #111827 !important;
+        color: #4c9a6a !important;
         font-size: 16px !important;
         font-weight: 700 !important;
         margin-bottom: 12px !important;
-    }}
-
-    .contact-icon-row {{
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        margin-top: 12px;
-        margin-bottom: 6px;
     }}
 
     .contact-icon-card {{
@@ -507,7 +479,7 @@ st.markdown(
     }}
 
     .contact-icon-label {{
-        color: #111827 !important;
+        color: #4c9a6a !important;
         font-size: 15px !important;
         font-weight: 700 !important;
     }}
@@ -521,9 +493,7 @@ st.markdown(
     }}
 
     .stSelectbox label,
-    .stMultiSelect label,
-    .stTextInput label,
-    .stTextArea label {{
+    .stMultiSelect label {{
         color: #111827 !important;
         font-weight: 600 !important;
     }}
@@ -653,7 +623,6 @@ st.markdown(
 # Data
 # -----------------------------
 df = load_data()
-
 county_col = "County"
 food_col = "Food Need Score"
 health_col = "Health Risk Score"
@@ -671,9 +640,11 @@ df = df.sort_values(priority_col, ascending=False).reset_index(drop=True)
 # -----------------------------
 if "started" not in st.session_state:
     st.session_state.started = False
+if "page" not in st.session_state:
+    st.session_state.page = "menu"
 
 # -----------------------------
-# Landing page
+# Landing
 # -----------------------------
 if not st.session_state.started:
     st.markdown(
@@ -695,24 +666,241 @@ if not st.session_state.started:
 
     if st.button("Let's Start"):
         st.session_state.started = True
+        st.session_state.page = "menu"
         st.rerun()
 
 # -----------------------------
-# Dashboard page
+# Menu page after Let's Start
 # -----------------------------
-else:
+elif st.session_state.page == "menu":
     st.markdown(
         """
-        <div class="dashboard-hero">
-            <div class="dashboard-hero-inner">
-                <h1>Carelio</h1>
-                <p class="tagline">Minnesota county priority view</p>
-                <p class="subnote">Review top-priority counties, compare urgency levels, and explore county-level need in seconds.</p>
+        <div class="section-hero">
+            <div class="section-hero-inner">
+                <h1>Welcome to Carelio</h1>
+                <p class="tagline">Choose how you want to explore the project</p>
+                <p class="subnote">Open the dashboard for practical county analysis or open About Me to understand the story, purpose, and support options.</p>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+    left, right = st.columns(2)
+    with left:
+        if st.button("Dashboard", use_container_width=True):
+            st.session_state.page = "dashboard"
+            st.rerun()
+    with right:
+        if st.button("About Me", use_container_width=True):
+            st.session_state.page = "about"
+            st.rerun()
+
+# -----------------------------
+# About page
+# -----------------------------
+elif st.session_state.page == "about":
+    st.markdown(
+        """
+        <div class="section-hero">
+            <div class="section-hero-inner">
+                <h1>About Carelio</h1>
+                <p class="tagline">Why it was created and how it helps</p>
+                <p class="subnote">A practical tool built to help identify where food support may deserve closer attention across Minnesota.</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    nav1, nav2 = st.columns(2)
+    with nav1:
+        if st.button("Back", use_container_width=True):
+            st.session_state.page = "menu"
+            st.rerun()
+    with nav2:
+        if st.button("Open Dashboard", use_container_width=True):
+            st.session_state.page = "dashboard"
+            st.rerun()
+
+    st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
+
+    left, right = st.columns(2)
+
+    with left:
+        st.markdown(
+            """
+            <div class="white-box">
+                <h3>Our Story</h3>
+                <p>Carelio was built to help sponsors, nonprofits, and community organizations better understand where food support may be needed most across Minnesota.</p>
+                <p>It was designed to turn county-level analysis into something easier to explore, share, and use for planning meaningful support.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
+            <div class="pink-box">
+                <h3>What Carelio means</h3>
+                <p>The name Carelio is inspired by care, community, and action. It reflects support, well-being, and organized efforts to help where the need may be greater.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with right:
+        st.markdown(
+            """
+            <div class="yellow-box">
+                <h3>Why it is useful</h3>
+                <p>Carelio combines food need and health risk to provide a more practical view of community vulnerability.</p>
+                <p>This helps organizations and supporters review county-level signals before planning outreach, sponsorship, partnerships, or food support efforts.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
+            <div class="green-box">
+                <h3>How it can be used</h3>
+                <ul>
+                    <li>Sponsors can review counties that may need greater support attention.</li>
+                    <li>Nonprofits can use it as a starting point for outreach planning.</li>
+                    <li>Community groups can compare counties before focusing local efforts.</li>
+                    <li>Partners can use it to support discussions around food support priorities.</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    a1, a2, a3 = st.columns(3)
+
+    with a1:
+        st.markdown(
+            """
+            <div class="action-card-yellow">
+                <h3>Donate support</h3>
+                <p>Share interest in donating funds, resources, or food support for higher-need Minnesota counties.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.link_button("Open Donation Form", SUPPORT_FORM_URL, use_container_width=True)
+
+    with a2:
+        st.markdown(
+            """
+            <div class="action-card-pink">
+                <h3>Become a sponsor</h3>
+                <p>Organizations and businesses can express interest in sponsoring county-level food support efforts.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.link_button("Open Sponsorship Form", SUPPORT_FORM_URL, use_container_width=True)
+
+    with a3:
+        st.markdown(
+            """
+            <div class="action-card-orange">
+                <h3>Partner organization</h3>
+                <p>Nonprofits and community organizations can connect to discuss outreach, planning, and collaboration.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.link_button("Open Partnership Form", SUPPORT_FORM_URL, use_container_width=True)
+
+    st.markdown('<div class="contact-box">', unsafe_allow_html=True)
+    st.markdown('<h3>Contact</h3>', unsafe_allow_html=True)
+    st.markdown('<p class="contact-name">Created by: Sruthi Vemavarapu</p>', unsafe_allow_html=True)
+    st.markdown('<p>Click any icon below to open the destination directly.</p>', unsafe_allow_html=True)
+
+    icon1, icon2, icon3, icon4 = st.columns(4)
+
+    with icon1:
+        st.markdown(
+            f'''
+            <a class="contact-icon-card" href="mailto:{EMAIL_ADDRESS}" target="_blank">
+                <div class="contact-icon">📧</div>
+                <div class="contact-icon-label">Email</div>
+            </a>
+            ''',
+            unsafe_allow_html=True
+        )
+
+    with icon2:
+        st.markdown(
+            f'''
+            <a class="contact-icon-card" href="{LINKEDIN_URL}" target="_blank">
+                <div class="contact-icon">💼</div>
+                <div class="contact-icon-label">LinkedIn</div>
+            </a>
+            ''',
+            unsafe_allow_html=True
+        )
+
+    with icon3:
+        st.markdown(
+            f'''
+            <a class="contact-icon-card" href="{GITHUB_URL}" target="_blank">
+                <div class="contact-icon">💻</div>
+                <div class="contact-icon-label">GitHub</div>
+            </a>
+            ''',
+            unsafe_allow_html=True
+        )
+
+    with icon4:
+        st.markdown(
+            f'''
+            <a class="contact-icon-card" href="{LIVE_URL}" target="_blank">
+                <div class="contact-icon">🌐</div>
+                <div class="contact-icon-label">Live App</div>
+            </a>
+            ''',
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<hr style='border: none; border-top: 1px solid #d1d5db; margin: 18px 0;'>", unsafe_allow_html=True)
+    st.markdown('<h3>Update note</h3>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-note">Carelio supports planning, prioritization, and outreach using the latest available project dataset.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-note">This tool is manually updated and does not refresh in real time.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-note"><strong>Last updated:</strong> April 2026</p>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# -----------------------------
+# Dashboard page
+# -----------------------------
+elif st.session_state.page == "dashboard":
+    st.markdown(
+        """
+        <div class="section-hero">
+            <div class="section-hero-inner">
+                <h1>Carelio Dashboard</h1>
+                <p class="tagline">Interactive county priority view</p>
+                <p class="subnote">Review top-priority counties, compare urgency levels, and explore county-level need in a practical way.</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    nav1, nav2 = st.columns(2)
+    with nav1:
+        if st.button("Back", use_container_width=True):
+            st.session_state.page = "menu"
+            st.rerun()
+    with nav2:
+        if st.button("About Me", use_container_width=True):
+            st.session_state.page = "about"
+            st.rerun()
 
     st.sidebar.markdown("## Filters")
     st.sidebar.markdown("Choose an urgency level to focus the county ranking.")
@@ -806,25 +994,10 @@ else:
             st.markdown(
                 """
                 <div class="pink-box">
-                    <h3>What Carelio does</h3>
-                    <p>Carelio helps sponsors, nonprofits, and community organizations quickly see where food support may be needed most across Minnesota.</p>
-                    <p>It combines food need and health risk signals into a simpler starting point for outreach, prioritization, and support planning.</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
-
-        info1, info2 = st.columns(2)
-
-        with info1:
-            st.markdown(
-                """
-                <div class="white-box">
-                    <h3>How to use this</h3>
+                    <h3>How dashboard works</h3>
                     <ul>
-                        <li>Scan the top chart to identify the strongest need signal.</li>
-                        <li>Use the county ranking to compare counties side by side.</li>
+                        <li>Scan the chart to identify the strongest need signal.</li>
+                        <li>Use the ranking table to compare counties side by side.</li>
                         <li>Open County Detail to review one county more closely.</li>
                         <li>Filter by urgency level from the sidebar for faster planning.</li>
                     </ul>
@@ -832,113 +1005,6 @@ else:
                 """,
                 unsafe_allow_html=True,
             )
-
-        with info2:
-            st.markdown(
-                """
-                <div class="yellow-box">
-                    <h3>Why combine food need and health risk</h3>
-                    <p>Food need highlights access challenges. Health risk adds another signal about community vulnerability. Together, they create a more useful priority view than either signal alone.</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        a1, a2, a3 = st.columns(3)
-
-        with a1:
-            st.markdown(
-                """
-                <div class="action-card-yellow">
-                    <h3>Donate support</h3>
-                    <p>Share interest in donating funds, resources, or food support for higher-need Minnesota counties.</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.link_button("Open Donation Form", SUPPORT_FORM_URL, use_container_width=True)
-
-        with a2:
-            st.markdown(
-                """
-                <div class="action-card-pink">
-                    <h3>Become a sponsor</h3>
-                    <p>Organizations and businesses can express interest in sponsoring county-level food support efforts.</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.link_button("Open Sponsorship Form", SUPPORT_FORM_URL, use_container_width=True)
-
-        with a3:
-            st.markdown(
-                """
-                <div class="action-card-orange">
-                    <h3>Partner organization</h3>
-                    <p>Nonprofits and community organizations can connect to discuss outreach, planning, and collaboration.</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.link_button("Open Partnership Form", SUPPORT_FORM_URL, use_container_width=True)
-
-        st.markdown('<div class="contact-box">', unsafe_allow_html=True)
-        st.markdown('<h3>Contact</h3>', unsafe_allow_html=True)
-        st.markdown('<p class="contact-name">Created by: Sruthi Vemavarapu</p>', unsafe_allow_html=True)
-        st.markdown('<p>Click any icon below to open the destination directly.</p>', unsafe_allow_html=True)
-
-        icon1, icon2, icon3, icon4 = st.columns(4)
-
-        with icon1:
-            st.markdown(
-                f'''
-                <a class="contact-icon-card" href="mailto:{EMAIL_ADDRESS}" target="_blank">
-                    <div class="contact-icon">📧</div>
-                    <div class="contact-icon-label">Email</div>
-                </a>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        with icon2:
-            st.markdown(
-                f'''
-                <a class="contact-icon-card" href="{LINKEDIN_URL}" target="_blank">
-                    <div class="contact-icon">💼</div>
-                    <div class="contact-icon-label">LinkedIn</div>
-                </a>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        with icon3:
-            st.markdown(
-                f'''
-                <a class="contact-icon-card" href="{GITHUB_URL}" target="_blank">
-                    <div class="contact-icon">💻</div>
-                    <div class="contact-icon-label">GitHub</div>
-                </a>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        with icon4:
-            st.markdown(
-                f'''
-                <a class="contact-icon-card" href="{LIVE_URL}" target="_blank">
-                    <div class="contact-icon">🌐</div>
-                    <div class="contact-icon-label">Live App</div>
-                </a>
-                ''',
-                unsafe_allow_html=True
-            )
-
-        st.markdown("<hr style='border: none; border-top: 1px solid #d1d5db; margin: 18px 0;'>", unsafe_allow_html=True)
-        st.markdown('<h3>Update note</h3>', unsafe_allow_html=True)
-        st.markdown('<p class="footer-note">Carelio supports planning, prioritization, and outreach using the latest available project dataset.</p>', unsafe_allow_html=True)
-        st.markdown('<p class="footer-note">This tool is manually updated and does not refresh in real time.</p>', unsafe_allow_html=True)
-        st.markdown('<p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>', unsafe_allow_html=True)
-        st.markdown('<p class="footer-note"><strong>Last updated:</strong> April 2026</p>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
