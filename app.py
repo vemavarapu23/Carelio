@@ -295,21 +295,29 @@ st.markdown(
     }}
 
     .contact-box h3 {{
-        color: #4c9a6a !important;
+        color: #111827 !important;
         font-size: 24px !important;
         margin: 0 0 10px 0 !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
     }}
 
-    .pink-box p, .yellow-box p, .white-box p, .green-box p, .contact-box p, .chart-card p,
-    .pink-box li, .yellow-box li, .white-box li, .green-box li, .contact-box li {{
+    .pink-box p, .yellow-box p, .white-box p, .green-box p, .chart-card p,
+    .pink-box li, .yellow-box li, .white-box li, .green-box li {{
         color: #111827 !important;
         font-size: 16px !important;
         line-height: 1.7 !important;
         margin-bottom: 8px !important;
     }}
 
-    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul, .contact-box ul {{
+    .contact-box p {{
+        color: #111827 !important;
+        font-size: 16px !important;
+        line-height: 1.7 !important;
+        margin-bottom: 8px !important;
+        font-weight: 700 !important;
+    }}
+
+    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul {{
         margin: 8px 0 0 0 !important;
         padding-left: 22px !important;
     }}
@@ -437,15 +445,16 @@ st.markdown(
 
     .footer-note {{
         font-size: 13px !important;
-        color: #6b7280 !important;
+        color: #111827 !important;
+        font-weight: 700 !important;
         line-height: 1.7 !important;
         animation: fadeInSoft 0.9s ease-out;
     }}
 
     .contact-name {{
-        color: #4c9a6a !important;
+        color: #111827 !important;
         font-size: 16px !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         margin-bottom: 12px !important;
     }}
 
@@ -479,9 +488,9 @@ st.markdown(
     }}
 
     .contact-icon-label {{
-        color: #4c9a6a !important;
+        color: #111827 !important;
         font-size: 15px !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
     }}
 
     .urgency-badge {{
@@ -644,7 +653,7 @@ if "page" not in st.session_state:
     st.session_state.page = "menu"
 
 # -----------------------------
-# Landing
+# Landing page
 # -----------------------------
 if not st.session_state.started:
     st.markdown(
@@ -670,7 +679,7 @@ if not st.session_state.started:
         st.rerun()
 
 # -----------------------------
-# Menu page after Let's Start
+# Menu page
 # -----------------------------
 elif st.session_state.page == "menu":
     st.markdown(
@@ -686,12 +695,20 @@ elif st.session_state.page == "menu":
         unsafe_allow_html=True,
     )
 
-    left, right = st.columns(2)
-    with left:
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col1:
+        if st.button("⌂ Home", use_container_width=True):
+            st.session_state.started = False
+            st.session_state.page = "menu"
+            st.rerun()
+
+    with col2:
         if st.button("Dashboard", use_container_width=True):
             st.session_state.page = "dashboard"
             st.rerun()
-    with right:
+
+    with col3:
         if st.button("About Me", use_container_width=True):
             st.session_state.page = "about"
             st.rerun()
@@ -713,12 +730,20 @@ elif st.session_state.page == "about":
         unsafe_allow_html=True,
     )
 
-    nav1, nav2 = st.columns(2)
+    nav1, nav2, nav3 = st.columns(3)
+
     with nav1:
-        if st.button("Back", use_container_width=True):
+        if st.button("← Back", use_container_width=True):
             st.session_state.page = "menu"
             st.rerun()
+
     with nav2:
+        if st.button("⌂ Home", use_container_width=True):
+            st.session_state.started = False
+            st.session_state.page = "menu"
+            st.rerun()
+
+    with nav3:
         if st.button("Open Dashboard", use_container_width=True):
             st.session_state.page = "dashboard"
             st.rerun()
@@ -892,12 +917,20 @@ elif st.session_state.page == "dashboard":
         unsafe_allow_html=True,
     )
 
-    nav1, nav2 = st.columns(2)
+    nav1, nav2, nav3 = st.columns(3)
+
     with nav1:
-        if st.button("Back", use_container_width=True):
+        if st.button("← Back", use_container_width=True):
             st.session_state.page = "menu"
             st.rerun()
+
     with nav2:
+        if st.button("⌂ Home", use_container_width=True):
+            st.session_state.started = False
+            st.session_state.page = "menu"
+            st.rerun()
+
+    with nav3:
         if st.button("About Me", use_container_width=True):
             st.session_state.page = "about"
             st.rerun()
