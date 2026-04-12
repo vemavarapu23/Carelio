@@ -58,6 +58,24 @@ def metric_card(label: str, value: str) -> str:
     </div>
     """
 
+def explain_score(score):
+    if score >= 70:
+        return "High priority — this county shows relatively higher food and health vulnerability compared with others in the dataset."
+    elif score >= 55:
+        return "Moderate-high priority — this county may deserve targeted review and stronger support attention."
+    elif score >= 40:
+        return "Moderate priority — some level of need is present and may benefit from additional review."
+    return "Lower priority — comparatively lower need based on the current dataset."
+
+def why_county_high(food_score, health_score):
+    if food_score >= 60 and health_score >= 60:
+        return "Both food need and health risk are elevated, which increases the county’s overall priority."
+    elif food_score >= 60:
+        return "Food need is the stronger driver of this county’s priority score."
+    elif health_score >= 60:
+        return "Health risk is the stronger driver of this county’s priority score."
+    return "This county’s score reflects a combined effect of moderate food and health indicators."
+
 # -----------------------------
 # Images
 # -----------------------------
@@ -240,7 +258,7 @@ st.markdown(
         backdrop-filter: blur(6px);
     }}
 
-    .pink-box, .yellow-box, .white-box, .green-box, .contact-box, .chart-card {{
+    .pink-box, .yellow-box, .white-box, .green-box, .blue-box, .contact-box, .chart-card {{
         border-radius: 22px;
         padding: 20px;
         margin-bottom: 18px;
@@ -250,7 +268,7 @@ st.markdown(
         transition: transform 0.28s ease, box-shadow 0.28s ease;
     }}
 
-    .pink-box:hover, .yellow-box:hover, .white-box:hover, .green-box:hover,
+    .pink-box:hover, .yellow-box:hover, .white-box:hover, .green-box:hover, .blue-box:hover,
     .contact-box:hover, .chart-card:hover {{
         transform: translateY(-4px);
         box-shadow: 0 14px 28px rgba(0,0,0,0.10);
@@ -276,6 +294,11 @@ st.markdown(
         border: 1px solid rgba(144, 196, 157, 0.95);
     }}
 
+    .blue-box {{
+        background: rgba(232, 244, 255, 0.98);
+        border: 1px solid rgba(147, 197, 253, 0.95);
+    }}
+
     .chart-card {{
         background: rgba(255,255,255,0.98);
         border: 1px solid rgba(243, 217, 164, 0.90);
@@ -288,7 +311,7 @@ st.markdown(
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     }}
 
-    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .chart-card h3 {{
+    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .blue-box h3, .chart-card h3 {{
         color: #111827 !important;
         font-size: 24px !important;
         margin: 0 0 10px 0 !important;
@@ -302,8 +325,8 @@ st.markdown(
         font-weight: 800 !important;
     }}
 
-    .pink-box p, .yellow-box p, .white-box p, .green-box p, .chart-card p,
-    .pink-box li, .yellow-box li, .white-box li, .green-box li {{
+    .pink-box p, .yellow-box p, .white-box p, .green-box p, .blue-box p, .chart-card p,
+    .pink-box li, .yellow-box li, .white-box li, .green-box li, .blue-box li {{
         color: #111827 !important;
         font-size: 16px !important;
         line-height: 1.7 !important;
@@ -318,7 +341,7 @@ st.markdown(
         font-weight: 700 !important;
     }}
 
-    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul {{
+    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul, .blue-box ul {{
         margin: 8px 0 0 0 !important;
         padding-left: 22px !important;
     }}
@@ -689,7 +712,7 @@ elif st.session_state.page == "menu":
             <div class="section-hero-inner">
                 <h1>Welcome to Carelio</h1>
                 <p class="tagline">Choose how you want to explore the project</p>
-                <p class="subnote">Open the dashboard for practical county analysis or open About Me to understand the story, purpose, and support options.</p>
+                <p class="subnote">Open the dashboard for practical county analysis or open About Me to understand the story, purpose, scoring, and support options.</p>
             </div>
         </div>
         """,
@@ -723,7 +746,7 @@ elif st.session_state.page == "about":
         <div class="section-hero">
             <div class="section-hero-inner">
                 <h1>About Carelio</h1>
-                <p class="tagline">Why it was created and how it helps</p>
+                <p class="tagline">Why it was created and how the scores should be understood</p>
                 <p class="subnote">A practical tool built to help identify where food support may deserve closer attention across Minnesota.</p>
             </div>
         </div>
@@ -801,6 +824,46 @@ elif st.session_state.page == "about":
             """,
             unsafe_allow_html=True,
         )
+
+    st.markdown(
+        """
+        <div class="white-box">
+            <h3>How Carelio scores work</h3>
+            <p><strong>Food Need Score:</strong> Represents relative food access challenges across counties based on the available dataset indicators.</p>
+            <p><strong>Health Risk Score:</strong> Represents relative health-related vulnerability factors that may affect food security.</p>
+            <p><strong>Final Priority Score:</strong> A combined score used to rank counties based on overall relative need.</p>
+            <ul>
+                <li>Higher score → relatively higher priority</li>
+                <li>Lower score → relatively lower priority</li>
+            </ul>
+            <p><strong>Important:</strong> These are comparative prioritization scores, not direct percentages of people affected.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="blue-box">
+            <h3>How to interpret this in real life</h3>
+            <p>Carelio scores are designed for comparison across counties.</p>
+            <p>They do not directly represent an exact percentage of people going without meals. Instead, they help highlight where relative need may be higher and where additional review or support attention may be warranted first.</p>
+            <p>This tool is designed for prioritization, not precise measurement.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="yellow-box">
+            <h3>Score formula used in this version</h3>
+            <p><strong>Final Priority Score = Combined use of Food Need Score and Health Risk Score</strong></p>
+            <p>This means the final score is intended to balance both food access and health-related vulnerability when ranking counties.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     a1, a2, a3 = st.columns(3)
 
@@ -1030,19 +1093,38 @@ elif st.session_state.page == "dashboard":
             )
             st.markdown("</div>", unsafe_allow_html=True)
 
-        rank_left, rank_right = st.columns([2.2, 1])
+        bottom_left, bottom_mid, bottom_right = st.columns([1.3, 1.1, 1.1])
 
-        with rank_left:
+        with bottom_left:
             st.markdown('<div class="green-box">', unsafe_allow_html=True)
             st.markdown('<h3 style="color:#111827; margin-bottom:6px;">All County Ranking</h3>', unsafe_allow_html=True)
             st.markdown('<div class="section-caption">Counties ranked by Final Priority Score</div>', unsafe_allow_html=True)
-
             display_df = filtered_df[[county_col, food_col, health_col, priority_col, "Urgency Level"]].copy()
             st.dataframe(display_df, use_container_width=True, hide_index=True)
-
             st.markdown("</div>", unsafe_allow_html=True)
 
-        with rank_right:
+        with bottom_mid:
+            st.markdown(
+                f"""
+                <div class="yellow-box">
+                    <h3>What this score means</h3>
+                    <p>{explain_score(county_data[priority_col])}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                f"""
+                <div class="blue-box">
+                    <h3>Why this county is high</h3>
+                    <p>{why_county_high(county_data[food_col], county_data[health_col])}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with bottom_right:
             st.markdown(
                 """
                 <div class="pink-box">
@@ -1057,6 +1139,18 @@ elif st.session_state.page == "dashboard":
                 """,
                 unsafe_allow_html=True,
             )
+
+            st.markdown(
+                """
+                <div class="white-box">
+                    <h3>Score formula used</h3>
+                    <p><strong>Final Priority Score</strong> is based on the combined use of Food Need Score and Health Risk Score.</p>
+                    <p>This version is intended for prioritization and comparison across counties.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
             st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
