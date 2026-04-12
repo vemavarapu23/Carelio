@@ -1,6 +1,7 @@
 import base64
 import pandas as pd
 import streamlit as st
+import altair as alt
 
 st.set_page_config(page_title="Carelio", layout="wide")
 
@@ -979,16 +980,34 @@ elif st.session_state.page == "dashboard":
 
         with top_left:
             st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+
             if selected_urgency == "All":
                 st.markdown('<h3>Top 10 Priority Counties</h3>', unsafe_allow_html=True)
                 st.markdown('<div class="section-caption">Fast visual summary of the highest-priority counties in the current view</div>', unsafe_allow_html=True)
-                chart_df = filtered_df[[county_col, priority_col]].head(10).copy()
+                chart_df = filtered_df[[county_col, priority_col, "Urgency Level"]].head(10).copy()
             else:
                 st.markdown(f'<h3>Top {min(len(filtered_df), 10)} {selected_urgency} Counties</h3>', unsafe_allow_html=True)
                 st.markdown('<div class="section-caption">Fast visual summary of counties in the selected urgency level</div>', unsafe_allow_html=True)
-                chart_df = filtered_df[[county_col, priority_col]].head(10).copy()
+                chart_df = filtered_df[[county_col, priority_col, "Urgency Level"]].head(10).copy()
 
-            st.bar_chart(chart_df.set_index(county_col), use_container_width=True, height=360)
+            chart = alt.Chart(chart_df).mark_bar(
+                cornerRadiusTopLeft=8,
+                cornerRadiusTopRight=8
+            ).encode(
+                x=alt.X(f"{county_col}:N", sort='-y', title="County"),
+                y=alt.Y(f"{priority_col}:Q", title="Final Priority Score"),
+                color=alt.Color(
+                    "Urgency Level:N",
+                    scale=alt.Scale(
+                        domain=["Critical", "High", "Moderate", "Low"],
+                        range=["#ef4444", "#f59e0b", "#3b82f6", "#22c55e"]
+                    ),
+                    legend=alt.Legend(title="Urgency Level")
+                ),
+                tooltip=[county_col, priority_col, "Urgency Level"]
+            ).properties(height=360)
+
+            st.altair_chart(chart, use_container_width=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
         with top_right:
