@@ -55,7 +55,7 @@ st.markdown(f"""
 <style>
     .stApp {{
         background:
-            linear-gradient(rgba(255,255,255,0.80), rgba(255,255,255,0.84)),
+            linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.86)),
             url("data:image/jpg;base64,{page_bg}");
         background-size: cover;
         background-position: center;
@@ -69,14 +69,14 @@ st.markdown(f"""
     }}
 
     section[data-testid="stSidebar"] {{
-        background: rgba(255, 247, 236, 0.92);
+        background: rgba(255, 247, 236, 0.96);
         border-right: 2px solid rgba(240, 190, 95, 0.55);
         backdrop-filter: blur(8px);
     }}
 
     .hero-banner {{
         background:
-            linear-gradient(rgba(0,0,0,0.48), rgba(0,0,0,0.48)),
+            linear-gradient(rgba(0,0,0,0.50), rgba(0,0,0,0.50)),
             url("data:image/avif;base64,{header_banner}");
         background-size: cover;
         background-position: center;
@@ -115,68 +115,91 @@ st.markdown(f"""
     }}
 
     .content-wrap {{
-        background: rgba(255,255,255,0.58);
+        background: rgba(255,255,255,0.78);
         border-radius: 28px;
         padding: 24px;
         backdrop-filter: blur(4px);
     }}
 
     .pink-box {{
-        background: rgba(255, 233, 243, 0.90);
-        border: 2px solid rgba(242, 167, 200, 0.85);
+        background: rgba(255, 233, 243, 0.96);
+        border: 2px solid rgba(242, 167, 200, 0.90);
         border-radius: 22px;
         padding: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
         margin-bottom: 18px;
+        color: #111827 !important;
     }}
 
     .yellow-box {{
-        background: rgba(255, 245, 196, 0.90);
-        border: 2px solid rgba(244, 201, 93, 0.85);
+        background: rgba(255, 245, 196, 0.96);
+        border: 2px solid rgba(244, 201, 93, 0.90);
         border-radius: 22px;
         padding: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
         margin-bottom: 18px;
+        color: #111827 !important;
     }}
 
     .white-box {{
-        background: rgba(255,255,255,0.90);
-        border: 1px solid rgba(234, 215, 164, 0.95);
+        background: rgba(255,255,255,0.97);
+        border: 1px solid rgba(220, 220, 220, 0.95);
         border-radius: 22px;
         padding: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
         margin-bottom: 18px;
+        color: #111827 !important;
     }}
 
     .green-box {{
-        background: rgba(232, 247, 236, 0.92);
+        background: rgba(232, 247, 236, 0.97);
         border: 1px solid rgba(144, 196, 157, 0.95);
         border-radius: 22px;
         padding: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
         margin-bottom: 18px;
+        color: #111827 !important;
     }}
 
     .skyblue-box {{
-        background: rgba(232, 244, 255, 0.92);
+        background: rgba(232, 244, 255, 0.97);
         border: 1px solid rgba(147, 197, 253, 0.95);
         border-radius: 22px;
         padding: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
         margin-bottom: 18px;
+        color: #111827 !important;
     }}
 
     .contact-box {{
-        background: rgba(255,255,255,0.90);
-        border: 1px solid rgba(234, 215, 164, 0.95);
+        background: rgba(255,255,255,0.98);
+        border: 2px solid rgba(234, 215, 164, 0.95);
         border-radius: 22px;
-        padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        padding: 22px;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.08);
         margin-bottom: 18px;
+        color: #111827 !important;
+    }}
+
+    .pink-box p, .pink-box li, .pink-box div, .pink-box span, .pink-box strong,
+    .yellow-box p, .yellow-box li, .yellow-box div, .yellow-box span, .yellow-box strong,
+    .white-box p, .white-box li, .white-box div, .white-box span, .white-box strong,
+    .green-box p, .green-box li, .green-box div, .green-box span, .green-box strong,
+    .skyblue-box p, .skyblue-box li, .skyblue-box div, .skyblue-box span, .skyblue-box strong,
+    .contact-box p, .contact-box li, .contact-box div, .contact-box span, .contact-box strong {{
+        color: #111827 !important;
+        font-size: 17px !important;
+        line-height: 1.7 !important;
+    }}
+
+    .contact-box a, .pink-box a, .yellow-box a, .white-box a, .green-box a, .skyblue-box a {{
+        color: #1d4ed8 !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
     }}
 
     .action-card-yellow {{
-        background: rgba(255, 247, 196, 0.92);
+        background: rgba(255, 247, 196, 0.96);
         border: 1px solid rgba(244, 201, 93, 0.95);
         border-radius: 22px;
         padding: 18px;
@@ -185,7 +208,7 @@ st.markdown(f"""
     }}
 
     .action-card-pink {{
-        background: rgba(255, 236, 245, 0.92);
+        background: rgba(255, 236, 245, 0.96);
         border: 1px solid rgba(242, 167, 200, 0.95);
         border-radius: 22px;
         padding: 18px;
@@ -194,7 +217,7 @@ st.markdown(f"""
     }}
 
     .action-card-orange {{
-        background: rgba(255, 238, 220, 0.92);
+        background: rgba(255, 238, 220, 0.96);
         border: 1px solid rgba(245, 158, 11, 0.95);
         border-radius: 22px;
         padding: 18px;
@@ -213,17 +236,22 @@ st.markdown(f"""
     .action-card-yellow p,
     .action-card-pink p,
     .action-card-orange p {{
-        color: #374151 !important;
+        color: #111827 !important;
         font-size: 17px !important;
         line-height: 1.6 !important;
     }}
 
     div[data-testid="metric-container"] {{
-        background: linear-gradient(to bottom right, rgba(255,255,255,0.97), rgba(255,249,242,0.97));
+        background: linear-gradient(to bottom right, rgba(255,255,255,0.98), rgba(255,249,242,0.98));
         border: 1px solid rgba(243, 217, 164, 0.95);
         padding: 18px;
         border-radius: 18px;
         box-shadow: 0 6px 14px rgba(255, 138, 0, 0.10);
+    }}
+
+    div[data-testid="metric-container"] label,
+    div[data-testid="metric-container"] div {{
+        color: #111827 !important;
     }}
 
     .critical-badge {{
@@ -271,12 +299,12 @@ st.markdown(f"""
     }}
 
     .mini-note {{
-        color: #374151;
+        color: #111827 !important;
         font-size: 16px;
     }}
 
     .section-caption {{
-        color: #6b7280;
+        color: #374151 !important;
         font-size: 16px;
         margin-top: -6px;
         margin-bottom: 8px;
@@ -338,7 +366,7 @@ st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 st.markdown('<div class="pink-box">', unsafe_allow_html=True)
 st.subheader("Our Story")
 st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#374151;'>"
+    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
     "Carelio was built to help sponsors, nonprofits, and community groups better understand "
     "where food support may be needed most across Minnesota. It combines food need and health-related risk "
     "to give a simple starting point for planning, outreach, and support."
@@ -350,7 +378,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="yellow-box">', unsafe_allow_html=True)
 st.subheader("Why Carelio Is Different")
 st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#374151;'>"
+    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
     "Carelio is designed to complement existing food resource tools by helping sponsors, nonprofits, "
     "and community organizations better understand where support may be needed most across Minnesota."
     "</div>",
@@ -361,7 +389,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="white-box">', unsafe_allow_html=True)
 st.subheader("Why Food Need and Health Risk Are Combined")
 st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#374151;'>"
+    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
     "Carelio combines food need and health risk to give a more complete view of community need. "
     "Food need shows where people may be struggling more with access to enough nutritious food. "
     "Health risk shows where poor food access may have a bigger impact on overall well-being. "
@@ -370,7 +398,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#374151; margin-top:10px;'>"
+    "<div style='font-size:18px; line-height:1.7; color:#111827; margin-top:10px;'>"
     "This does not mean health risk alone decides where support should go. "
     "It is used as an extra signal to better understand vulnerability alongside food need. "
     "Together, these measures help sponsors, nonprofits, and community organizations make more informed decisions."
@@ -382,7 +410,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="white-box">', unsafe_allow_html=True)
 st.subheader("What Carelio Means")
 st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#374151;'>"
+    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
     "Carelio is inspired by the ideas of care, living, and organization. "
     "The name reflects support, well-being, and community action across Minnesota."
     "</div>",
