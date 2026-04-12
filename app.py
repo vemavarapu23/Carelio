@@ -35,16 +35,16 @@ def urgency_label(score):
 
 def urgency_badge(urgency):
     if urgency == "Critical":
-        return '<div class="critical-badge">Urgency Level: Critical</div>'
+        return '<div class="critical-badge badge-pop">Urgency Level: Critical</div>'
     elif urgency == "High":
-        return '<div class="high-badge">Urgency Level: High</div>'
+        return '<div class="high-badge badge-pop">Urgency Level: High</div>'
     elif urgency == "Moderate":
-        return '<div class="moderate-badge">Urgency Level: Moderate</div>'
-    return '<div class="low-badge">Urgency Level: Low</div>'
+        return '<div class="moderate-badge badge-pop">Urgency Level: Moderate</div>'
+    return '<div class="low-badge badge-pop">Urgency Level: Low</div>'
 
 def metric_card(label: str, value: str) -> str:
     return f"""
-    <div class="metric-card">
+    <div class="metric-card glass-card">
         <div class="metric-label">{label}</div>
         <div class="metric-value">{value}</div>
     </div>
@@ -52,7 +52,7 @@ def metric_card(label: str, value: str) -> str:
 
 def trust_card(title: str, text: str) -> str:
     return f"""
-    <div class="trust-box">
+    <div class="trust-box glass-card">
         <div class="trust-title">{title}</div>
         <div class="trust-text">{text}</div>
     </div>
@@ -69,9 +69,13 @@ page_bg = get_base64_image("page_bg.jpg")
 # -----------------------------
 st.markdown(f"""
 <style>
+    html {{
+        scroll-behavior: smooth;
+    }}
+
     .stApp {{
         background:
-            linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.86)),
+            linear-gradient(rgba(255,255,255,0.78), rgba(255,255,255,0.84)),
             url("data:image/jpg;base64,{page_bg}");
         background-size: cover;
         background-position: center;
@@ -81,12 +85,13 @@ st.markdown(f"""
     .block-container {{
         padding-top: 1rem;
         padding-bottom: 2rem;
-        max-width: 1250px;
+        max-width: 1260px;
+        animation: pageFade 0.8s ease-out;
     }}
 
     section[data-testid="stSidebar"] {{
         background: rgba(255, 247, 236, 0.97);
-        border-right: 2px solid rgba(240, 190, 95, 0.55);
+        border-right: 2px solid rgba(240, 190, 95, 0.45);
         backdrop-filter: blur(8px);
     }}
 
@@ -95,29 +100,41 @@ st.markdown(f"""
     }}
 
     .hero-banner {{
+        position: relative;
+        overflow: hidden;
         background:
-            linear-gradient(rgba(0,0,0,0.48), rgba(0,0,0,0.48)),
+            linear-gradient(rgba(0,0,0,0.42), rgba(0,0,0,0.48)),
             url("data:image/avif;base64,{header_banner}");
         background-size: cover;
         background-position: center;
-        border-radius: 28px;
-        min-height: 260px;
+        border-radius: 30px;
+        min-height: 290px;
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
-        padding: 34px;
+        padding: 38px;
         margin-bottom: 18px;
-        box-shadow: 0 10px 28px rgba(0,0,0,0.16);
-        animation: fadeUp 0.8s ease-out;
+        box-shadow: 0 14px 34px rgba(0,0,0,0.18);
+        animation: heroRise 1s ease-out;
+    }}
+
+    .hero-banner::before {{
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, rgba(255,255,255,0.06), rgba(255,255,255,0.00), rgba(255,255,255,0.08));
+        animation: shimmer 8s linear infinite;
+        pointer-events: none;
     }}
 
     .hero-banner h1 {{
         color: white !important;
-        font-size: 72px !important;
+        font-size: 76px !important;
         margin: 0 0 8px 0 !important;
         font-weight: 900 !important;
-        animation: softPulse 3s ease-in-out infinite;
+        letter-spacing: 0.5px !important;
+        animation: softPulse 3.6s ease-in-out infinite;
     }}
 
     .hero-banner .tagline {{
@@ -132,7 +149,7 @@ st.markdown(f"""
         color: #fff8ef !important;
         font-size: 18px !important;
         margin: 14px 0 0 0 !important;
-        line-height: 1.6 !important;
+        line-height: 1.65 !important;
         font-weight: 500 !important;
     }}
 
@@ -142,13 +159,19 @@ st.markdown(f"""
         margin-top: 14px !important;
         font-weight: 700 !important;
         font-family: "Segoe Script", "Lucida Handwriting", "Brush Script MT", cursive !important;
+        animation: fadeUp 1.2s ease-out;
     }}
 
     .content-wrap {{
-        background: rgba(255,255,255,0.82);
-        border-radius: 28px;
+        background: rgba(255,255,255,0.70);
+        border-radius: 30px;
         padding: 24px;
-        backdrop-filter: blur(4px);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    }}
+
+    .glass-card {{
+        backdrop-filter: blur(6px);
     }}
 
     .trust-box, .pink-box, .yellow-box, .white-box, .green-box, .skyblue-box, .contact-box, .chart-card {{
@@ -158,10 +181,17 @@ st.markdown(f"""
         box-shadow: 0 6px 14px rgba(0,0,0,0.06);
         color: #111827 !important;
         animation: fadeUp 0.7s ease-out;
+        transition: transform 0.28s ease, box-shadow 0.28s ease;
+    }}
+
+    .trust-box:hover, .pink-box:hover, .yellow-box:hover, .white-box:hover, .green-box:hover,
+    .skyblue-box:hover, .contact-box:hover, .chart-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 14px 28px rgba(0,0,0,0.10);
     }}
 
     .trust-box {{
-        background: rgba(255,255,255,0.995);
+        background: rgba(255,255,255,0.96);
         border: 1px solid rgba(226, 232, 240, 0.95);
         min-height: 120px;
     }}
@@ -180,38 +210,38 @@ st.markdown(f"""
     }}
 
     .pink-box {{
-        background: rgba(255, 233, 243, 0.99);
-        border: 2px solid rgba(242, 167, 200, 0.95);
+        background: rgba(255, 233, 243, 0.97);
+        border: 2px solid rgba(242, 167, 200, 0.88);
     }}
 
     .yellow-box {{
-        background: rgba(255, 245, 196, 0.99);
-        border: 2px solid rgba(244, 201, 93, 0.95);
+        background: rgba(255, 245, 196, 0.97);
+        border: 2px solid rgba(244, 201, 93, 0.88);
     }}
 
     .white-box {{
-        background: rgba(255,255,255,0.995);
-        border: 1px solid rgba(220, 220, 220, 0.98);
+        background: rgba(255,255,255,0.98);
+        border: 1px solid rgba(220, 220, 220, 0.95);
     }}
 
     .green-box {{
-        background: rgba(232, 247, 236, 0.995);
-        border: 1px solid rgba(144, 196, 157, 0.98);
+        background: rgba(232, 247, 236, 0.98);
+        border: 1px solid rgba(144, 196, 157, 0.95);
     }}
 
     .skyblue-box {{
-        background: rgba(232, 244, 255, 0.995);
-        border: 1px solid rgba(147, 197, 253, 0.98);
+        background: rgba(232, 244, 255, 0.98);
+        border: 1px solid rgba(147, 197, 253, 0.95);
     }}
 
     .chart-card {{
-        background: rgba(255,255,255,0.995);
-        border: 1px solid rgba(243, 217, 164, 0.95);
+        background: rgba(255,255,255,0.98);
+        border: 1px solid rgba(243, 217, 164, 0.90);
     }}
 
     .contact-box {{
-        background: rgba(255,255,255,0.995);
-        border: 2px solid rgba(234, 215, 164, 0.98);
+        background: rgba(255,255,255,0.98);
+        border: 2px solid rgba(234, 215, 164, 0.92);
         padding: 22px;
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     }}
@@ -247,28 +277,42 @@ st.markdown(f"""
         padding: 18px;
         min-height: 180px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
-        animation: fadeUp 0.7s ease-out;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        animation: fadeUp 0.8s ease-out;
+        transition: transform 0.28s ease, box-shadow 0.28s ease;
+        position: relative;
+        overflow: hidden;
+    }}
+
+    .action-card-yellow::after, .action-card-pink::after, .action-card-orange::after {{
+        content: "";
+        position: absolute;
+        inset: auto -30% -80% auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.18);
+        filter: blur(8px);
+        pointer-events: none;
     }}
 
     .action-card-yellow:hover, .action-card-pink:hover, .action-card-orange:hover,
     .metric-card:hover {{
-        transform: translateY(-4px);
-        box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+        transform: translateY(-6px) scale(1.01);
+        box-shadow: 0 14px 28px rgba(0,0,0,0.10);
     }}
 
     .action-card-yellow {{
-        background: rgba(255, 247, 196, 0.99);
+        background: linear-gradient(135deg, rgba(255, 247, 196, 0.98), rgba(255, 238, 172, 0.94));
         border: 1px solid rgba(244, 201, 93, 0.95);
     }}
 
     .action-card-pink {{
-        background: rgba(255, 236, 245, 0.99);
+        background: linear-gradient(135deg, rgba(255, 236, 245, 0.98), rgba(255, 220, 238, 0.94));
         border: 1px solid rgba(242, 167, 200, 0.95);
     }}
 
     .action-card-orange {{
-        background: rgba(255, 238, 220, 0.99);
+        background: linear-gradient(135deg, rgba(255, 238, 220, 0.98), rgba(255, 224, 187, 0.94));
         border: 1px solid rgba(245, 158, 11, 0.95);
     }}
 
@@ -290,14 +334,27 @@ st.markdown(f"""
     }}
 
     .metric-card {{
-        background: linear-gradient(to bottom right, rgba(255,255,255,0.99), rgba(255,249,242,0.99));
-        border: 1px solid rgba(243, 217, 164, 0.95);
+        background: linear-gradient(135deg, rgba(255,255,255,0.99), rgba(255,249,242,0.98));
+        border: 1px solid rgba(243, 217, 164, 0.92);
         padding: 18px;
         border-radius: 18px;
         box-shadow: 0 6px 14px rgba(255, 138, 0, 0.10);
         margin-bottom: 8px;
         animation: fadeUp 0.7s ease-out;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        transition: transform 0.28s ease, box-shadow 0.28s ease;
+        position: relative;
+        overflow: hidden;
+    }}
+
+    .metric-card::before {{
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -120%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+        animation: shine 4.8s infinite;
     }}
 
     .metric-label {{
@@ -338,9 +395,17 @@ st.markdown(f"""
     .stMultiSelect div[data-baseweb="select"] > div {{
         background: rgba(255,255,255,0.995) !important;
         color: #111827 !important;
-        border-radius: 12px !important;
+        border-radius: 14px !important;
         border: 1px solid rgba(244, 201, 93, 0.95) !important;
         min-height: 48px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.04) !important;
+        transition: all 0.25s ease !important;
+    }}
+
+    .stSelectbox div[data-baseweb="select"] > div:hover,
+    .stMultiSelect div[data-baseweb="select"] > div:hover {{
+        border: 1px solid rgba(245, 158, 11, 0.95) !important;
+        box-shadow: 0 8px 18px rgba(245, 158, 11, 0.12) !important;
     }}
 
     .stSelectbox div[data-baseweb="select"] span,
@@ -370,21 +435,12 @@ st.markdown(f"""
         color: #111827 !important;
     }}
 
-    @keyframes fadeUp {{
-        from {{
-            opacity: 0;
-            transform: translateY(18px);
-        }}
-        to {{
-            opacity: 1;
-            transform: translateY(0);
-        }}
+    div[data-baseweb="popover"] div[role="option"]:hover {{
+        background: #fff7dd !important;
     }}
 
-    @keyframes softPulse {{
-        0% {{ transform: scale(1); }}
-        50% {{ transform: scale(1.02); }}
-        100% {{ transform: scale(1); }}
+    .badge-pop {{
+        animation: badgePop 0.45s ease-out;
     }}
 
     .critical-badge {{
@@ -425,6 +481,75 @@ st.markdown(f"""
         font-weight: 700;
         display: inline-block;
         margin-top: 8px;
+    }}
+
+    @keyframes pageFade {{
+        from {{
+            opacity: 0;
+        }}
+        to {{
+            opacity: 1;
+        }}
+    }}
+
+    @keyframes fadeUp {{
+        from {{
+            opacity: 0;
+            transform: translateY(18px);
+        }}
+        to {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
+    }}
+
+    @keyframes heroRise {{
+        0% {{
+            opacity: 0;
+            transform: translateY(28px) scale(0.98);
+        }}
+        100% {{
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }}
+    }}
+
+    @keyframes softPulse {{
+        0% {{ transform: scale(1); }}
+        50% {{ transform: scale(1.025); }}
+        100% {{ transform: scale(1); }}
+    }}
+
+    @keyframes shimmer {{
+        0% {{
+            transform: translateX(-40%);
+        }}
+        100% {{
+            transform: translateX(40%);
+        }}
+    }}
+
+    @keyframes shine {{
+        0% {{
+            left: -120%;
+        }}
+        30% {{
+            left: 120%;
+        }}
+        100% {{
+            left: 120%;
+        }}
+    }}
+
+    @keyframes badgePop {{
+        0% {{
+            opacity: 0;
+            transform: scale(0.92);
+        }}
+        100% {{
+            opacity: 1;
+            transform: scale(1);
+        }}
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -558,7 +683,10 @@ else:
         st.markdown(metric_card("Health Risk Score", f"{county_data[health_col]:.2f}"), unsafe_allow_html=True)
         st.markdown(metric_card("Final Priority Score", f"{county_data[priority_col]:.2f}"), unsafe_allow_html=True)
         st.markdown(urgency_badge(county_data["Urgency Level"]), unsafe_allow_html=True)
-        st.markdown('<p class="mini-note">Use this panel to review the selected county before making outreach or support decisions.</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="mini-note">Use this panel to review the selected county before making outreach or support decisions.</p>',
+            unsafe_allow_html=True
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     rank_left, rank_right = st.columns([2.2, 1])
