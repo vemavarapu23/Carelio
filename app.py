@@ -94,7 +94,7 @@ st.markdown(
 
     .stApp {{
         background:
-            linear-gradient(rgba(255,255,255,0.76), rgba(255,255,255,0.84)),
+            linear-gradient(rgba(255,255,255,0.74), rgba(255,255,255,0.84)),
             url("data:image/jpg;base64,{page_bg}");
         background-size: cover;
         background-position: center;
@@ -104,14 +104,14 @@ st.markdown(
     .block-container {{
         padding-top: 1rem;
         padding-bottom: 2rem;
-        max-width: 1260px;
+        max-width: 1280px;
         animation: pageFade 0.8s ease-out;
     }}
 
     section[data-testid="stSidebar"] {{
         background: rgba(255, 247, 236, 0.97);
         border-right: 2px solid rgba(240, 190, 95, 0.45);
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(10px);
     }}
 
     section[data-testid="stSidebar"] * {{
@@ -129,19 +129,19 @@ st.markdown(
         border-radius: 34px;
         overflow: hidden;
         background:
-            linear-gradient(rgba(0,0,0,0.40), rgba(0,0,0,0.52)),
+            linear-gradient(rgba(0,0,0,0.40), rgba(0,0,0,0.54)),
             url("data:image/avif;base64,{header_banner}");
         background-size: cover;
         background-position: center;
-        box-shadow: 0 20px 46px rgba(0,0,0,0.18);
-        animation: heroRise 0.95s ease-out;
+        box-shadow: 0 24px 50px rgba(0,0,0,0.20);
+        animation: heroRise 1s ease-out;
     }}
 
     .hero-screen::before {{
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient(120deg, rgba(255,255,255,0.08), rgba(255,255,255,0.00), rgba(255,255,255,0.09));
+        background: linear-gradient(120deg, rgba(255,255,255,0.08), rgba(255,255,255,0.00), rgba(255,255,255,0.10));
         animation: shimmer 8s linear infinite;
         pointer-events: none;
     }}
@@ -149,17 +149,18 @@ st.markdown(
     .hero-inner {{
         position: relative;
         z-index: 2;
-        max-width: 940px;
+        max-width: 960px;
         animation: fadeInSoft 1s ease-out;
     }}
 
     .hero-title {{
         color: #ffffff !important;
-        font-size: 98px !important;
+        font-size: 100px !important;
         font-weight: 900 !important;
         letter-spacing: 0.8px !important;
         margin-bottom: 10px !important;
         animation: softPulse 4s ease-in-out infinite;
+        text-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }}
 
     .hero-subtitle {{
@@ -190,7 +191,7 @@ st.markdown(
         position: relative;
         overflow: hidden;
         background:
-            linear-gradient(rgba(0,0,0,0.40), rgba(0,0,0,0.48)),
+            linear-gradient(rgba(0,0,0,0.42), rgba(0,0,0,0.50)),
             url("data:image/avif;base64,{header_banner}");
         background-size: cover;
         background-position: center;
@@ -202,7 +203,7 @@ st.markdown(
         text-align: center;
         padding: 34px;
         margin-bottom: 18px;
-        box-shadow: 0 14px 34px rgba(0,0,0,0.18);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.18);
         animation: heroRise 0.9s ease-out;
     }}
 
@@ -245,11 +246,32 @@ st.markdown(
         font-weight: 500 !important;
     }}
 
+    div.stButton > button:first-child {{
+        background: linear-gradient(135deg, #f59e0b, #f97316) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 999px !important;
+        padding: 0.9rem 2.3rem !important;
+        font-size: 1.02rem !important;
+        font-weight: 800 !important;
+        box-shadow: 0 14px 30px rgba(249, 115, 22, 0.28) !important;
+        transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+    }}
+
+    div.stButton > button:first-child:hover {{
+        transform: translateY(-3px) scale(1.03) !important;
+        box-shadow: 0 18px 34px rgba(249, 115, 22, 0.34) !important;
+    }}
+
+    div.stButton > button:first-child:active {{
+        animation: clickPop 0.22s ease;
+    }}
+
     .content-wrap {{
         background: rgba(255,255,255,0.72);
         border-radius: 30px;
         padding: 24px;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(9px);
         box-shadow: 0 12px 28px rgba(0,0,0,0.08);
         animation: fadeInSoft 0.8s ease-out;
     }}
@@ -502,10 +524,6 @@ st.markdown(
         box-shadow: 0 12px 22px rgba(0,0,0,0.10);
     }}
 
-    .contact-icon-card:active {{
-        animation: clickPop 0.2s ease;
-    }}
-
     .contact-icon {{
         font-size: 22px;
         line-height: 1;
@@ -523,6 +541,25 @@ st.markdown(
         font-weight: 700;
         display: inline-block;
         margin-top: 8px;
+    }}
+
+    .stExpander {{
+        background: rgba(255,255,255,0.88) !important;
+        border-radius: 18px !important;
+        border: 1px solid rgba(226, 232, 240, 0.95) !important;
+        margin-bottom: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.04) !important;
+    }}
+
+    .stExpander details {{
+        background: transparent !important;
+    }}
+
+    .stExpander summary {{
+        font-weight: 800 !important;
+        color: #111827 !important;
+        font-size: 17px !important;
     }}
 
     .stSelectbox label,
@@ -755,18 +792,15 @@ elif st.session_state.page == "about":
     )
 
     nav1, nav2, nav3 = st.columns(3)
-
     with nav1:
         if st.button("← Back", use_container_width=True):
             st.session_state.page = "menu"
             st.rerun()
-
     with nav2:
         if st.button("⌂ Home", use_container_width=True):
             st.session_state.started = False
             st.session_state.page = "menu"
             st.rerun()
-
     with nav3:
         if st.button("Open Dashboard", use_container_width=True):
             st.session_state.page = "dashboard"
@@ -774,13 +808,10 @@ elif st.session_state.page == "about":
 
     st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
-    left, right = st.columns(2)
-
-    with left:
+    with st.expander("Our Story"):
         st.markdown(
             """
             <div class="white-box">
-                <h3>Our Story</h3>
                 <p>Carelio was built to help sponsors, nonprofits, and community organizations better understand where food support may be needed most across Minnesota.</p>
                 <p>It was designed to turn county-level analysis into something easier to explore, share, and use for planning meaningful support.</p>
             </div>
@@ -788,21 +819,20 @@ elif st.session_state.page == "about":
             unsafe_allow_html=True,
         )
 
+    with st.expander("What Carelio Means"):
         st.markdown(
             """
             <div class="pink-box">
-                <h3>What Carelio means</h3>
                 <p>The name Carelio is inspired by care, community, and action. It reflects support, well-being, and organized efforts to help where the need may be greater.</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with right:
+    with st.expander("Why It Is Useful"):
         st.markdown(
             """
             <div class="yellow-box">
-                <h3>Why it is useful</h3>
                 <p>Carelio combines food need and health risk to provide a more practical view of community vulnerability.</p>
                 <p>This helps organizations and supporters review county-level signals before planning outreach, sponsorship, partnerships, or food support efforts.</p>
             </div>
@@ -810,10 +840,10 @@ elif st.session_state.page == "about":
             unsafe_allow_html=True,
         )
 
+    with st.expander("How It Can Be Used"):
         st.markdown(
             """
             <div class="green-box">
-                <h3>How it can be used</h3>
                 <ul>
                     <li>Sponsors can review counties that may need greater support attention.</li>
                     <li>Nonprofits can use it as a starting point for outreach planning.</li>
@@ -825,45 +855,46 @@ elif st.session_state.page == "about":
             unsafe_allow_html=True,
         )
 
-    st.markdown(
-        """
-        <div class="white-box">
-            <h3>How Carelio scores work</h3>
-            <p><strong>Food Need Score:</strong> Represents relative food access challenges across counties based on the available dataset indicators.</p>
-            <p><strong>Health Risk Score:</strong> Represents relative health-related vulnerability factors that may affect food security.</p>
-            <p><strong>Final Priority Score:</strong> A combined score used to rank counties based on overall relative need.</p>
-            <ul>
-                <li>Higher score → relatively higher priority</li>
-                <li>Lower score → relatively lower priority</li>
-            </ul>
-            <p><strong>Important:</strong> These are comparative prioritization scores, not direct percentages of people affected.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with st.expander("How Carelio Scores Work"):
+        st.markdown(
+            """
+            <div class="white-box">
+                <p><strong>Food Need Score:</strong> Represents relative food access challenges across counties based on the available dataset indicators.</p>
+                <p><strong>Health Risk Score:</strong> Represents relative health-related vulnerability factors that may affect food security.</p>
+                <p><strong>Final Priority Score:</strong> A combined score used to rank counties based on overall relative need.</p>
+                <ul>
+                    <li>Higher score → relatively higher priority</li>
+                    <li>Lower score → relatively lower priority</li>
+                </ul>
+                <p><strong>Important:</strong> These are comparative prioritization scores, not direct percentages of people affected.</p>
+                <p><strong>Data source:</strong> This data was taken from the Minnesota public health website.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.markdown(
-        """
-        <div class="blue-box">
-            <h3>How to interpret this in real life</h3>
-            <p>Carelio scores are designed for comparison across counties.</p>
-            <p>They do not directly represent an exact percentage of people going without meals. Instead, they help highlight where relative need may be higher and where additional review or support attention may be warranted first.</p>
-            <p>This tool is designed for prioritization, not precise measurement.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with st.expander("How To Interpret This In Real Life"):
+        st.markdown(
+            """
+            <div class="blue-box">
+                <p>Carelio scores are designed for comparison across counties.</p>
+                <p>They do not directly represent an exact percentage of people going without meals. Instead, they help highlight where relative need may be higher and where additional review or support attention may be warranted first.</p>
+                <p>This tool is designed for prioritization, not precise measurement.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.markdown(
-        """
-        <div class="yellow-box">
-            <h3>Score formula used in this version</h3>
-            <p><strong>Final Priority Score = Combined use of Food Need Score and Health Risk Score</strong></p>
-            <p>This means the final score is intended to balance both food access and health-related vulnerability when ranking counties.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with st.expander("Score Formula Used"):
+        st.markdown(
+            """
+            <div class="yellow-box">
+                <p><strong>Final Priority Score</strong> is based on the combined use of Food Need Score and Health Risk Score.</p>
+                <p>This version is intended for prioritization and comparison across counties.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     a1, a2, a3 = st.columns(3)
 
@@ -909,7 +940,6 @@ elif st.session_state.page == "about":
     st.markdown('<p>Click any icon below to open the destination directly.</p>', unsafe_allow_html=True)
 
     icon1, icon2, icon3, icon4 = st.columns(4)
-
     with icon1:
         st.markdown(
             f'''
@@ -920,7 +950,6 @@ elif st.session_state.page == "about":
             ''',
             unsafe_allow_html=True
         )
-
     with icon2:
         st.markdown(
             f'''
@@ -931,7 +960,6 @@ elif st.session_state.page == "about":
             ''',
             unsafe_allow_html=True
         )
-
     with icon3:
         st.markdown(
             f'''
@@ -942,7 +970,6 @@ elif st.session_state.page == "about":
             ''',
             unsafe_allow_html=True
         )
-
     with icon4:
         st.markdown(
             f'''
@@ -982,18 +1009,15 @@ elif st.session_state.page == "dashboard":
     )
 
     nav1, nav2, nav3 = st.columns(3)
-
     with nav1:
         if st.button("← Back", use_container_width=True):
             st.session_state.page = "menu"
             st.rerun()
-
     with nav2:
         if st.button("⌂ Home", use_container_width=True):
             st.session_state.started = False
             st.session_state.page = "menu"
             st.rerun()
-
     with nav3:
         if st.button("About Me", use_container_width=True):
             st.session_state.page = "about"
@@ -1113,7 +1137,6 @@ elif st.session_state.page == "dashboard":
                 """,
                 unsafe_allow_html=True,
             )
-
             st.markdown(
                 f"""
                 <div class="blue-box">
@@ -1139,7 +1162,6 @@ elif st.session_state.page == "dashboard":
                 """,
                 unsafe_allow_html=True,
             )
-
             st.markdown(
                 """
                 <div class="white-box">
@@ -1150,7 +1172,6 @@ elif st.session_state.page == "dashboard":
                 """,
                 unsafe_allow_html=True,
             )
-
             st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
