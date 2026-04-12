@@ -42,6 +42,14 @@ def urgency_badge(urgency):
         return '<div class="moderate-badge">Urgency Level: Moderate</div>'
     return '<div class="low-badge">Urgency Level: Low</div>'
 
+def metric_card(label: str, value: str) -> str:
+    return f"""
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+    </div>
+    """
+
 # -----------------------------
 # Images
 # -----------------------------
@@ -98,7 +106,7 @@ st.markdown(f"""
     .hero-banner h1 {{
         color: white !important;
         font-size: 82px !important;
-        margin-bottom: 10px !important;
+        margin: 0 0 10px 0 !important;
         font-weight: 900 !important;
     }}
 
@@ -119,126 +127,98 @@ st.markdown(f"""
     }}
 
     .content-wrap {{
-        background: rgba(255,255,255,0.80);
+        background: rgba(255,255,255,0.82);
         border-radius: 28px;
         padding: 24px;
         backdrop-filter: blur(4px);
     }}
 
-    .pink-box {{
-        background: rgba(255, 233, 243, 0.98);
-        border: 2px solid rgba(242, 167, 200, 0.90);
+    .pink-box, .yellow-box, .white-box, .green-box, .skyblue-box, .contact-box {{
         border-radius: 22px;
-        padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        padding: 20px;
         margin-bottom: 18px;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+        color: #111827 !important;
+    }}
+
+    .pink-box {{
+        background: rgba(255, 233, 243, 0.99);
+        border: 2px solid rgba(242, 167, 200, 0.95);
     }}
 
     .yellow-box {{
-        background: rgba(255, 245, 196, 0.98);
-        border: 2px solid rgba(244, 201, 93, 0.90);
-        border-radius: 22px;
-        padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
-        margin-bottom: 18px;
+        background: rgba(255, 245, 196, 0.99);
+        border: 2px solid rgba(244, 201, 93, 0.95);
     }}
 
     .white-box {{
-        background: rgba(255,255,255,0.99);
-        border: 1px solid rgba(220, 220, 220, 0.95);
-        border-radius: 22px;
-        padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
-        margin-bottom: 18px;
+        background: rgba(255,255,255,0.995);
+        border: 1px solid rgba(220, 220, 220, 0.98);
     }}
 
     .green-box {{
-        background: rgba(232, 247, 236, 0.99);
-        border: 1px solid rgba(144, 196, 157, 0.95);
-        border-radius: 22px;
-        padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
-        margin-bottom: 18px;
+        background: rgba(232, 247, 236, 0.995);
+        border: 1px solid rgba(144, 196, 157, 0.98);
     }}
 
     .skyblue-box {{
-        background: rgba(232, 244, 255, 0.99);
-        border: 1px solid rgba(147, 197, 253, 0.95);
-        border-radius: 22px;
-        padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
-        margin-bottom: 18px;
+        background: rgba(232, 244, 255, 0.995);
+        border: 1px solid rgba(147, 197, 253, 0.98);
     }}
 
     .contact-box {{
-        background: rgba(255,255,255,0.99);
-        border: 2px solid rgba(234, 215, 164, 0.95);
-        border-radius: 22px;
+        background: rgba(255,255,255,0.995);
+        border: 2px solid rgba(234, 215, 164, 0.98);
         padding: 22px;
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
-        margin-bottom: 18px;
-    }}
-
-    .pink-box, .yellow-box, .white-box, .green-box, .skyblue-box, .contact-box {{
-        color: #111827 !important;
     }}
 
     .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .skyblue-box h3, .contact-box h3 {{
         color: #111827 !important;
         font-size: 26px !important;
-        margin-bottom: 10px !important;
+        margin: 0 0 12px 0 !important;
+        font-weight: 700 !important;
     }}
 
     .pink-box p, .yellow-box p, .white-box p, .green-box p, .skyblue-box p, .contact-box p,
-    .pink-box li, .yellow-box li, .white-box li, .green-box li, .skyblue-box li, .contact-box li,
-    .pink-box div, .yellow-box div, .white-box div, .green-box div, .skyblue-box div, .contact-box div,
-    .pink-box span, .yellow-box span, .white-box span, .green-box span, .skyblue-box span, .contact-box span,
-    .pink-box strong, .yellow-box strong, .white-box strong, .green-box strong, .skyblue-box strong, .contact-box strong,
-    .pink-box label, .yellow-box label, .white-box label, .green-box label, .skyblue-box label, .contact-box label {{
+    .pink-box li, .yellow-box li, .white-box li, .green-box li, .skyblue-box li, .contact-box li {{
         color: #111827 !important;
         font-size: 17px !important;
         line-height: 1.75 !important;
-    }}
-
-    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul, .skyblue-box ul, .contact-box ul,
-    .pink-box ol, .yellow-box ol, .white-box ol, .green-box ol, .skyblue-box ol, .contact-box ol {{
-        color: #111827 !important;
-        padding-left: 22px !important;
-        margin-top: 8px !important;
         margin-bottom: 8px !important;
     }}
 
-    .contact-box a, .pink-box a, .yellow-box a, .white-box a, .green-box a, .skyblue-box a {{
+    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul, .skyblue-box ul, .contact-box ul {{
+        margin: 8px 0 0 0 !important;
+        padding-left: 22px !important;
+    }}
+
+    .contact-box a {{
         color: #1d4ed8 !important;
         font-weight: 600 !important;
         text-decoration: none !important;
     }}
 
-    .action-card-yellow {{
-        background: rgba(255, 247, 196, 0.98);
-        border: 1px solid rgba(244, 201, 93, 0.95);
+    .action-card-yellow, .action-card-pink, .action-card-orange {{
         border-radius: 22px;
         padding: 18px;
         min-height: 180px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+    }}
+
+    .action-card-yellow {{
+        background: rgba(255, 247, 196, 0.99);
+        border: 1px solid rgba(244, 201, 93, 0.95);
     }}
 
     .action-card-pink {{
-        background: rgba(255, 236, 245, 0.98);
+        background: rgba(255, 236, 245, 0.99);
         border: 1px solid rgba(242, 167, 200, 0.95);
-        border-radius: 22px;
-        padding: 18px;
-        min-height: 180px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
     }}
 
     .action-card-orange {{
-        background: rgba(255, 238, 220, 0.98);
+        background: rgba(255, 238, 220, 0.99);
         border: 1px solid rgba(245, 158, 11, 0.95);
-        border-radius: 22px;
-        padding: 18px;
-        min-height: 180px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
     }}
 
     .action-card-yellow h3,
@@ -246,7 +226,7 @@ st.markdown(f"""
     .action-card-orange h3 {{
         color: #5b21b6 !important;
         font-size: 24px !important;
-        margin-bottom: 8px !important;
+        margin: 0 0 8px 0 !important;
     }}
 
     .action-card-yellow p,
@@ -255,19 +235,29 @@ st.markdown(f"""
         color: #111827 !important;
         font-size: 17px !important;
         line-height: 1.6 !important;
+        margin: 0 !important;
     }}
 
-    div[data-testid="metric-container"] {{
+    .metric-card {{
         background: linear-gradient(to bottom right, rgba(255,255,255,0.99), rgba(255,249,242,0.99));
         border: 1px solid rgba(243, 217, 164, 0.95);
         padding: 18px;
         border-radius: 18px;
         box-shadow: 0 6px 14px rgba(255, 138, 0, 0.10);
+        margin-bottom: 8px;
     }}
 
-    div[data-testid="metric-container"] label,
-    div[data-testid="metric-container"] div {{
+    .metric-label {{
+        color: #6b7280 !important;
+        font-size: 15px !important;
+        margin-bottom: 6px !important;
+    }}
+
+    .metric-value {{
         color: #111827 !important;
+        font-size: 28px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
     }}
 
     .stSelectbox label,
@@ -280,11 +270,11 @@ st.markdown(f"""
 
     .stSelectbox div[data-baseweb="select"] > div,
     .stMultiSelect div[data-baseweb="select"] > div {{
-        background: rgba(255,255,255,0.99) !important;
+        background: rgba(255,255,255,0.995) !important;
         color: #111827 !important;
     }}
 
-    .stDataFrame, .stTable {{
+    .stDataFrame {{
         color: #111827 !important;
     }}
 
@@ -328,20 +318,17 @@ st.markdown(f"""
         margin-top: 8px;
     }}
 
-    h2 {{
-        color: #4b1d6b !important;
-    }}
-
     .mini-note {{
         color: #111827 !important;
-        font-size: 16px;
+        font-size: 16px !important;
+        line-height: 1.7 !important;
     }}
 
     .section-caption {{
         color: #374151 !important;
-        font-size: 16px;
-        margin-top: -6px;
-        margin-bottom: 8px;
+        font-size: 16px !important;
+        margin-top: -4px !important;
+        margin-bottom: 10px !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -378,7 +365,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Sidebar filter
+# Sidebar
 # -----------------------------
 st.sidebar.markdown("## Filters")
 st.sidebar.markdown("Choose an urgency level to view matching counties.")
@@ -393,90 +380,69 @@ else:
 filtered_df = filtered_df.sort_values(priority_col, ascending=False).reset_index(drop=True)
 
 # -----------------------------
-# Main page
+# Main content
 # -----------------------------
 st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
-st.markdown('<div class="pink-box">', unsafe_allow_html=True)
-st.subheader("Our Story")
-st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
-    "Carelio was built to help sponsors, nonprofits, and community groups better understand "
-    "where food support may be needed most across Minnesota. It combines food need and health-related risk "
-    "to give a simple starting point for planning, outreach, and support."
-    "</div>",
-    unsafe_allow_html=True
-)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="pink-box">
+    <h3>Our Story</h3>
+    <p>Carelio was built to help sponsors, nonprofits, and community groups better understand where food support may be needed most across Minnesota. It combines food need and health-related risk to give a simple starting point for planning, outreach, and support.</p>
+</div>
+""", unsafe_allow_html=True)
 
-st.markdown('<div class="yellow-box">', unsafe_allow_html=True)
-st.subheader("Why Carelio Is Different")
-st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
-    "Carelio is designed to complement existing food resource tools by helping sponsors, nonprofits, "
-    "and community organizations better understand where support may be needed most across Minnesota."
-    "</div>",
-    unsafe_allow_html=True
-)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="yellow-box">
+    <h3>Why Carelio Is Different</h3>
+    <p>Carelio is designed to complement existing food resource tools by helping sponsors, nonprofits, and community organizations better understand where support may be needed most across Minnesota.</p>
+</div>
+""", unsafe_allow_html=True)
 
-st.markdown('<div class="white-box">', unsafe_allow_html=True)
-st.subheader("Why Food Need and Health Risk Are Combined")
-st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
-    "Carelio combines food need and health risk to give a more complete view of community need. "
-    "Food need shows where people may be struggling more with access to enough nutritious food. "
-    "Health risk shows where poor food access may have a bigger impact on overall well-being. "
-    "When both are high in the same county, it can suggest that the county may need closer attention for food support planning."
-    "</div>",
-    unsafe_allow_html=True
-)
-st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#111827; margin-top:10px;'>"
-    "This does not mean health risk alone decides where support should go. "
-    "It is used as an extra signal to better understand vulnerability alongside food need. "
-    "Together, these measures help sponsors, nonprofits, and community organizations make more informed decisions."
-    "</div>",
-    unsafe_allow_html=True
-)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="white-box">
+    <h3>Why Food Need and Health Risk Are Combined</h3>
+    <p>Carelio combines food need and health risk to give a more complete view of community need. Food need shows where people may be struggling more with access to enough nutritious food. Health risk shows where poor food access may have a bigger impact on overall well-being. When both are high in the same county, it can suggest that the county may need closer attention for food support planning.</p>
+    <p>This does not mean health risk alone decides where support should go. It is used as an extra signal to better understand vulnerability alongside food need. Together, these measures help sponsors, nonprofits, and community organizations make more informed decisions.</p>
+</div>
+""", unsafe_allow_html=True)
 
-st.markdown('<div class="white-box">', unsafe_allow_html=True)
-st.subheader("What Carelio Means")
-st.markdown(
-    "<div style='font-size:18px; line-height:1.7; color:#111827;'>"
-    "Carelio is inspired by the ideas of care, living, and organization. "
-    "The name reflects support, well-being, and community action across Minnesota."
-    "</div>",
-    unsafe_allow_html=True
-)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="white-box">
+    <h3>What Carelio Means</h3>
+    <p>Carelio is inspired by the ideas of care, living, and organization. The name reflects support, well-being, and community action across Minnesota.</p>
+</div>
+""", unsafe_allow_html=True)
 
 if filtered_df.empty:
-    st.markdown('<div class="pink-box">', unsafe_allow_html=True)
-    st.subheader("No counties available")
-    st.write("No counties match the selected urgency level.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="pink-box">
+        <h3>No counties available</h3>
+        <p>No counties match the selected urgency level.</p>
+    </div>
+    """, unsafe_allow_html=True)
 else:
     top_county = filtered_df.iloc[0][county_col]
     top_score = filtered_df.iloc[0][priority_col]
 
-    st.markdown('<div class="yellow-box">', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Counties in current view", len(filtered_df))
-    c2.metric("Highest Priority County", top_county)
-    c3.metric("Highest Priority Score", f"{top_score:.2f}")
-    st.markdown('</div>', unsafe_allow_html=True)
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        st.markdown(metric_card("Counties in current view", str(len(filtered_df))), unsafe_allow_html=True)
+    with m2:
+        st.markdown(metric_card("Highest Priority County", str(top_county)), unsafe_allow_html=True)
+    with m3:
+        st.markdown(metric_card("Highest Priority Score", f"{top_score:.2f}"), unsafe_allow_html=True)
 
-    st.markdown('<div class="pink-box">', unsafe_allow_html=True)
-    st.subheader("How to Use This Tool")
     st.markdown("""
-- Sponsors can use this tool to identify counties that may need greater food support attention  
-- Nonprofits can use it to support outreach and planning decisions  
-- Community groups can review county-level need before focusing support efforts  
-- The results provide a starting point for food support prioritization across Minnesota  
-""")
-    st.markdown('</div>', unsafe_allow_html=True)
+    <div class="pink-box">
+        <h3>How to Use This Tool</h3>
+        <ul>
+            <li>Sponsors can use this tool to identify counties that may need greater food support attention.</li>
+            <li>Nonprofits can use it to support outreach and planning decisions.</li>
+            <li>Community groups can review county-level need before focusing support efforts.</li>
+            <li>The results provide a starting point for food support prioritization across Minnesota.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
 
     a1, a2, a3 = st.columns(3)
 
@@ -514,7 +480,7 @@ else:
 
     with left:
         st.markdown('<div class="green-box">', unsafe_allow_html=True)
-        st.subheader("County Priority Ranking")
+        st.markdown('<h3 style="color:#111827; margin-bottom:6px;">County Priority Ranking</h3>', unsafe_allow_html=True)
         st.markdown('<div class="section-caption">Counties ranked by final priority score</div>', unsafe_allow_html=True)
         display_df = filtered_df[[county_col, food_col, health_col, priority_col, "Urgency Level"]].copy()
         st.dataframe(display_df, use_container_width=True, hide_index=True)
@@ -522,24 +488,18 @@ else:
 
     with right:
         st.markdown('<div class="white-box">', unsafe_allow_html=True)
-        st.subheader("County Detail")
+        st.markdown('<h3 style="color:#111827; margin-bottom:6px;">County Detail</h3>', unsafe_allow_html=True)
         county_list = filtered_df[county_col].tolist()
         selected_county = st.selectbox("Select a county", county_list)
 
         county_data = filtered_df[filtered_df[county_col] == selected_county].iloc[0]
 
-        st.metric("County", county_data[county_col])
-        st.metric("Food Need Score", f"{county_data[food_col]:.2f}")
-        st.metric("Health Risk Score", f"{county_data[health_col]:.2f}")
-        st.metric("Final Priority Score", f"{county_data[priority_col]:.2f}")
+        st.markdown(metric_card("County", str(county_data[county_col])), unsafe_allow_html=True)
+        st.markdown(metric_card("Food Need Score", f"{county_data[food_col]:.2f}"), unsafe_allow_html=True)
+        st.markdown(metric_card("Health Risk Score", f"{county_data[health_col]:.2f}"), unsafe_allow_html=True)
+        st.markdown(metric_card("Final Priority Score", f"{county_data[priority_col]:.2f}"), unsafe_allow_html=True)
         st.markdown(urgency_badge(county_data["Urgency Level"]), unsafe_allow_html=True)
-
-        st.markdown("""
-        <p class="mini-note">
-        This county may deserve closer review for food support outreach and planning
-        based on its relative score.
-        </p>
-        """, unsafe_allow_html=True)
+        st.markdown('<p class="mini-note">This county may deserve closer review for food support outreach and planning based on its relative score.</p>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     b1, b2 = st.columns([1.4, 1])
@@ -547,22 +507,21 @@ else:
     with b1:
         st.markdown('<div class="skyblue-box">', unsafe_allow_html=True)
         if selected_urgency == "All":
-            st.subheader("Top 10 Counties in Current View")
+            st.markdown('<h3 style="color:#111827; margin-bottom:6px;">Top 10 Counties in Current View</h3>', unsafe_allow_html=True)
             shown_df = filtered_df[[county_col, priority_col, "Urgency Level"]].head(10).copy()
         else:
-            st.subheader(f"{selected_urgency} Counties in Current View")
+            st.markdown(f'<h3 style="color:#111827; margin-bottom:6px;">{selected_urgency} Counties in Current View</h3>', unsafe_allow_html=True)
             shown_df = filtered_df[[county_col, priority_col, "Urgency Level"]].copy()
         st.dataframe(shown_df, use_container_width=True, hide_index=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with b2:
-        st.markdown('<div class="pink-box">', unsafe_allow_html=True)
-        st.subheader("Planning Note")
-        st.write(
-            "This tool helps sponsors, nonprofit organizations, and community groups identify Minnesota counties "
-            "where food support may be needed more urgently. It is designed to support planning and outreach."
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="pink-box">
+            <h3>Planning Note</h3>
+            <p>This tool helps sponsors, nonprofit organizations, and community groups identify Minnesota counties where food support may be needed more urgently. It is designed to support planning and outreach.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="contact-box">
