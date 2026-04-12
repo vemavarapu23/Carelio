@@ -295,8 +295,7 @@ st.markdown(f"""
         pointer-events: none;
     }}
 
-    .action-card-yellow:hover, .action-card-pink:hover, .action-card-orange:hover,
-    .metric-card:hover {{
+    .action-card-yellow:hover, .action-card-pink:hover, .action-card-orange:hover {{
         transform: translateY(-6px) scale(1.01);
         box-shadow: 0 14px 28px rgba(0,0,0,0.10);
     }}
@@ -341,7 +340,9 @@ st.markdown(f"""
         box-shadow: 0 6px 14px rgba(255, 138, 0, 0.10);
         margin-bottom: 8px;
         animation: fadeUp 0.7s ease-out;
-        transition: transform 0.28s ease, box-shadow 0.28s ease;
+        transition: transform 0.35s ease, box-shadow 0.35s ease;
+        transform-style: preserve-3d;
+        cursor: pointer;
         position: relative;
         overflow: hidden;
     }}
@@ -355,6 +356,11 @@ st.markdown(f"""
         height: 100%;
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
         animation: shine 4.8s infinite;
+    }}
+
+    .metric-card:hover {{
+        transform: perspective(900px) rotateX(6deg) rotateY(-6deg) translateY(-8px) scale(1.03);
+        box-shadow: 0 20px 34px rgba(0,0,0,0.15);
     }}
 
     .metric-label {{
