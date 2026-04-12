@@ -109,6 +109,7 @@ st.markdown(f"""
         padding: 34px;
         margin-bottom: 18px;
         box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+        animation: fadeUp 0.8s ease-out;
     }}
 
     .hero-banner h1 {{
@@ -116,6 +117,7 @@ st.markdown(f"""
         font-size: 72px !important;
         margin: 0 0 8px 0 !important;
         font-weight: 900 !important;
+        animation: softPulse 3s ease-in-out infinite;
     }}
 
     .hero-banner .tagline {{
@@ -155,6 +157,7 @@ st.markdown(f"""
         margin-bottom: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.06);
         color: #111827 !important;
+        animation: fadeUp 0.7s ease-out;
     }}
 
     .trust-box {{
@@ -244,6 +247,14 @@ st.markdown(f"""
         padding: 18px;
         min-height: 180px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        animation: fadeUp 0.7s ease-out;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }}
+
+    .action-card-yellow:hover, .action-card-pink:hover, .action-card-orange:hover,
+    .metric-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 10px 22px rgba(0,0,0,0.10);
     }}
 
     .action-card-yellow {{
@@ -285,6 +296,8 @@ st.markdown(f"""
         border-radius: 18px;
         box-shadow: 0 6px 14px rgba(255, 138, 0, 0.10);
         margin-bottom: 8px;
+        animation: fadeUp 0.7s ease-out;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
     }}
 
     .metric-label {{
@@ -311,6 +324,67 @@ st.markdown(f"""
         color: #111827 !important;
         font-size: 15px !important;
         line-height: 1.65 !important;
+    }}
+
+    .stSelectbox label,
+    .stMultiSelect label,
+    .stTextInput label,
+    .stTextArea label {{
+        color: #111827 !important;
+        font-weight: 600 !important;
+    }}
+
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stMultiSelect div[data-baseweb="select"] > div {{
+        background: rgba(255,255,255,0.995) !important;
+        color: #111827 !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(244, 201, 93, 0.95) !important;
+        min-height: 48px !important;
+    }}
+
+    .stSelectbox div[data-baseweb="select"] span,
+    .stSelectbox div[data-baseweb="select"] input,
+    .stSelectbox div[data-baseweb="select"] svg,
+    .stMultiSelect div[data-baseweb="select"] span,
+    .stMultiSelect div[data-baseweb="select"] input,
+    .stMultiSelect div[data-baseweb="select"] svg {{
+        color: #111827 !important;
+        fill: #111827 !important;
+        opacity: 1 !important;
+    }}
+
+    div[data-baseweb="popover"] * {{
+        color: #111827 !important;
+    }}
+
+    div[data-baseweb="popover"] ul,
+    div[data-baseweb="popover"] li,
+    div[data-baseweb="popover"] div[role="option"] {{
+        background: #ffffff !important;
+        color: #111827 !important;
+    }}
+
+    div[data-baseweb="popover"] div[aria-selected="true"] {{
+        background: #fef3c7 !important;
+        color: #111827 !important;
+    }}
+
+    @keyframes fadeUp {{
+        from {{
+            opacity: 0;
+            transform: translateY(18px);
+        }}
+        to {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
+    }}
+
+    @keyframes softPulse {{
+        0% {{ transform: scale(1); }}
+        50% {{ transform: scale(1.02); }}
+        100% {{ transform: scale(1); }}
     }}
 
     .critical-badge {{
@@ -409,11 +483,29 @@ st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
 trust1, trust2, trust3 = st.columns(3)
 with trust1:
-    st.markdown(trust_card("Data source", "Built from the latest project dataset covering Minnesota county-level food need and health-related risk indicators."), unsafe_allow_html=True)
+    st.markdown(
+        trust_card(
+            "Data source",
+            "Built from the latest project dataset covering Minnesota county-level food need and health-related risk indicators."
+        ),
+        unsafe_allow_html=True
+    )
 with trust2:
-    st.markdown(trust_card("Scoring logic", "Final Priority Score combines Food Need Score and Health Risk Score to highlight counties that may deserve closer outreach review."), unsafe_allow_html=True)
+    st.markdown(
+        trust_card(
+            "Scoring logic",
+            "Final Priority Score combines Food Need Score and Health Risk Score to highlight counties that may deserve closer outreach review."
+        ),
+        unsafe_allow_html=True
+    )
 with trust3:
-    st.markdown(trust_card("Refresh method", "Monthly manual refresh plan. Last updated: April 2026."), unsafe_allow_html=True)
+    st.markdown(
+        trust_card(
+            "Refresh method",
+            "Monthly manual refresh plan. Last updated: April 2026."
+        ),
+        unsafe_allow_html=True
+    )
 
 if filtered_df.empty:
     st.markdown("""
