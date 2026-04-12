@@ -35,7 +35,7 @@ def urgency_label(score):
         return "Moderate"
     return "Low"
 
-def urgency_badge(urgency):
+def urgency_badge(urgency: str) -> str:
     styles = {
         "Critical": ("#ffe3e3", "#b00020"),
         "High": ("#fff1d6", "#b45309"),
@@ -55,14 +55,6 @@ def metric_card(label: str, value: str) -> str:
         <div class="metric-label">{label}</div>
         <div class="metric-value">{value}</div>
     </div>
-    """
-
-def contact_icon_card(icon: str, label: str, href: str) -> str:
-    return f"""
-    <a class="contact-icon-card" href="{href}" target="_blank">
-        <div class="contact-icon">{icon}</div>
-        <div class="contact-icon-label">{label}</div>
-    </a>
     """
 
 # -----------------------------
@@ -488,6 +480,7 @@ st.markdown(
     .contact-icon-card {{
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 10px;
         padding: 12px 16px;
         border-radius: 16px;
@@ -889,71 +882,63 @@ else:
             )
             st.link_button("Open Partnership Form", SUPPORT_FORM_URL, use_container_width=True)
 
-        contact_html = f"""
         st.markdown('<div class="contact-box">', unsafe_allow_html=True)
-st.markdown('<h3>Contact</h3>', unsafe_allow_html=True)
-st.markdown('<p class="contact-name">Created by: Sruthi Vemavarapu</p>', unsafe_allow_html=True)
-st.markdown('<p>Click any icon below to open the destination directly.</p>', unsafe_allow_html=True)
+        st.markdown('<h3>Contact</h3>', unsafe_allow_html=True)
+        st.markdown('<p class="contact-name">Created by: Sruthi Vemavarapu</p>', unsafe_allow_html=True)
+        st.markdown('<p>Click any icon below to open the destination directly.</p>', unsafe_allow_html=True)
 
-icon1, icon2, icon3, icon4 = st.columns(4)
+        icon1, icon2, icon3, icon4 = st.columns(4)
 
-with icon1:
-    st.markdown(
-        f'''
-        <a class="contact-icon-card" href="mailto:{EMAIL_ADDRESS}" target="_blank">
-            <div class="contact-icon">📧</div>
-            <div class="contact-icon-label">Email</div>
-        </a>
-        ''',
-        unsafe_allow_html=True
-    )
+        with icon1:
+            st.markdown(
+                f'''
+                <a class="contact-icon-card" href="mailto:{EMAIL_ADDRESS}" target="_blank">
+                    <div class="contact-icon">📧</div>
+                    <div class="contact-icon-label">Email</div>
+                </a>
+                ''',
+                unsafe_allow_html=True
+            )
 
-with icon2:
-    st.markdown(
-        f'''
-        <a class="contact-icon-card" href="{LINKEDIN_URL}" target="_blank">
-            <div class="contact-icon">💼</div>
-            <div class="contact-icon-label">LinkedIn</div>
-        </a>
-        ''',
-        unsafe_allow_html=True
-    )
+        with icon2:
+            st.markdown(
+                f'''
+                <a class="contact-icon-card" href="{LINKEDIN_URL}" target="_blank">
+                    <div class="contact-icon">💼</div>
+                    <div class="contact-icon-label">LinkedIn</div>
+                </a>
+                ''',
+                unsafe_allow_html=True
+            )
 
-with icon3:
-    st.markdown(
-        f'''
-        <a class="contact-icon-card" href="{GITHUB_URL}" target="_blank">
-            <div class="contact-icon">💻</div>
-            <div class="contact-icon-label">GitHub</div>
-        </a>
-        ''',
-        unsafe_allow_html=True
-    )
+        with icon3:
+            st.markdown(
+                f'''
+                <a class="contact-icon-card" href="{GITHUB_URL}" target="_blank">
+                    <div class="contact-icon">💻</div>
+                    <div class="contact-icon-label">GitHub</div>
+                </a>
+                ''',
+                unsafe_allow_html=True
+            )
 
-with icon4:
-    st.markdown(
-        f'''
-        <a class="contact-icon-card" href="{LIVE_URL}" target="_blank">
-            <div class="contact-icon">🌐</div>
-            <div class="contact-icon-label">Live App</div>
-        </a>
-        ''',
-        unsafe_allow_html=True
-    )
+        with icon4:
+            st.markdown(
+                f'''
+                <a class="contact-icon-card" href="{LIVE_URL}" target="_blank">
+                    <div class="contact-icon">🌐</div>
+                    <div class="contact-icon-label">Live App</div>
+                </a>
+                ''',
+                unsafe_allow_html=True
+            )
 
-st.markdown("<hr style='border: none; border-top: 1px solid #d1d5db; margin: 18px 0;'>", unsafe_allow_html=True)
-st.markdown('<h3>Update note</h3>', unsafe_allow_html=True)
-st.markdown('<p class="footer-note">Carelio supports planning, prioritization, and outreach using the latest available project dataset.</p>', unsafe_allow_html=True)
-st.markdown('<p class="footer-note">This tool is manually updated and does not refresh in real time.</p>', unsafe_allow_html=True)
-st.markdown('<p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>', unsafe_allow_html=True)
-st.markdown('<p class="footer-note"><strong>Last updated:</strong> April 2026</p>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-            <p class="footer-note">Carelio supports planning, prioritization, and outreach using the latest available project dataset.</p>
-            <p class="footer-note">This tool is manually updated and does not refresh in real time.</p>
-            <p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>
-            <p class="footer-note"><strong>Last updated:</strong> April 2026</p>
-        </div>
-        """
-        st.markdown(contact_html, unsafe_allow_html=True)
+        st.markdown("<hr style='border: none; border-top: 1px solid #d1d5db; margin: 18px 0;'>", unsafe_allow_html=True)
+        st.markdown('<h3>Update note</h3>', unsafe_allow_html=True)
+        st.markdown('<p class="footer-note">Carelio supports planning, prioritization, and outreach using the latest available project dataset.</p>', unsafe_allow_html=True)
+        st.markdown('<p class="footer-note">This tool is manually updated and does not refresh in real time.</p>', unsafe_allow_html=True)
+        st.markdown('<p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>', unsafe_allow_html=True)
+        st.markdown('<p class="footer-note"><strong>Last updated:</strong> April 2026</p>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
