@@ -16,18 +16,15 @@ LIVE_URL = "https://carelio-mn.streamlit.app/"
 # -----------------------------
 # Helpers
 # -----------------------------
-
 def get_base64_image(image_path: str) -> str:
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
-
 
 @st.cache_data
 def load_data():
     df = pd.read_csv("mn_food_access_data.csv")
     df.columns = [col.strip() for col in df.columns]
     return df
-
 
 def urgency_label(score):
     if score >= 70:
@@ -38,16 +35,19 @@ def urgency_label(score):
         return "Moderate"
     return "Low"
 
-
 def urgency_badge(urgency):
-    if urgency == "Critical":
-        return '<div class="critical-badge badge-pop">Urgency Level: Critical</div>'
-    elif urgency == "High":
-        return '<div class="high-badge badge-pop">Urgency Level: High</div>'
-    elif urgency == "Moderate":
-        return '<div class="moderate-badge badge-pop">Urgency Level: Moderate</div>'
-    return '<div class="low-badge badge-pop">Urgency Level: Low</div>'
-
+    styles = {
+        "Critical": ("#ffe3e3", "#b00020"),
+        "High": ("#fff1d6", "#b45309"),
+        "Moderate": ("#dbeafe", "#1d4ed8"),
+        "Low": ("#dcfce7", "#15803d"),
+    }
+    bg, fg = styles.get(urgency, ("#f3f4f6", "#111827"))
+    return f"""
+    <div class="urgency-badge badge-pop" style="background:{bg}; color:{fg};">
+        Urgency Level: {urgency}
+    </div>
+    """
 
 def metric_card(label: str, value: str) -> str:
     return f"""
@@ -57,7 +57,6 @@ def metric_card(label: str, value: str) -> str:
     </div>
     """
 
-
 def contact_icon_card(icon: str, label: str, href: str) -> str:
     return f"""
     <a class="contact-icon-card" href="{href}" target="_blank">
@@ -65,7 +64,6 @@ def contact_icon_card(icon: str, label: str, href: str) -> str:
         <div class="contact-icon-label">{label}</div>
     </a>
     """
-
 
 # -----------------------------
 # Images
@@ -76,7 +74,8 @@ page_bg = get_base64_image("page_bg.jpg")
 # -----------------------------
 # CSS
 # -----------------------------
-st.markdown(f"""
+st.markdown(
+    f"""
 <style>
     html {{
         scroll-behavior: smooth;
@@ -84,7 +83,7 @@ st.markdown(f"""
 
     .stApp {{
         background:
-            linear-gradient(rgba(255,255,255,0.76), rgba(255,255,255,0.82)),
+            linear-gradient(rgba(255,255,255,0.76), rgba(255,255,255,0.84)),
             url("data:image/jpg;base64,{page_bg}");
         background-size: cover;
         background-position: center;
@@ -115,23 +114,23 @@ st.markdown(f"""
         align-items: center;
         justify-content: center;
         text-align: center;
-        padding: 24px;
-        border-radius: 32px;
+        padding: 28px;
+        border-radius: 34px;
         overflow: hidden;
         background:
-            linear-gradient(rgba(0,0,0,0.42), rgba(0,0,0,0.50)),
+            linear-gradient(rgba(0,0,0,0.40), rgba(0,0,0,0.52)),
             url("data:image/avif;base64,{header_banner}");
         background-size: cover;
         background-position: center;
-        box-shadow: 0 18px 42px rgba(0,0,0,0.18);
-        animation: heroRise 1s ease-out;
+        box-shadow: 0 20px 46px rgba(0,0,0,0.18);
+        animation: heroRise 0.95s ease-out;
     }}
 
     .hero-screen::before {{
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient(120deg, rgba(255,255,255,0.09), rgba(255,255,255,0.00), rgba(255,255,255,0.08));
+        background: linear-gradient(120deg, rgba(255,255,255,0.08), rgba(255,255,255,0.00), rgba(255,255,255,0.09));
         animation: shimmer 8s linear infinite;
         pointer-events: none;
     }}
@@ -139,47 +138,47 @@ st.markdown(f"""
     .hero-inner {{
         position: relative;
         z-index: 2;
-        max-width: 920px;
-        animation: fadeUp 1s ease-out;
+        max-width: 940px;
+        animation: fadeInSoft 1s ease-out;
     }}
 
     .hero-title {{
         color: #ffffff !important;
-        font-size: 92px !important;
+        font-size: 96px !important;
         font-weight: 900 !important;
         letter-spacing: 0.8px !important;
         margin-bottom: 10px !important;
-        animation: softPulse 3.8s ease-in-out infinite;
+        animation: softPulse 4s ease-in-out infinite;
     }}
 
     .hero-subtitle {{
-        color: #fff9f2 !important;
-        font-size: 30px !important;
-        font-weight: 700 !important;
+        color: #fffaf2 !important;
+        font-size: 31px !important;
+        font-weight: 800 !important;
         line-height: 1.4 !important;
         margin-bottom: 12px !important;
-    }}
-
-    .hero-small {{
-        color: #fffaf5 !important;
-        font-size: 19px !important;
-        line-height: 1.75 !important;
-        max-width: 760px;
-        margin: 0 auto 28px auto !important;
     }}
 
     .hero-bold {{
         color: #ffffff !important;
         font-size: 22px !important;
         font-weight: 800 !important;
-        margin-top: 10px !important;
-        margin-bottom: 24px !important;
+        margin-top: 8px !important;
+        margin-bottom: 18px !important;
     }}
 
-    .center-button-wrap {{
+    .hero-small {{
+        color: #fffaf5 !important;
+        font-size: 18px !important;
+        line-height: 1.8 !important;
+        max-width: 780px;
+        margin: 0 auto 28px auto !important;
+    }}
+
+    div.stButton {{
         display: flex;
         justify-content: center;
-        margin-top: 10px;
+        margin-top: 8px;
     }}
 
     div.stButton > button:first-child {{
@@ -187,7 +186,7 @@ st.markdown(f"""
         color: white !important;
         border: none !important;
         border-radius: 999px !important;
-        padding: 0.85rem 2.4rem !important;
+        padding: 0.9rem 2.8rem !important;
         font-size: 1.05rem !important;
         font-weight: 800 !important;
         box-shadow: 0 14px 30px rgba(249, 115, 22, 0.28) !important;
@@ -195,15 +194,19 @@ st.markdown(f"""
     }}
 
     div.stButton > button:first-child:hover {{
-        transform: translateY(-2px) scale(1.02) !important;
+        transform: translateY(-3px) scale(1.03) !important;
         box-shadow: 0 18px 34px rgba(249, 115, 22, 0.34) !important;
+    }}
+
+    div.stButton > button:first-child:active {{
+        animation: clickPop 0.22s ease;
     }}
 
     .dashboard-hero {{
         position: relative;
         overflow: hidden;
         background:
-            linear-gradient(rgba(0,0,0,0.42), rgba(0,0,0,0.48)),
+            linear-gradient(rgba(0,0,0,0.40), rgba(0,0,0,0.48)),
             url("data:image/avif;base64,{header_banner}");
         background-size: cover;
         background-position: center;
@@ -216,7 +219,7 @@ st.markdown(f"""
         padding: 34px;
         margin-bottom: 18px;
         box-shadow: 0 14px 34px rgba(0,0,0,0.18);
-        animation: heroRise 1s ease-out;
+        animation: heroRise 0.9s ease-out;
     }}
 
     .dashboard-hero::before {{
@@ -228,13 +231,18 @@ st.markdown(f"""
         pointer-events: none;
     }}
 
+    .dashboard-hero-inner {{
+        position: relative;
+        z-index: 2;
+    }}
+
     .dashboard-hero h1 {{
         color: white !important;
         font-size: 70px !important;
         margin: 0 0 8px 0 !important;
         font-weight: 900 !important;
         letter-spacing: 0.5px !important;
-        animation: softPulse 3.6s ease-in-out infinite;
+        animation: softPulse 3.8s ease-in-out infinite;
     }}
 
     .dashboard-hero .tagline {{
@@ -254,29 +262,30 @@ st.markdown(f"""
     }}
 
     .content-wrap {{
-        background: rgba(255,255,255,0.70);
+        background: rgba(255,255,255,0.72);
         border-radius: 30px;
         padding: 24px;
         backdrop-filter: blur(8px);
         box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+        animation: fadeInSoft 0.8s ease-out;
     }}
 
     .glass-card {{
         backdrop-filter: blur(6px);
     }}
 
-    .pink-box, .yellow-box, .white-box, .green-box, .skyblue-box, .contact-box, .chart-card {{
+    .pink-box, .yellow-box, .white-box, .green-box, .contact-box, .chart-card {{
         border-radius: 22px;
         padding: 20px;
         margin-bottom: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.06);
         color: #111827 !important;
-        animation: fadeUp 0.7s ease-out;
+        animation: fadeInSoft 0.75s ease-out;
         transition: transform 0.28s ease, box-shadow 0.28s ease;
     }}
 
     .pink-box:hover, .yellow-box:hover, .white-box:hover, .green-box:hover,
-    .skyblue-box:hover, .contact-box:hover, .chart-card:hover {{
+    .contact-box:hover, .chart-card:hover {{
         transform: translateY(-4px);
         box-shadow: 0 14px 28px rgba(0,0,0,0.10);
     }}
@@ -301,11 +310,6 @@ st.markdown(f"""
         border: 1px solid rgba(144, 196, 157, 0.95);
     }}
 
-    .skyblue-box {{
-        background: rgba(232, 244, 255, 0.98);
-        border: 1px solid rgba(147, 197, 253, 0.95);
-    }}
-
     .chart-card {{
         background: rgba(255,255,255,0.98);
         border: 1px solid rgba(243, 217, 164, 0.90);
@@ -318,22 +322,22 @@ st.markdown(f"""
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     }}
 
-    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .skyblue-box h3, .contact-box h3, .chart-card h3 {{
+    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .contact-box h3, .chart-card h3 {{
         color: #111827 !important;
         font-size: 24px !important;
         margin: 0 0 10px 0 !important;
         font-weight: 700 !important;
     }}
 
-    .pink-box p, .yellow-box p, .white-box p, .green-box p, .skyblue-box p, .contact-box p, .chart-card p,
-    .pink-box li, .yellow-box li, .white-box li, .green-box li, .skyblue-box li, .contact-box li {{
+    .pink-box p, .yellow-box p, .white-box p, .green-box p, .contact-box p, .chart-card p,
+    .pink-box li, .yellow-box li, .white-box li, .green-box li, .contact-box li {{
         color: #111827 !important;
         font-size: 16px !important;
         line-height: 1.7 !important;
         margin-bottom: 8px !important;
     }}
 
-    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul, .skyblue-box ul, .contact-box ul {{
+    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul, .contact-box ul {{
         margin: 8px 0 0 0 !important;
         padding-left: 22px !important;
     }}
@@ -345,7 +349,7 @@ st.markdown(f"""
         border-radius: 18px;
         box-shadow: 0 6px 14px rgba(255, 138, 0, 0.10);
         margin-bottom: 8px;
-        animation: fadeUp 0.7s ease-out;
+        animation: fadeInSoft 0.7s ease-out;
         transition: transform 0.35s ease, box-shadow 0.35s ease;
         transform-style: preserve-3d;
         cursor: pointer;
@@ -369,6 +373,10 @@ st.markdown(f"""
         box-shadow: 0 20px 34px rgba(0,0,0,0.15);
     }}
 
+    .metric-card:active {{
+        animation: clickPop 0.2s ease;
+    }}
+
     .metric-label {{
         color: #6b7280 !important;
         font-size: 15px !important;
@@ -387,7 +395,7 @@ st.markdown(f"""
         padding: 18px;
         min-height: 180px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
-        animation: fadeUp 0.8s ease-out;
+        animation: fadeInSoft 0.8s ease-out;
         transition: transform 0.28s ease, box-shadow 0.28s ease;
         position: relative;
         overflow: hidden;
@@ -459,6 +467,14 @@ st.markdown(f"""
         font-size: 13px !important;
         color: #6b7280 !important;
         line-height: 1.7 !important;
+        animation: fadeInSoft 0.9s ease-out;
+    }}
+
+    .contact-name {{
+        color: #111827 !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        margin-bottom: 12px !important;
     }}
 
     .contact-icon-row {{
@@ -466,6 +482,7 @@ st.markdown(f"""
         gap: 14px;
         flex-wrap: wrap;
         margin-top: 12px;
+        margin-bottom: 6px;
     }}
 
     .contact-icon-card {{
@@ -479,11 +496,16 @@ st.markdown(f"""
         text-decoration: none !important;
         transition: transform 0.24s ease, box-shadow 0.24s ease;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        animation: popIn 0.5s ease-out;
     }}
 
     .contact-icon-card:hover {{
-        transform: translateY(-4px);
+        transform: translateY(-4px) scale(1.04);
         box-shadow: 0 12px 22px rgba(0,0,0,0.10);
+    }}
+
+    .contact-icon-card:active {{
+        animation: clickPop 0.2s ease;
     }}
 
     .contact-icon {{
@@ -495,6 +517,14 @@ st.markdown(f"""
         color: #111827 !important;
         font-size: 15px !important;
         font-weight: 700 !important;
+    }}
+
+    .urgency-badge {{
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        display: inline-block;
+        margin-top: 8px;
     }}
 
     .stSelectbox label,
@@ -553,64 +583,41 @@ st.markdown(f"""
         background: #fff7dd !important;
     }}
 
-    .badge-pop {{
-        animation: badgePop 0.45s ease-out;
-    }}
-
-    .critical-badge {{
-        background: #ffe3e3;
-        color: #b00020;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-weight: 700;
-        display: inline-block;
-        margin-top: 8px;
-    }}
-
-    .high-badge {{
-        background: #fff1d6;
-        color: #b45309;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-weight: 700;
-        display: inline-block;
-        margin-top: 8px;
-    }}
-
-    .moderate-badge {{
-        background: #dbeafe;
-        color: #1d4ed8;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-weight: 700;
-        display: inline-block;
-        margin-top: 8px;
-    }}
-
-    .low-badge {{
-        background: #dcfce7;
-        color: #15803d;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-weight: 700;
-        display: inline-block;
-        margin-top: 8px;
-    }}
-
     @keyframes pageFade {{
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
     }}
 
-    @keyframes fadeUp {{
+    @keyframes fadeInSoft {{
         from {{
             opacity: 0;
-            transform: translateY(18px);
+            transform: translateY(14px);
         }}
         to {{
             opacity: 1;
             transform: translateY(0);
         }}
+    }}
+
+    @keyframes popIn {{
+        0% {{
+            opacity: 0;
+            transform: scale(0.92);
+        }}
+        60% {{
+            opacity: 1;
+            transform: scale(1.05);
+        }}
+        100% {{
+            opacity: 1;
+            transform: scale(1);
+        }}
+    }}
+
+    @keyframes clickPop {{
+        0% {{ transform: scale(1); }}
+        50% {{ transform: scale(0.96); }}
+        100% {{ transform: scale(1); }}
     }}
 
     @keyframes heroRise {{
@@ -641,18 +648,13 @@ st.markdown(f"""
         100% {{ left: 120%; }}
     }}
 
-    @keyframes badgePop {{
-        0% {{
-            opacity: 0;
-            transform: scale(0.92);
-        }}
-        100% {{
-            opacity: 1;
-            transform: scale(1);
-        }}
+    .badge-pop {{
+        animation: popIn 0.45s ease-out;
     }}
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # -----------------------------
 # Data
@@ -672,7 +674,7 @@ df["Urgency Level"] = df[priority_col].apply(urgency_label)
 df = df.sort_values(priority_col, ascending=False).reset_index(drop=True)
 
 # -----------------------------
-# State
+# Session state
 # -----------------------------
 if "started" not in st.session_state:
     st.session_state.started = False
@@ -681,39 +683,43 @@ if "started" not in st.session_state:
 # Landing page
 # -----------------------------
 if not st.session_state.started:
-    st.markdown("""
-    <div class="hero-screen">
-        <div class="hero-inner">
-            <div class="hero-title">Carelio</div>
-            <div class="hero-subtitle">Minnesota food support prioritization website</div>
-            <div class="hero-bold">See which counties may need food support attention most.</div>
-            <div class="hero-small">
-                Explore county rankings, compare urgency levels, and review a practical dashboard built to support sponsors,
-                nonprofits, and community organizations across Minnesota.
+    st.markdown(
+        """
+        <div class="hero-screen">
+            <div class="hero-inner">
+                <div class="hero-title">Carelio</div>
+                <div class="hero-subtitle">Minnesota food support prioritization website</div>
+                <div class="hero-bold">See which counties may need food support attention most.</div>
+                <div class="hero-small">
+                    Explore county rankings, compare urgency levels, and review an interactive experience
+                    built to support sponsors, nonprofits, and community organizations across Minnesota.
+                </div>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
-    st.markdown('<div class="center-button-wrap">', unsafe_allow_html=True)
-    if st.button("Let's Start", use_container_width=False):
+    if st.button("Let's Start"):
         st.session_state.started = True
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
 # Dashboard page
 # -----------------------------
 else:
-    st.markdown("""
-    <div class="dashboard-hero">
-        <div>
-            <h1>Carelio</h1>
-            <p class="tagline">All counties dashboard</p>
-            <p class="subnote">Review top-priority counties, compare urgency levels, and explore county-level need in seconds.</p>
+    st.markdown(
+        """
+        <div class="dashboard-hero">
+            <div class="dashboard-hero-inner">
+                <h1>Carelio</h1>
+                <p class="tagline">Minnesota county priority view</p>
+                <p class="subnote">Review top-priority counties, compare urgency levels, and explore county-level need in seconds.</p>
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.sidebar.markdown("## Filters")
     st.sidebar.markdown("Choose an urgency level to focus the county ranking.")
@@ -731,12 +737,15 @@ else:
     st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
     if filtered_df.empty:
-        st.markdown("""
-        <div class="pink-box">
-            <h3>No counties available</h3>
-            <p>No counties match the selected urgency level.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="pink-box">
+                <h3>No counties available</h3>
+                <p>No counties match the selected urgency level.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     else:
         top_county = filtered_df.iloc[0][county_col]
         top_score = filtered_df.iloc[0][priority_col]
@@ -766,11 +775,12 @@ else:
                 chart_df = filtered_df[[county_col, priority_col]].head(10).copy()
 
             st.bar_chart(chart_df.set_index(county_col), use_container_width=True, height=360)
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
         with top_right:
             st.markdown('<div class="white-box">', unsafe_allow_html=True)
             st.markdown('<h3 style="color:#111827; margin-bottom:6px;">County Detail</h3>', unsafe_allow_html=True)
+
             county_list = filtered_df[county_col].tolist()
             selected_county = st.selectbox("Select a county", county_list)
 
@@ -783,9 +793,9 @@ else:
             st.markdown(urgency_badge(county_data["Urgency Level"]), unsafe_allow_html=True)
             st.markdown(
                 '<p class="mini-note">Use this panel to review the selected county before making outreach or support decisions.</p>',
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
         rank_left, rank_right = st.columns([2.2, 1])
 
@@ -793,88 +803,111 @@ else:
             st.markdown('<div class="green-box">', unsafe_allow_html=True)
             st.markdown('<h3 style="color:#111827; margin-bottom:6px;">All County Ranking</h3>', unsafe_allow_html=True)
             st.markdown('<div class="section-caption">Counties ranked by Final Priority Score</div>', unsafe_allow_html=True)
+
             display_df = filtered_df[[county_col, food_col, health_col, priority_col, "Urgency Level"]].copy()
             st.dataframe(display_df, use_container_width=True, hide_index=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
 
         with rank_right:
-            st.markdown("""
-            <div class="pink-box">
-                <h3>How to use this dashboard</h3>
-                <ul>
-                    <li>Scan the top chart to identify the counties with the strongest need signal.</li>
-                    <li>Use the county ranking to compare counties side by side.</li>
-                    <li>Open County Detail to review one county more closely.</li>
-                    <li>Filter by urgency level from the sidebar for faster planning.</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-
+            st.markdown(
+                """
+                <div class="pink-box">
+                    <h3>What Carelio does</h3>
+                    <p>Carelio helps sponsors, nonprofits, and community organizations quickly see where food support may be needed most across Minnesota.</p>
+                    <p>It combines food need and health risk signals into a simpler starting point for outreach, prioritization, and support planning.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
 
         info1, info2 = st.columns(2)
 
         with info1:
-            st.markdown("""
-            <div class="white-box">
-                <h3>What this dashboard shows</h3>
-                <p>Carelio helps sponsors, nonprofits, and community organizations quickly see where food support may be needed most across Minnesota. It turns county-level analysis into a simpler starting point for outreach and planning.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div class="white-box">
+                    <h3>How to use this</h3>
+                    <ul>
+                        <li>Scan the top chart to identify the strongest need signal.</li>
+                        <li>Use the county ranking to compare counties side by side.</li>
+                        <li>Open County Detail to review one county more closely.</li>
+                        <li>Filter by urgency level from the sidebar for faster planning.</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         with info2:
-            st.markdown("""
-            <div class="yellow-box">
-                <h3>Why combine food need and health risk</h3>
-                <p>Food need highlights access challenges. Health risk adds another signal about community vulnerability. Together, they create a more useful priority view than either signal alone.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div class="yellow-box">
+                    <h3>Why combine food need and health risk</h3>
+                    <p>Food need highlights access challenges. Health risk adds another signal about community vulnerability. Together, they create a more useful priority view than either signal alone.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         a1, a2, a3 = st.columns(3)
 
         with a1:
-            st.markdown("""
-            <div class="action-card-yellow">
-                <h3>Donate support</h3>
-                <p>Share interest in donating funds, resources, or food support for higher-need Minnesota counties.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div class="action-card-yellow">
+                    <h3>Donate support</h3>
+                    <p>Share interest in donating funds, resources, or food support for higher-need Minnesota counties.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.link_button("Open Donation Form", SUPPORT_FORM_URL, use_container_width=True)
 
         with a2:
-            st.markdown("""
-            <div class="action-card-pink">
-                <h3>Become a sponsor</h3>
-                <p>Organizations and businesses can express interest in sponsoring county-level food support efforts.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div class="action-card-pink">
+                    <h3>Become a sponsor</h3>
+                    <p>Organizations and businesses can express interest in sponsoring county-level food support efforts.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.link_button("Open Sponsorship Form", SUPPORT_FORM_URL, use_container_width=True)
 
         with a3:
-            st.markdown("""
-            <div class="action-card-orange">
-                <h3>Partner organization</h3>
-                <p>Nonprofits and community organizations can connect to discuss outreach, planning, and collaboration.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div class="action-card-orange">
+                    <h3>Partner organization</h3>
+                    <p>Nonprofits and community organizations can connect to discuss outreach, planning, and collaboration.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.link_button("Open Partnership Form", SUPPORT_FORM_URL, use_container_width=True)
 
-        st.markdown(f"""
+        contact_html = f"""
         <div class="contact-box">
             <h3>Contact</h3>
+            <p class="contact-name">Created by: Sruthi Vemavarapu</p>
             <p>Click any icon below to open the destination directly.</p>
             <div class="contact-icon-row">
-                {contact_icon_card('📧', 'Email', f'mailto:{EMAIL_ADDRESS}')}
-                {contact_icon_card('💼', 'LinkedIn', LINKEDIN_URL)}
-                {contact_icon_card('💻', 'GitHub', GITHUB_URL)}
-                {contact_icon_card('🌐', 'Live App', LIVE_URL)}
+                {contact_icon_card("📧", "Email", f"mailto:{EMAIL_ADDRESS}")}
+                {contact_icon_card("💼", "LinkedIn", LINKEDIN_URL)}
+                {contact_icon_card("💻", "GitHub", GITHUB_URL)}
+                {contact_icon_card("🌐", "Live App", LIVE_URL)}
             </div>
             <hr style="border: none; border-top: 1px solid #d1d5db; margin: 18px 0;">
             <h3>Update note</h3>
             <p class="footer-note">Carelio supports planning, prioritization, and outreach using the latest available project dataset.</p>
-            <p class="footer-note">This tool is not auto-refreshed in real time. Current update plan: monthly manual data refresh.</p>
+            <p class="footer-note">This tool is manually updated and does not refresh in real time.</p>
+            <p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>
             <p class="footer-note"><strong>Last updated:</strong> April 2026</p>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(contact_html, unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
