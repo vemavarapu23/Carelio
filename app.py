@@ -69,9 +69,13 @@ st.markdown(f"""
     }}
 
     section[data-testid="stSidebar"] {{
-        background: rgba(255, 247, 236, 0.96);
+        background: rgba(255, 247, 236, 0.97);
         border-right: 2px solid rgba(240, 190, 95, 0.55);
         backdrop-filter: blur(8px);
+    }}
+
+    section[data-testid="stSidebar"] * {{
+        color: #111827 !important;
     }}
 
     .hero-banner {{
@@ -115,81 +119,93 @@ st.markdown(f"""
     }}
 
     .content-wrap {{
-        background: rgba(255,255,255,0.78);
+        background: rgba(255,255,255,0.80);
         border-radius: 28px;
         padding: 24px;
         backdrop-filter: blur(4px);
     }}
 
     .pink-box {{
-        background: rgba(255, 233, 243, 0.96);
+        background: rgba(255, 233, 243, 0.98);
         border: 2px solid rgba(242, 167, 200, 0.90);
         border-radius: 22px;
         padding: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
         margin-bottom: 18px;
-        color: #111827 !important;
     }}
 
     .yellow-box {{
-        background: rgba(255, 245, 196, 0.96);
+        background: rgba(255, 245, 196, 0.98);
         border: 2px solid rgba(244, 201, 93, 0.90);
         border-radius: 22px;
         padding: 18px;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
         margin-bottom: 18px;
-        color: #111827 !important;
     }}
 
     .white-box {{
-        background: rgba(255,255,255,0.97);
+        background: rgba(255,255,255,0.99);
         border: 1px solid rgba(220, 220, 220, 0.95);
         border-radius: 22px;
         padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
         margin-bottom: 18px;
-        color: #111827 !important;
     }}
 
     .green-box {{
-        background: rgba(232, 247, 236, 0.97);
+        background: rgba(232, 247, 236, 0.99);
         border: 1px solid rgba(144, 196, 157, 0.95);
         border-radius: 22px;
         padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
         margin-bottom: 18px;
-        color: #111827 !important;
     }}
 
     .skyblue-box {{
-        background: rgba(232, 244, 255, 0.97);
+        background: rgba(232, 244, 255, 0.99);
         border: 1px solid rgba(147, 197, 253, 0.95);
         border-radius: 22px;
         padding: 18px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.06);
         margin-bottom: 18px;
-        color: #111827 !important;
     }}
 
     .contact-box {{
-        background: rgba(255,255,255,0.98);
+        background: rgba(255,255,255,0.99);
         border: 2px solid rgba(234, 215, 164, 0.95);
         border-radius: 22px;
         padding: 22px;
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
         margin-bottom: 18px;
+    }}
+
+    .pink-box, .yellow-box, .white-box, .green-box, .skyblue-box, .contact-box {{
         color: #111827 !important;
     }}
 
-    .pink-box p, .pink-box li, .pink-box div, .pink-box span, .pink-box strong,
-    .yellow-box p, .yellow-box li, .yellow-box div, .yellow-box span, .yellow-box strong,
-    .white-box p, .white-box li, .white-box div, .white-box span, .white-box strong,
-    .green-box p, .green-box li, .green-box div, .green-box span, .green-box strong,
-    .skyblue-box p, .skyblue-box li, .skyblue-box div, .skyblue-box span, .skyblue-box strong,
-    .contact-box p, .contact-box li, .contact-box div, .contact-box span, .contact-box strong {{
+    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .skyblue-box h3, .contact-box h3 {{
+        color: #111827 !important;
+        font-size: 26px !important;
+        margin-bottom: 10px !important;
+    }}
+
+    .pink-box p, .yellow-box p, .white-box p, .green-box p, .skyblue-box p, .contact-box p,
+    .pink-box li, .yellow-box li, .white-box li, .green-box li, .skyblue-box li, .contact-box li,
+    .pink-box div, .yellow-box div, .white-box div, .green-box div, .skyblue-box div, .contact-box div,
+    .pink-box span, .yellow-box span, .white-box span, .green-box span, .skyblue-box span, .contact-box span,
+    .pink-box strong, .yellow-box strong, .white-box strong, .green-box strong, .skyblue-box strong, .contact-box strong,
+    .pink-box label, .yellow-box label, .white-box label, .green-box label, .skyblue-box label, .contact-box label {{
         color: #111827 !important;
         font-size: 17px !important;
-        line-height: 1.7 !important;
+        line-height: 1.75 !important;
+    }}
+
+    .pink-box ul, .yellow-box ul, .white-box ul, .green-box ul, .skyblue-box ul, .contact-box ul,
+    .pink-box ol, .yellow-box ol, .white-box ol, .green-box ol, .skyblue-box ol, .contact-box ol {{
+        color: #111827 !important;
+        padding-left: 22px !important;
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
     }}
 
     .contact-box a, .pink-box a, .yellow-box a, .white-box a, .green-box a, .skyblue-box a {{
@@ -199,7 +215,7 @@ st.markdown(f"""
     }}
 
     .action-card-yellow {{
-        background: rgba(255, 247, 196, 0.96);
+        background: rgba(255, 247, 196, 0.98);
         border: 1px solid rgba(244, 201, 93, 0.95);
         border-radius: 22px;
         padding: 18px;
@@ -208,7 +224,7 @@ st.markdown(f"""
     }}
 
     .action-card-pink {{
-        background: rgba(255, 236, 245, 0.96);
+        background: rgba(255, 236, 245, 0.98);
         border: 1px solid rgba(242, 167, 200, 0.95);
         border-radius: 22px;
         padding: 18px;
@@ -217,7 +233,7 @@ st.markdown(f"""
     }}
 
     .action-card-orange {{
-        background: rgba(255, 238, 220, 0.96);
+        background: rgba(255, 238, 220, 0.98);
         border: 1px solid rgba(245, 158, 11, 0.95);
         border-radius: 22px;
         padding: 18px;
@@ -242,7 +258,7 @@ st.markdown(f"""
     }}
 
     div[data-testid="metric-container"] {{
-        background: linear-gradient(to bottom right, rgba(255,255,255,0.98), rgba(255,249,242,0.98));
+        background: linear-gradient(to bottom right, rgba(255,255,255,0.99), rgba(255,249,242,0.99));
         border: 1px solid rgba(243, 217, 164, 0.95);
         padding: 18px;
         border-radius: 18px;
@@ -251,6 +267,24 @@ st.markdown(f"""
 
     div[data-testid="metric-container"] label,
     div[data-testid="metric-container"] div {{
+        color: #111827 !important;
+    }}
+
+    .stSelectbox label,
+    .stMultiSelect label,
+    .stTextInput label,
+    .stTextArea label {{
+        color: #111827 !important;
+        font-weight: 600 !important;
+    }}
+
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stMultiSelect div[data-baseweb="select"] > div {{
+        background: rgba(255,255,255,0.99) !important;
+        color: #111827 !important;
+    }}
+
+    .stDataFrame, .stTable {{
         color: #111827 !important;
     }}
 
@@ -294,7 +328,7 @@ st.markdown(f"""
         margin-top: 8px;
     }}
 
-    h2, h3 {{
+    h2 {{
         color: #4b1d6b !important;
     }}
 
@@ -530,22 +564,20 @@ else:
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="contact-box">', unsafe_allow_html=True)
-    st.subheader("Contact")
-    st.write("For collaboration, sponsorship discussions, nonprofit partnerships, or project inquiries:")
-    st.markdown(f"**Email:** [{EMAIL_ADDRESS}](mailto:{EMAIL_ADDRESS})")
-    st.markdown(f"**LinkedIn:** [Connect on LinkedIn]({LINKEDIN_URL})")
-    st.markdown("**Created by:** Sruthi Vemavarapu")
-    st.markdown("---")
-    st.markdown("**Update Note**")
-    st.write(
-        "Carelio is based on the latest available project dataset and is intended to support planning, prioritization, and outreach."
-    )
-    st.write(
-        "This tool does not track live real-time county needs automatically. The data should be updated regularly, such as monthly, to reflect the most recent available information."
-    )
-    st.markdown("**Current update plan:** Monthly manual data refresh")
-    st.markdown("**Last updated:** April 2026")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="contact-box">
+        <h3>Contact</h3>
+        <p>For collaboration, sponsorship discussions, nonprofit partnerships, or project inquiries:</p>
+        <p><strong>Email:</strong> <a href="mailto:{EMAIL_ADDRESS}">{EMAIL_ADDRESS}</a></p>
+        <p><strong>LinkedIn:</strong> <a href="{LINKEDIN_URL}" target="_blank">Connect on LinkedIn</a></p>
+        <p><strong>Created by:</strong> Sruthi Vemavarapu</p>
+        <hr style="border: none; border-top: 1px solid #d1d5db; margin: 18px 0;">
+        <h3>Update Note</h3>
+        <p>Carelio is based on the latest available project dataset and is intended to support planning, prioritization, and outreach.</p>
+        <p>This tool does not track live real-time county needs automatically. The data should be updated regularly, such as monthly, to reflect the most recent available information.</p>
+        <p><strong>Current update plan:</strong> Monthly manual data refresh</p>
+        <p><strong>Last updated:</strong> April 2026</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
