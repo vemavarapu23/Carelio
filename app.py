@@ -3,8 +3,17 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-st.set_page_config(page_title="Carelio", layout="wide")
+st.set_page_config(
+    page_title="Carelio | Minnesota Food Support Prioritization",
+    page_icon="🍎",
+    layout="wide"
+)
+st.title("Carelio")
 
+st.markdown("""
+Carelio is a Minnesota food support prioritization website built using public data.
+It highlights counties that may need more attention for food support planning and outreach.
+""")
 # -----------------------------
 # Links
 # -----------------------------
