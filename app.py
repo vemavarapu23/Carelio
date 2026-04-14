@@ -37,22 +37,6 @@ def load_data():
     df.columns = [col.strip() for col in df.columns]
     return df
 
-    possible_cols = ["CTY_NAME", "COUNTY", "County", "NAME", "COUN"]
-    county_name_col = None
-
-    for col in possible_cols:
-        if col in gdf.columns:
-            county_name_col = col
-            break
-
-    if county_name_col is None:
-        st.error(f"County name column not found in shapefile. Available columns: {list(gdf.columns)}")
-        st.stop()
-
-    gdf["County"] = gdf[county_name_col].astype(str).str.strip()
-    gdf["County"] = gdf["County"].str.replace(" County", "", regex=False).str.strip()
-    return gdf
-
 def urgency_label(score):
     if score >= 70:
         return "Critical"
@@ -104,7 +88,6 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is critical mainly because health risk is especially high. That added vulnerability raises the county into the highest urgency level."
         else:
             text = "This county is critical because the combined effect of food need and health risk produces one of the strongest priority signals in the dataset."
-
     elif urgency == "High":
         title = "Why this county is high"
         if food_score >= 55 and health_score >= 55:
@@ -115,7 +98,6 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is high mainly because health risk is elevated and increases the county’s overall vulnerability."
         else:
             text = "This county is high because its combined score remains above many other counties in the dataset."
-
     elif urgency == "Moderate":
         title = "Why this county is moderate"
         if food_score >= 40 and health_score >= 40:
@@ -126,7 +108,6 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is moderate mainly because health risk shows some concern, but the overall combined score stays in the middle range."
         else:
             text = "This county is moderate because the combined result of the indicators falls in the middle range compared with the rest of the dataset."
-
     else:
         title = "Why this county is low"
         if food_score < 40 and health_score < 40:
@@ -139,29 +120,6 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is low because the combined score is lower than many other counties in the dataset."
 
     return title, text
-
-def county_comparison_text(selected_county, selected_score, avg_score, top_county, top_score, county_rank, total_counties):
-    diff_avg = selected_score - avg_score
-    diff_top = top_score - selected_score
-
-    if county_rank == 1:
-        rank_text = f"{selected_county} is the top-ranked county in the current view."
-    else:
-        rank_text = f"{selected_county} ranks #{county_rank} out of {total_counties} counties in the current view."
-
-    if diff_avg > 0:
-        avg_text = f"Its priority score is {diff_avg:.2f} points above the current-view average."
-    elif diff_avg < 0:
-        avg_text = f"Its priority score is {abs(diff_avg):.2f} points below the current-view average."
-    else:
-        avg_text = "Its priority score is equal to the current-view average."
-
-    if selected_county == top_county:
-        top_text = "It currently leads the ranking with the highest score in this view."
-    else:
-        top_text = f"It is {diff_top:.2f} points below {top_county}, the top-ranked county in this view."
-
-    return rank_text, avg_text, top_text
 
 # -----------------------------
 # Images
@@ -350,10 +308,6 @@ st.markdown(
         box-shadow: 0 18px 34px rgba(249, 115, 22, 0.34) !important;
     }}
 
-    div.stButton > button:first-child:active {{
-        animation: clickPop 0.22s ease;
-    }}
-
     .content-wrap {{
         background: rgba(255,255,255,0.72);
         border-radius: 30px;
@@ -363,11 +317,7 @@ st.markdown(
         animation: fadeInSoft 0.8s ease-out;
     }}
 
-    .glass-card {{
-        backdrop-filter: blur(6px);
-    }}
-
-    .pink-box, .yellow-box, .white-box, .green-box, .blue-box, .contact-box, .chart-card, .map-card {{
+    .pink-box, .yellow-box, .white-box, .green-box, .blue-box, .contact-box, .chart-card {{
         border-radius: 22px;
         padding: 20px;
         margin-bottom: 18px;
@@ -378,7 +328,7 @@ st.markdown(
     }}
 
     .pink-box:hover, .yellow-box:hover, .white-box:hover, .green-box:hover, .blue-box:hover,
-    .contact-box:hover, .chart-card:hover, .map-card:hover {{
+    .contact-box:hover, .chart-card:hover {{
         transform: translateY(-4px);
         box-shadow: 0 14px 28px rgba(0,0,0,0.10);
     }}
@@ -408,7 +358,7 @@ st.markdown(
         border: 1px solid rgba(147, 197, 253, 0.95);
     }}
 
-    .chart-card, .map-card {{
+    .chart-card {{
         background: rgba(255,255,255,0.98);
         border: 1px solid rgba(243, 217, 164, 0.90);
     }}
@@ -420,7 +370,7 @@ st.markdown(
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     }}
 
-    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .blue-box h3, .chart-card h3, .map-card h3 {{
+    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .blue-box h3, .chart-card h3 {{
         color: #111827 !important;
         font-size: 24px !important;
         margin: 0 0 10px 0 !important;
@@ -434,7 +384,7 @@ st.markdown(
         font-weight: 800 !important;
     }}
 
-    .pink-box p, .yellow-box p, .white-box p, .green-box p, .blue-box p, .chart-card p, .map-card p,
+    .pink-box p, .yellow-box p, .white-box p, .green-box p, .blue-box p, .chart-card p,
     .pink-box li, .yellow-box li, .white-box li, .green-box li, .blue-box li {{
         color: #111827 !important;
         font-size: 16px !important;
@@ -464,30 +414,14 @@ st.markdown(
         margin-bottom: 8px;
         animation: fadeInSoft 0.7s ease-out;
         transition: transform 0.35s ease, box-shadow 0.35s ease;
-        transform-style: preserve-3d;
         cursor: pointer;
         position: relative;
         overflow: hidden;
     }}
 
-    .metric-card::before {{
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -120%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-        animation: shine 4.8s infinite;
-    }}
-
     .metric-card:hover {{
-        transform: perspective(900px) rotateX(6deg) rotateY(-6deg) translateY(-8px) scale(1.03);
+        transform: translateY(-8px) scale(1.03);
         box-shadow: 0 20px 34px rgba(0,0,0,0.15);
-    }}
-
-    .metric-card:active {{
-        animation: clickPop 0.2s ease;
     }}
 
     .metric-label {{
@@ -512,18 +446,6 @@ st.markdown(
         transition: transform 0.28s ease, box-shadow 0.28s ease;
         position: relative;
         overflow: hidden;
-    }}
-
-    .action-card-yellow::after, .action-card-pink::after, .action-card-orange::after {{
-        content: "";
-        position: absolute;
-        inset: auto -30% -80% auto;
-        width: 180px;
-        height: 180px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.18);
-        filter: blur(8px);
-        pointer-events: none;
     }}
 
     .action-card-yellow:hover, .action-card-pink:hover, .action-card-orange:hover {{
@@ -581,7 +503,6 @@ st.markdown(
         color: #111827 !important;
         font-weight: 700 !important;
         line-height: 1.7 !important;
-        animation: fadeInSoft 0.9s ease-out;
     }}
 
     .contact-name {{
@@ -603,7 +524,6 @@ st.markdown(
         text-decoration: none !important;
         transition: transform 0.24s ease, box-shadow 0.24s ease;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
-        animation: popIn 0.5s ease-out;
     }}
 
     .contact-icon-card:hover {{
@@ -639,45 +559,28 @@ st.markdown(
         box-shadow: 0 8px 18px rgba(0,0,0,0.04) !important;
     }}
 
-    .stExpander details {{
-        background: transparent !important;
-    }}
-
     .stExpander summary {{
         font-weight: 800 !important;
         color: #111827 !important;
         font-size: 17px !important;
     }}
 
-    .stSelectbox label,
-    .stMultiSelect label {{
+    .stSelectbox label {{
         color: #111827 !important;
         font-weight: 600 !important;
     }}
 
-    .stSelectbox div[data-baseweb="select"] > div,
-    .stMultiSelect div[data-baseweb="select"] > div {{
+    .stSelectbox div[data-baseweb="select"] > div {{
         background: rgba(255,255,255,0.995) !important;
         color: #111827 !important;
         border-radius: 14px !important;
         border: 1px solid rgba(244, 201, 93, 0.95) !important;
         min-height: 48px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.04) !important;
-        transition: all 0.25s ease !important;
-    }}
-
-    .stSelectbox div[data-baseweb="select"] > div:hover,
-    .stMultiSelect div[data-baseweb="select"] > div:hover {{
-        border: 1px solid rgba(245, 158, 11, 0.95) !important;
-        box-shadow: 0 8px 18px rgba(245, 158, 11, 0.12) !important;
     }}
 
     .stSelectbox div[data-baseweb="select"] span,
     .stSelectbox div[data-baseweb="select"] input,
-    .stSelectbox div[data-baseweb="select"] svg,
-    .stMultiSelect div[data-baseweb="select"] span,
-    .stMultiSelect div[data-baseweb="select"] input,
-    .stMultiSelect div[data-baseweb="select"] svg {{
+    .stSelectbox div[data-baseweb="select"] svg {{
         color: #111827 !important;
         fill: #111827 !important;
         opacity: 1 !important;
@@ -685,22 +588,6 @@ st.markdown(
 
     div[data-baseweb="popover"] * {{
         color: #111827 !important;
-    }}
-
-    div[data-baseweb="popover"] ul,
-    div[data-baseweb="popover"] li,
-    div[data-baseweb="popover"] div[role="option"] {{
-        background: #ffffff !important;
-        color: #111827 !important;
-    }}
-
-    div[data-baseweb="popover"] div[aria-selected="true"] {{
-        background: #fef3c7 !important;
-        color: #111827 !important;
-    }}
-
-    div[data-baseweb="popover"] div[role="option"]:hover {{
-        background: #fff7dd !important;
     }}
 
     @keyframes pageFade {{
@@ -717,27 +604,6 @@ st.markdown(
             opacity: 1;
             transform: translateY(0);
         }}
-    }}
-
-    @keyframes popIn {{
-        0% {{
-            opacity: 0;
-            transform: scale(0.92);
-        }}
-        60% {{
-            opacity: 1;
-            transform: scale(1.05);
-        }}
-        100% {{
-            opacity: 1;
-            transform: scale(1);
-        }}
-    }}
-
-    @keyframes clickPop {{
-        0% {{ transform: scale(1); }}
-        50% {{ transform: scale(0.96); }}
-        100% {{ transform: scale(1); }}
     }}
 
     @keyframes heroRise {{
@@ -761,16 +627,6 @@ st.markdown(
         0% {{ transform: translateX(-40%); }}
         100% {{ transform: translateX(40%); }}
     }}
-
-    @keyframes shine {{
-        0% {{ left: -120%; }}
-        30% {{ left: 120%; }}
-        100% {{ left: 120%; }}
-    }}
-
-    .badge-pop {{
-        animation: popIn 0.45s ease-out;
-    }}
 </style>
 """,
     unsafe_allow_html=True,
@@ -793,6 +649,7 @@ df[county_col] = df[county_col].astype(str).str.replace(" County", "", regex=Fal
 df = df.dropna(subset=[county_col, food_col, health_col, priority_col]).copy()
 df["Urgency Level"] = df[priority_col].apply(urgency_label)
 df = df.sort_values(priority_col, ascending=False).reset_index(drop=True)
+
 # -----------------------------
 # Session state
 # -----------------------------
@@ -827,9 +684,6 @@ if not st.session_state.started:
         st.session_state.page = "menu"
         st.rerun()
 
-# -----------------------------
-# Menu page
-# -----------------------------
 elif st.session_state.page == "menu":
     st.markdown(
         """
@@ -862,9 +716,6 @@ elif st.session_state.page == "menu":
             st.session_state.page = "about"
             st.rerun()
 
-# -----------------------------
-# About page
-# -----------------------------
 elif st.session_state.page == "about":
     st.markdown(
         """
@@ -1035,9 +886,6 @@ elif st.session_state.page == "about":
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# -----------------------------
-# Dashboard page
-# -----------------------------
 elif st.session_state.page == "dashboard":
     st.markdown(
         """
@@ -1102,7 +950,7 @@ elif st.session_state.page == "dashboard":
         with m3:
             st.markdown(metric_card("Highest score", f"{top_score:.2f}"), unsafe_allow_html=True)
         with m4:
-            st.markdown(metric_card("Critical counties", str(critical_count)), unsafe_allow_html=True)
+            st.markdown(metric_card("Critical counties", str(critical_count))), unsafe_allow_html=True
 
         top_left, top_right = st.columns([1.7, 1])
 
@@ -1221,130 +1069,5 @@ elif st.session_state.page == "dashboard":
                 unsafe_allow_html=True,
             )
             st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
-
-        # -----------------------------
-        # Added map + comparison section
-        # -----------------------------
-        selected_map = merged_map[merged_map["County"] == selected_county].copy()
-        county_rank = int(filtered_df.index[filtered_df[county_col] == selected_county][0] + 1)
-        total_counties = len(filtered_df)
-
-        rank_text, avg_text, top_text = county_comparison_text(
-            selected_county=selected_county,
-            selected_score=float(county_data[priority_col]),
-            avg_score=float(avg_score),
-            top_county=top_county,
-            top_score=float(top_score),
-            county_rank=county_rank,
-            total_counties=total_counties
-        )
-
-        st.markdown("""
-        <div class="section-caption" style="margin-top: 6px; margin-bottom: 14px;">
-            County Map & Comparison View
-        </div>
-        """, unsafe_allow_html=True)
-
-        new_left, new_mid, new_right = st.columns([1.3, 1, 1])
-
-        with new_left:
-            st.markdown('<div class="map-card">', unsafe_allow_html=True)
-            st.markdown('<h3>Minnesota County Map</h3>', unsafe_allow_html=True)
-            st.markdown('<div class="section-caption">The selected county updates on the map when the county filter changes</div>', unsafe_allow_html=True)
-
-            fig, ax = plt.subplots(figsize=(6, 6))
-            merged_map.plot(ax=ax, color="#e5e7eb", edgecolor="white", linewidth=0.8)
-
-            color_map = {
-                "Critical": "#ef4444",
-                "High": "#f59e0b",
-                "Moderate": "#3b82f6",
-                "Low": "#22c55e"
-            }
-            selected_color = color_map.get(county_data["Urgency Level"], "#6b7280")
-
-            if not selected_map.empty:
-                selected_map.plot(
-                    ax=ax,
-                    color=selected_color,
-                    edgecolor="white",
-                    linewidth=1.2
-                )
-
-            ax.set_title(f"{selected_county} County", fontsize=12)
-            ax.axis("off")
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        with new_mid:
-            st.markdown(
-                f"""
-                <div class="yellow-box">
-                    <h3>County comparison</h3>
-                    <p>{rank_text}</p>
-                    <p>{avg_text}</p>
-                    <p>{top_text}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            comparison_df = pd.DataFrame({
-                "Comparison": ["Selected County", "Current View Average", "Top County"],
-                "Score": [float(county_data[priority_col]), float(avg_score), float(top_score)]
-            })
-
-            compare_chart = alt.Chart(comparison_df).mark_bar(
-                cornerRadiusTopLeft=8,
-                cornerRadiusTopRight=8
-            ).encode(
-                x=alt.X("Comparison:N", title=""),
-                y=alt.Y("Score:Q", title="Final Priority Score"),
-                color=alt.Color(
-                    "Comparison:N",
-                    scale=alt.Scale(
-                        domain=["Selected County", "Current View Average", "Top County"],
-                        range=["#3b82f6", "#9ca3af", "#f59e0b"]
-                    ),
-                    legend=None
-                ),
-                tooltip=["Comparison", "Score"]
-            ).properties(height=280)
-
-            st.altair_chart(compare_chart, use_container_width=True)
-
-        with new_right:
-            if county_rank == 1:
-                insight_line = f"{selected_county} currently leads the ranking in this view."
-            elif float(county_data[priority_col]) > float(avg_score):
-                insight_line = f"{selected_county} stands above the current-view average and shows stronger relative need."
-            else:
-                insight_line = f"{selected_county} is below the current-view average, indicating lower relative need than many counties in this view."
-
-            st.markdown(
-                f"""
-                <div class="blue-box">
-                    <h3>Quick insight</h3>
-                    <p>{insight_line}</p>
-                    <p>The map, ranking, and comparison bar all update together when the selected county changes.</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                f"""
-                <div class="white-box">
-                    <h3>Selected county snapshot</h3>
-                    <p><strong>County:</strong> {selected_county}</p>
-                    <p><strong>Urgency:</strong> {county_data["Urgency Level"]}</p>
-                    <p><strong>Current rank:</strong> #{county_rank}</p>
-                    <p><strong>Priority score:</strong> {float(county_data[priority_col]):.2f}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
 
     st.markdown("</div>", unsafe_allow_html=True)
