@@ -2,7 +2,6 @@ import base64
 import pandas as pd
 import streamlit as st
 import altair as alt
-import matplotlib.pyplot as plt
 
 st.set_page_config(
     page_title="Carelio | Minnesota Food Support Prioritization",
