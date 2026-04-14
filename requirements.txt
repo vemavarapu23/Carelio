@@ -2,7 +2,7 @@ streamlit
 pandas
 altair
 matplotlib
-geopandas==0.14.4
-shapely==2.0.4
-fiona==1.9.6
-pyproj==3.6.1
+geopandas
+shapely
+fiona
+pyproj
