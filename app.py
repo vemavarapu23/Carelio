@@ -2,6 +2,8 @@ import base64
 import pandas as pd
 import streamlit as st
 import altair as alt
+import geopandas as gpd
+import matplotlib.pyplot as plt
 
 st.set_page_config(
     page_title="Carelio | Minnesota Food Support Prioritization",
@@ -14,6 +16,7 @@ st.markdown("""
 Carelio is a Minnesota food support prioritization website built using public data.
 It highlights counties that may need more attention for food support planning and outreach.
 """)
+
 # -----------------------------
 # Links
 # -----------------------------
@@ -35,6 +38,12 @@ def load_data():
     df = pd.read_csv("mn_food_access_data.csv")
     df.columns = [col.strip() for col in df.columns]
     return df
+
+@st.cache_data
+def load_map():
+    gdf = gpd.read_file("mn_map/mn_county_boundaries.shp")
+    gdf["County"] = gdf["CTY_NAME"].astype(str).str.strip()
+    return gdf
 
 def urgency_label(score):
     if score >= 70:
@@ -87,7 +96,6 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is critical mainly because health risk is especially high. That added vulnerability raises the county into the highest urgency level."
         else:
             text = "This county is critical because the combined effect of food need and health risk produces one of the strongest priority signals in the dataset."
-
     elif urgency == "High":
         title = "Why this county is high"
         if food_score >= 55 and health_score >= 55:
@@ -98,7 +106,6 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is high mainly because health risk is elevated and increases the county’s overall vulnerability."
         else:
             text = "This county is high because its combined score remains above many other counties in the dataset."
-
     elif urgency == "Moderate":
         title = "Why this county is moderate"
         if food_score >= 40 and health_score >= 40:
@@ -109,7 +116,6 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is moderate mainly because health risk shows some concern, but the overall combined score stays in the middle range."
         else:
             text = "This county is moderate because the combined result of the indicators falls in the middle range compared with the rest of the dataset."
-
     else:
         title = "Why this county is low"
         if food_score < 40 and health_score < 40:
@@ -122,6 +128,29 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is low because the combined score is lower than many other counties in the dataset."
 
     return title, text
+
+def county_comparison_text(selected_county, selected_score, avg_score, top_county, top_score, county_rank, total_counties):
+    diff_avg = selected_score - avg_score
+    diff_top = top_score - selected_score
+
+    if county_rank == 1:
+        rank_text = f"{selected_county} is the top-ranked county in the current view."
+    else:
+        rank_text = f"{selected_county} ranks #{county_rank} out of {total_counties} counties in the current view."
+
+    if diff_avg > 0:
+        avg_text = f"Its priority score is {diff_avg:.2f} points above the current-view average."
+    elif diff_avg < 0:
+        avg_text = f"Its priority score is {abs(diff_avg):.2f} points below the current-view average."
+    else:
+        avg_text = "Its priority score is equal to the current-view average."
+
+    if selected_county == top_county:
+        top_text = f"It currently leads the ranking with the highest score in this view."
+    else:
+        top_text = f"It is {diff_top:.2f} points below {top_county}, the top-ranked county in this view."
+
+    return rank_text, avg_text, top_text
 
 # -----------------------------
 # Images
@@ -327,7 +356,7 @@ st.markdown(
         backdrop-filter: blur(6px);
     }}
 
-    .pink-box, .yellow-box, .white-box, .green-box, .blue-box, .contact-box, .chart-card {{
+    .pink-box, .yellow-box, .white-box, .green-box, .blue-box, .contact-box, .chart-card, .map-card {{
         border-radius: 22px;
         padding: 20px;
         margin-bottom: 18px;
@@ -338,7 +367,7 @@ st.markdown(
     }}
 
     .pink-box:hover, .yellow-box:hover, .white-box:hover, .green-box:hover, .blue-box:hover,
-    .contact-box:hover, .chart-card:hover {{
+    .contact-box:hover, .chart-card:hover, .map-card:hover {{
         transform: translateY(-4px);
         box-shadow: 0 14px 28px rgba(0,0,0,0.10);
     }}
@@ -368,7 +397,7 @@ st.markdown(
         border: 1px solid rgba(147, 197, 253, 0.95);
     }}
 
-    .chart-card {{
+    .chart-card, .map-card {{
         background: rgba(255,255,255,0.98);
         border: 1px solid rgba(243, 217, 164, 0.90);
     }}
@@ -380,7 +409,7 @@ st.markdown(
         box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     }}
 
-    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .blue-box h3, .chart-card h3 {{
+    .pink-box h3, .yellow-box h3, .white-box h3, .green-box h3, .blue-box h3, .chart-card h3, .map-card h3 {{
         color: #111827 !important;
         font-size: 24px !important;
         margin: 0 0 10px 0 !important;
@@ -394,7 +423,7 @@ st.markdown(
         font-weight: 800 !important;
     }}
 
-    .pink-box p, .yellow-box p, .white-box p, .green-box p, .blue-box p, .chart-card p,
+    .pink-box p, .yellow-box p, .white-box p, .green-box p, .blue-box p, .chart-card p, .map-card p,
     .pink-box li, .yellow-box li, .white-box li, .green-box li, .blue-box li {{
         color: #111827 !important;
         font-size: 16px !important;
@@ -740,6 +769,8 @@ st.markdown(
 # Data
 # -----------------------------
 df = load_data()
+map_gdf = load_map()
+
 county_col = "County"
 food_col = "Food Need Score"
 health_col = "Health Risk Score"
@@ -748,9 +779,12 @@ priority_col = "Final Priority Score"
 for col in [food_col, health_col, priority_col]:
     df[col] = pd.to_numeric(df[col], errors="coerce")
 
+df[county_col] = df[county_col].astype(str).str.replace(" County", "", regex=False).str.strip()
 df = df.dropna(subset=[county_col, food_col, health_col, priority_col]).copy()
 df["Urgency Level"] = df[priority_col].apply(urgency_label)
 df = df.sort_values(priority_col, ascending=False).reset_index(drop=True)
+
+merged_map = map_gdf.merge(df, on="County", how="left")
 
 # -----------------------------
 # Session state
@@ -1228,5 +1262,135 @@ elif st.session_state.page == "dashboard":
                 unsafe_allow_html=True,
             )
             st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
+
+        # ---------------------------------
+        # NEW ADDED SECTION ONLY
+        # ---------------------------------
+        selected_map = merged_map[merged_map["County"] == selected_county].copy()
+        county_rank = int(filtered_df.index[filtered_df[county_col] == selected_county][0] + 1)
+        total_counties = len(filtered_df)
+
+        rank_text, avg_text, top_text = county_comparison_text(
+            selected_county=selected_county,
+            selected_score=float(county_data[priority_col]),
+            avg_score=float(avg_score),
+            top_county=top_county,
+            top_score=float(top_score),
+            county_rank=county_rank,
+            total_counties=total_counties
+        )
+
+        st.markdown("""
+        <div class="section-caption" style="margin-top: 6px; margin-bottom: 14px;">
+            County Map & Comparison View
+        </div>
+        """, unsafe_allow_html=True)
+
+        new_left, new_mid, new_right = st.columns([1.3, 1, 1])
+
+        with new_left:
+            st.markdown('<div class="map-card">', unsafe_allow_html=True)
+            st.markdown('<h3>Minnesota County Map</h3>', unsafe_allow_html=True)
+            st.markdown('<div class="section-caption">The selected county updates on the map when the county filter changes</div>', unsafe_allow_html=True)
+
+            fig, ax = plt.subplots(figsize=(6, 6))
+            merged_map.plot(
+                ax=ax,
+                color="#e5e7eb",
+                edgecolor="white",
+                linewidth=0.8
+            )
+
+            color_map = {
+                "Critical": "#ef4444",
+                "High": "#f59e0b",
+                "Moderate": "#3b82f6",
+                "Low": "#22c55e"
+            }
+            selected_color = color_map.get(county_data["Urgency Level"], "#6b7280")
+
+            if not selected_map.empty:
+                selected_map.plot(
+                    ax=ax,
+                    color=selected_color,
+                    edgecolor="white",
+                    linewidth=1.2
+                )
+
+            ax.set_title(f"{selected_county} County", fontsize=12)
+            ax.axis("off")
+            st.pyplot(fig, use_container_width=True)
+            plt.close(fig)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with new_mid:
+            st.markdown(
+                f"""
+                <div class="yellow-box">
+                    <h3>County comparison</h3>
+                    <p>{rank_text}</p>
+                    <p>{avg_text}</p>
+                    <p>{top_text}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            comparison_df = pd.DataFrame({
+                "Comparison": ["Selected County", "Current View Average", "Top County"],
+                "Score": [float(county_data[priority_col]), float(avg_score), float(top_score)]
+            })
+
+            compare_chart = alt.Chart(comparison_df).mark_bar(
+                cornerRadiusTopLeft=8,
+                cornerRadiusTopRight=8
+            ).encode(
+                x=alt.X("Comparison:N", title=""),
+                y=alt.Y("Score:Q", title="Final Priority Score"),
+                color=alt.Color(
+                    "Comparison:N",
+                    scale=alt.Scale(
+                        domain=["Selected County", "Current View Average", "Top County"],
+                        range=["#3b82f6", "#9ca3af", "#f59e0b"]
+                    ),
+                    legend=None
+                ),
+                tooltip=["Comparison", "Score"]
+            ).properties(height=280)
+
+            st.altair_chart(compare_chart, use_container_width=True)
+
+        with new_right:
+            if county_rank == 1:
+                insight_line = f"{selected_county} currently leads the ranking in this view."
+            elif float(county_data[priority_col]) > float(avg_score):
+                insight_line = f"{selected_county} stands above the current-view average and shows stronger relative need."
+            else:
+                insight_line = f"{selected_county} is below the current-view average, indicating lower relative need than many counties in this view."
+
+            st.markdown(
+                f"""
+                <div class="blue-box">
+                    <h3>Quick insight</h3>
+                    <p>{insight_line}</p>
+                    <p>The map, ranking, and comparison bar all update together when the selected county changes.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                f"""
+                <div class="white-box">
+                    <h3>Selected county snapshot</h3>
+                    <p><strong>County:</strong> {selected_county}</p>
+                    <p><strong>Urgency:</strong> {county_data["Urgency Level"]}</p>
+                    <p><strong>Current rank:</strong> #{county_rank}</p>
+                    <p><strong>Priority score:</strong> {float(county_data[priority_col]):.2f}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     st.markdown("</div>", unsafe_allow_html=True)
