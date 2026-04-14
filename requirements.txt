@@ -2,7 +2,4 @@ streamlit
 pandas
 altair
 matplotlib
-geopandas
-shapely
-fiona
-pyproj
+
