@@ -887,7 +887,7 @@ elif st.session_state.page == "about":
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.page == "dashboard":
-     st.Write("NEW VERSION TEST")
+    st.Write("NEW VERSION TEST")
     st.markdown(
         """
         <div class="section-hero">
