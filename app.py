@@ -2,18 +2,10 @@ import base64
 import pandas as pd
 import streamlit as st
 import altair as alt
+import plotly.graph_objects as go
+import requests
 
-st.set_page_config(
-    page_title="Carelio | Minnesota Food Support Prioritization",
-    page_icon="🍎",
-    layout="wide"
-)
-st.title("Carelio")
-
-st.markdown("""
-Carelio is a Minnesota food support prioritization website built using public data.
-It highlights counties that may need more attention for food support planning and outreach.
-""")
+st.set_page_config(page_title="Carelio", layout="wide")
 
 # -----------------------------
 # Links
@@ -88,6 +80,7 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is critical mainly because health risk is especially high. That added vulnerability raises the county into the highest urgency level."
         else:
             text = "This county is critical because the combined effect of food need and health risk produces one of the strongest priority signals in the dataset."
+
     elif urgency == "High":
         title = "Why this county is high"
         if food_score >= 55 and health_score >= 55:
@@ -98,6 +91,7 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is high mainly because health risk is elevated and increases the county’s overall vulnerability."
         else:
             text = "This county is high because its combined score remains above many other counties in the dataset."
+
     elif urgency == "Moderate":
         title = "Why this county is moderate"
         if food_score >= 40 and health_score >= 40:
@@ -108,6 +102,7 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is moderate mainly because health risk shows some concern, but the overall combined score stays in the middle range."
         else:
             text = "This county is moderate because the combined result of the indicators falls in the middle range compared with the rest of the dataset."
+
     else:
         title = "Why this county is low"
         if food_score < 40 and health_score < 40:
@@ -120,6 +115,254 @@ def why_county_ranked(food_score, health_score, priority_score, urgency):
             text = "This county is low because the combined score is lower than many other counties in the dataset."
 
     return title, text
+
+def compare_county_to_others(selected_row, current_df):
+    county = selected_row["County"]
+    score = float(selected_row["Final Priority Score"])
+    avg_score = float(current_df["Final Priority Score"].mean())
+    rank_df = current_df.reset_index(drop=True).copy()
+    rank_df["Rank"] = rank_df.index + 1
+    rank = int(rank_df.loc[rank_df["County"] == county, "Rank"].iloc[0])
+
+    if score > avg_score:
+        return f"{county} is above the current view average ({score:.2f} vs {avg_score:.2f}). This means its combined food need and health risk are stronger than many other counties in this view."
+    elif score < avg_score:
+        return f"{county} is below the current view average ({score:.2f} vs {avg_score:.2f}). This means its combined need is lower than many counties in this current view."
+    return f"{county} is almost equal to the current view average ({score:.2f}). This means its overall need level is near the middle of this filtered group."
+
+def priority_formula_text():
+    return (
+        "Final Priority Score is based on the combined use of Food Need Score and Health Risk Score. "
+        "This helps turn multiple indicators into one easier comparison for county-level prioritization."
+    )
+
+# -----------------------------
+# Minnesota County FIPS
+# -----------------------------
+MN_COUNTY_FIPS = {
+    "Aitkin": "27001",
+    "Anoka": "27003",
+    "Becker": "27005",
+    "Beltrami": "27007",
+    "Benton": "27009",
+    "Big Stone": "27011",
+    "Blue Earth": "27013",
+    "Brown": "27015",
+    "Carlton": "27017",
+    "Carver": "27019",
+    "Cass": "27021",
+    "Chippewa": "27023",
+    "Chisago": "27025",
+    "Clay": "27027",
+    "Clearwater": "27029",
+    "Cook": "27031",
+    "Cottonwood": "27033",
+    "Crow Wing": "27035",
+    "Dakota": "27037",
+    "Dodge": "27039",
+    "Douglas": "27041",
+    "Faribault": "27043",
+    "Fillmore": "27045",
+    "Freeborn": "27047",
+    "Goodhue": "27049",
+    "Grant": "27051",
+    "Hennepin": "27053",
+    "Houston": "27055",
+    "Hubbard": "27057",
+    "Isanti": "27059",
+    "Itasca": "27061",
+    "Jackson": "27063",
+    "Kanabec": "27065",
+    "Kandiyohi": "27067",
+    "Kittson": "27069",
+    "Koochiching": "27071",
+    "Lac qui Parle": "27073",
+    "Lake": "27075",
+    "Lake of the Woods": "27077",
+    "Le Sueur": "27079",
+    "Lincoln": "27081",
+    "Lyon": "27083",
+    "McLeod": "27085",
+    "Mahnomen": "27087",
+    "Marshall": "27089",
+    "Martin": "27091",
+    "Meeker": "27093",
+    "Mille Lacs": "27095",
+    "Morrison": "27097",
+    "Mower": "27099",
+    "Murray": "27101",
+    "Nicollet": "27103",
+    "Nobles": "27105",
+    "Norman": "27107",
+    "Olmsted": "27109",
+    "Otter Tail": "27111",
+    "Pennington": "27113",
+    "Pine": "27115",
+    "Pipestone": "27117",
+    "Polk": "27119",
+    "Pope": "27121",
+    "Ramsey": "27123",
+    "Red Lake": "27125",
+    "Redwood": "27127",
+    "Renville": "27129",
+    "Rice": "27131",
+    "Rock": "27133",
+    "Roseau": "27135",
+    "St. Louis": "27137",
+    "Scott": "27139",
+    "Sherburne": "27141",
+    "Sibley": "27143",
+    "Stearns": "27145",
+    "Steele": "27147",
+    "Stevens": "27149",
+    "Swift": "27151",
+    "Todd": "27153",
+    "Traverse": "27155",
+    "Wabasha": "27157",
+    "Wadena": "27159",
+    "Waseca": "27161",
+    "Washington": "27163",
+    "Watonwan": "27165",
+    "Wilkin": "27167",
+    "Winona": "27169",
+    "Wright": "27171",
+    "Yellow Medicine": "27173",
+}
+
+@st.cache_data
+def load_county_geojson():
+    url = "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json"
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+def build_map(full_df, filtered_df, selected_county, selected_urgency):
+    geojson = load_county_geojson()
+    map_df = full_df.copy()
+    map_df["fips"] = map_df["County"].map(MN_COUNTY_FIPS)
+    map_df = map_df.dropna(subset=["fips"]).copy()
+
+    color_map = {
+        "Low": "#22c55e",
+        "Moderate": "#3b82f6",
+        "High": "#f59e0b",
+        "Critical": "#ef4444"
+    }
+
+    fig = go.Figure()
+
+    if selected_urgency == "All":
+        for urgency, color in color_map.items():
+            subset = map_df[map_df["Urgency Level"] == urgency].copy()
+            if subset.empty:
+                continue
+
+            fig.add_trace(
+                go.Choropleth(
+                    geojson=geojson,
+                    locations=subset["fips"],
+                    z=[1] * len(subset),
+                    featureidkey="id",
+                    colorscale=[[0, color], [1, color]],
+                    showscale=False,
+                    marker_line_color="white",
+                    marker_line_width=0.8,
+                    customdata=subset[["County", "Urgency Level", "Food Need Score", "Health Risk Score", "Final Priority Score"]],
+                    hovertemplate=(
+                        "<b>%{customdata[0]}</b><br>"
+                        "Urgency: %{customdata[1]}<br>"
+                        "Food Need Score: %{customdata[2]:.2f}<br>"
+                        "Health Risk Score: %{customdata[3]:.2f}<br>"
+                        "Final Priority Score: %{customdata[4]:.2f}<extra></extra>"
+                    ),
+                    name=urgency
+                )
+            )
+    else:
+        fig.add_trace(
+            go.Choropleth(
+                geojson=geojson,
+                locations=map_df["fips"],
+                z=[1] * len(map_df),
+                featureidkey="id",
+                colorscale=[[0, "#d1d5db"], [1, "#d1d5db"]],
+                showscale=False,
+                marker_line_color="white",
+                marker_line_width=0.8,
+                hoverinfo="skip",
+                name="Other Counties"
+            )
+        )
+
+        highlight_df = filtered_df.copy()
+        highlight_df["fips"] = highlight_df["County"].map(MN_COUNTY_FIPS)
+        highlight_df = highlight_df.dropna(subset=["fips"]).copy()
+
+        if not highlight_df.empty:
+            highlight_color = color_map.get(selected_urgency, "#111827")
+            fig.add_trace(
+                go.Choropleth(
+                    geojson=geojson,
+                    locations=highlight_df["fips"],
+                    z=[1] * len(highlight_df),
+                    featureidkey="id",
+                    colorscale=[[0, highlight_color], [1, highlight_color]],
+                    showscale=False,
+                    marker_line_color="white",
+                    marker_line_width=1.2,
+                    customdata=highlight_df[["County", "Urgency Level", "Food Need Score", "Health Risk Score", "Final Priority Score"]],
+                    hovertemplate=(
+                        "<b>%{customdata[0]}</b><br>"
+                        "Urgency: %{customdata[1]}<br>"
+                        "Food Need Score: %{customdata[2]:.2f}<br>"
+                        "Health Risk Score: %{customdata[3]:.2f}<br>"
+                        "Final Priority Score: %{customdata[4]:.2f}<extra></extra>"
+                    ),
+                    name=selected_urgency
+                )
+            )
+
+    if selected_county in map_df["County"].values:
+        selected_df = map_df[map_df["County"] == selected_county]
+        fig.add_trace(
+            go.Choropleth(
+                geojson=geojson,
+                locations=selected_df["fips"],
+                z=[1],
+                featureidkey="id",
+                colorscale=[[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
+                showscale=False,
+                marker_line_color="black",
+                marker_line_width=3,
+                hoverinfo="skip",
+                name="Selected County"
+            )
+        )
+
+    fig.update_geos(
+        visible=False,
+        projection_type="mercator",
+        center={"lat": 46.3, "lon": -94.2},
+        lataxis_range=[43.4, 49.5],
+        lonaxis_range=[-97.5, -89.0]
+    )
+
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=500,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.98,
+            xanchor="left",
+            x=1.01,
+            title="Urgency"
+        )
+    )
+
+    return fig
 
 # -----------------------------
 # Images
@@ -308,6 +551,10 @@ st.markdown(
         box-shadow: 0 18px 34px rgba(249, 115, 22, 0.34) !important;
     }}
 
+    div.stButton > button:first-child:active {{
+        animation: clickPop 0.22s ease;
+    }}
+
     .content-wrap {{
         background: rgba(255,255,255,0.72);
         border-radius: 30px;
@@ -315,6 +562,10 @@ st.markdown(
         backdrop-filter: blur(9px);
         box-shadow: 0 12px 28px rgba(0,0,0,0.08);
         animation: fadeInSoft 0.8s ease-out;
+    }}
+
+    .glass-card {{
+        backdrop-filter: blur(6px);
     }}
 
     .pink-box, .yellow-box, .white-box, .green-box, .blue-box, .contact-box, .chart-card {{
@@ -414,14 +665,30 @@ st.markdown(
         margin-bottom: 8px;
         animation: fadeInSoft 0.7s ease-out;
         transition: transform 0.35s ease, box-shadow 0.35s ease;
+        transform-style: preserve-3d;
         cursor: pointer;
         position: relative;
         overflow: hidden;
     }}
 
+    .metric-card::before {{
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -120%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+        animation: shine 4.8s infinite;
+    }}
+
     .metric-card:hover {{
-        transform: translateY(-8px) scale(1.03);
+        transform: perspective(900px) rotateX(6deg) rotateY(-6deg) translateY(-8px) scale(1.03);
         box-shadow: 0 20px 34px rgba(0,0,0,0.15);
+    }}
+
+    .metric-card:active {{
+        animation: clickPop 0.2s ease;
     }}
 
     .metric-label {{
@@ -446,6 +713,18 @@ st.markdown(
         transition: transform 0.28s ease, box-shadow 0.28s ease;
         position: relative;
         overflow: hidden;
+    }}
+
+    .action-card-yellow::after, .action-card-pink::after, .action-card-orange::after {{
+        content: "";
+        position: absolute;
+        inset: auto -30% -80% auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.18);
+        filter: blur(8px);
+        pointer-events: none;
     }}
 
     .action-card-yellow:hover, .action-card-pink:hover, .action-card-orange:hover {{
@@ -503,6 +782,7 @@ st.markdown(
         color: #111827 !important;
         font-weight: 700 !important;
         line-height: 1.7 !important;
+        animation: fadeInSoft 0.9s ease-out;
     }}
 
     .contact-name {{
@@ -524,6 +804,7 @@ st.markdown(
         text-decoration: none !important;
         transition: transform 0.24s ease, box-shadow 0.24s ease;
         box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        animation: popIn 0.5s ease-out;
     }}
 
     .contact-icon-card:hover {{
@@ -559,28 +840,45 @@ st.markdown(
         box-shadow: 0 8px 18px rgba(0,0,0,0.04) !important;
     }}
 
+    .stExpander details {{
+        background: transparent !important;
+    }}
+
     .stExpander summary {{
         font-weight: 800 !important;
         color: #111827 !important;
         font-size: 17px !important;
     }}
 
-    .stSelectbox label {{
+    .stSelectbox label,
+    .stMultiSelect label {{
         color: #111827 !important;
         font-weight: 600 !important;
     }}
 
-    .stSelectbox div[data-baseweb="select"] > div {{
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stMultiSelect div[data-baseweb="select"] > div {{
         background: rgba(255,255,255,0.995) !important;
         color: #111827 !important;
         border-radius: 14px !important;
         border: 1px solid rgba(244, 201, 93, 0.95) !important;
         min-height: 48px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.04) !important;
+        transition: all 0.25s ease !important;
+    }}
+
+    .stSelectbox div[data-baseweb="select"] > div:hover,
+    .stMultiSelect div[data-baseweb="select"] > div:hover {{
+        border: 1px solid rgba(245, 158, 11, 0.95) !important;
+        box-shadow: 0 8px 18px rgba(245, 158, 11, 0.12) !important;
     }}
 
     .stSelectbox div[data-baseweb="select"] span,
     .stSelectbox div[data-baseweb="select"] input,
-    .stSelectbox div[data-baseweb="select"] svg {{
+    .stSelectbox div[data-baseweb="select"] svg,
+    .stMultiSelect div[data-baseweb="select"] span,
+    .stMultiSelect div[data-baseweb="select"] input,
+    .stMultiSelect div[data-baseweb="select"] svg {{
         color: #111827 !important;
         fill: #111827 !important;
         opacity: 1 !important;
@@ -588,6 +886,22 @@ st.markdown(
 
     div[data-baseweb="popover"] * {{
         color: #111827 !important;
+    }}
+
+    div[data-baseweb="popover"] ul,
+    div[data-baseweb="popover"] li,
+    div[data-baseweb="popover"] div[role="option"] {{
+        background: #ffffff !important;
+        color: #111827 !important;
+    }}
+
+    div[data-baseweb="popover"] div[aria-selected="true"] {{
+        background: #fef3c7 !important;
+        color: #111827 !important;
+    }}
+
+    div[data-baseweb="popover"] div[role="option"]:hover {{
+        background: #fff7dd !important;
     }}
 
     @keyframes pageFade {{
@@ -604,6 +918,27 @@ st.markdown(
             opacity: 1;
             transform: translateY(0);
         }}
+    }}
+
+    @keyframes popIn {{
+        0% {{
+            opacity: 0;
+            transform: scale(0.92);
+        }}
+        60% {{
+            opacity: 1;
+            transform: scale(1.05);
+        }}
+        100% {{
+            opacity: 1;
+            transform: scale(1);
+        }}
+    }}
+
+    @keyframes clickPop {{
+        0% {{ transform: scale(1); }}
+        50% {{ transform: scale(0.96); }}
+        100% {{ transform: scale(1); }}
     }}
 
     @keyframes heroRise {{
@@ -627,6 +962,16 @@ st.markdown(
         0% {{ transform: translateX(-40%); }}
         100% {{ transform: translateX(40%); }}
     }}
+
+    @keyframes shine {{
+        0% {{ left: -120%; }}
+        30% {{ left: 120%; }}
+        100% {{ left: 120%; }}
+    }}
+
+    .badge-pop {{
+        animation: popIn 0.45s ease-out;
+    }}
 </style>
 """,
     unsafe_allow_html=True,
@@ -636,7 +981,6 @@ st.markdown(
 # Data
 # -----------------------------
 df = load_data()
-
 county_col = "County"
 food_col = "Food Need Score"
 health_col = "Health Risk Score"
@@ -645,7 +989,6 @@ priority_col = "Final Priority Score"
 for col in [food_col, health_col, priority_col]:
     df[col] = pd.to_numeric(df[col], errors="coerce")
 
-df[county_col] = df[county_col].astype(str).str.replace(" County", "", regex=False).str.strip()
 df = df.dropna(subset=[county_col, food_col, health_col, priority_col]).copy()
 df["Urgency Level"] = df[priority_col].apply(urgency_label)
 df = df.sort_values(priority_col, ascending=False).reset_index(drop=True)
@@ -684,6 +1027,9 @@ if not st.session_state.started:
         st.session_state.page = "menu"
         st.rerun()
 
+# -----------------------------
+# Menu page
+# -----------------------------
 elif st.session_state.page == "menu":
     st.markdown(
         """
@@ -716,6 +1062,9 @@ elif st.session_state.page == "menu":
             st.session_state.page = "about"
             st.rerun()
 
+# -----------------------------
+# About page
+# -----------------------------
 elif st.session_state.page == "about":
     st.markdown(
         """
@@ -748,30 +1097,40 @@ elif st.session_state.page == "about":
     st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
     with st.expander("Our Story"):
-        st.markdown("""
+        st.markdown(
+            """
             <div class="white-box">
                 <p>Carelio was built to help sponsors, nonprofits, and community organizations better understand where food support may be needed most across Minnesota.</p>
                 <p>It was designed to turn county-level analysis into something easier to explore, share, and use for planning meaningful support.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     with st.expander("What Carelio Means"):
-        st.markdown("""
+        st.markdown(
+            """
             <div class="pink-box">
                 <p>The name Carelio is inspired by care, community, and action. It reflects support, well-being, and organized efforts to help where the need may be greater.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     with st.expander("Why It Is Useful"):
-        st.markdown("""
+        st.markdown(
+            """
             <div class="yellow-box">
                 <p>Carelio combines food need and health risk to provide a more practical view of community vulnerability.</p>
                 <p>This helps organizations and supporters review county-level signals before planning outreach, sponsorship, partnerships, or food support efforts.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     with st.expander("How It Can Be Used"):
-        st.markdown("""
+        st.markdown(
+            """
             <div class="green-box">
                 <ul>
                     <li>Sponsors can review counties that may need greater support attention.</li>
@@ -780,10 +1139,13 @@ elif st.session_state.page == "about":
                     <li>Partners can use it to support discussions around food support priorities.</li>
                 </ul>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     with st.expander("How Carelio Scores Work"):
-        st.markdown("""
+        st.markdown(
+            """
             <div class="white-box">
                 <p><strong>Food Need Score:</strong> Represents relative food access challenges across counties based on the available dataset indicators.</p>
                 <p><strong>Health Risk Score:</strong> Represents relative health-related vulnerability factors that may affect food security.</p>
@@ -795,51 +1157,69 @@ elif st.session_state.page == "about":
                 <p><strong>Important:</strong> These are comparative prioritization scores, not direct percentages of people affected.</p>
                 <p><strong>Data source:</strong> This data was taken from the Minnesota public health website.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     with st.expander("How To Interpret This In Real Life"):
-        st.markdown("""
+        st.markdown(
+            """
             <div class="blue-box">
                 <p>Carelio scores are designed for comparison across counties.</p>
                 <p>They do not directly represent an exact percentage of people going without meals. Instead, they help highlight where relative need may be higher and where additional review or support attention may be warranted first.</p>
                 <p>This tool is designed for prioritization, not precise measurement.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     with st.expander("Score Formula Used"):
-        st.markdown("""
+        st.markdown(
+            """
             <div class="yellow-box">
                 <p><strong>Final Priority Score</strong> is based on the combined use of Food Need Score and Health Risk Score.</p>
                 <p>This version is intended for prioritization and comparison across counties.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     a1, a2, a3 = st.columns(3)
+
     with a1:
-        st.markdown("""
+        st.markdown(
+            """
             <div class="action-card-yellow">
                 <h3>Donate support</h3>
                 <p>Share interest in donating funds, resources, or food support for higher-need Minnesota counties.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
         st.link_button("Open Donation Form", SUPPORT_FORM_URL, use_container_width=True)
 
     with a2:
-        st.markdown("""
+        st.markdown(
+            """
             <div class="action-card-pink">
                 <h3>Become a sponsor</h3>
                 <p>Organizations and businesses can express interest in sponsoring county-level food support efforts.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
         st.link_button("Open Sponsorship Form", SUPPORT_FORM_URL, use_container_width=True)
 
     with a3:
-        st.markdown("""
+        st.markdown(
+            """
             <div class="action-card-orange">
                 <h3>Partner organization</h3>
                 <p>Nonprofits and community organizations can connect to discuss outreach, planning, and collaboration.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
         st.link_button("Open Partnership Form", SUPPORT_FORM_URL, use_container_width=True)
 
     st.markdown('<div class="contact-box">', unsafe_allow_html=True)
@@ -849,33 +1229,45 @@ elif st.session_state.page == "about":
 
     icon1, icon2, icon3, icon4 = st.columns(4)
     with icon1:
-        st.markdown(f'''
+        st.markdown(
+            f'''
             <a class="contact-icon-card" href="mailto:{EMAIL_ADDRESS}" target="_blank">
                 <div class="contact-icon">📧</div>
                 <div class="contact-icon-label">Email</div>
             </a>
-        ''', unsafe_allow_html=True)
+            ''',
+            unsafe_allow_html=True
+        )
     with icon2:
-        st.markdown(f'''
+        st.markdown(
+            f'''
             <a class="contact-icon-card" href="{LINKEDIN_URL}" target="_blank">
                 <div class="contact-icon">💼</div>
                 <div class="contact-icon-label">LinkedIn</div>
             </a>
-        ''', unsafe_allow_html=True)
+            ''',
+            unsafe_allow_html=True
+        )
     with icon3:
-        st.markdown(f'''
+        st.markdown(
+            f'''
             <a class="contact-icon-card" href="{GITHUB_URL}" target="_blank">
                 <div class="contact-icon">💻</div>
                 <div class="contact-icon-label">GitHub</div>
             </a>
-        ''', unsafe_allow_html=True)
+            ''',
+            unsafe_allow_html=True
+        )
     with icon4:
-        st.markdown(f'''
+        st.markdown(
+            f'''
             <a class="contact-icon-card" href="{LIVE_URL}" target="_blank">
                 <div class="contact-icon">🌐</div>
                 <div class="contact-icon-label">Live App</div>
             </a>
-        ''', unsafe_allow_html=True)
+            ''',
+            unsafe_allow_html=True
+        )
 
     st.markdown("<hr style='border: none; border-top: 1px solid #d1d5db; margin: 18px 0;'>", unsafe_allow_html=True)
     st.markdown('<h3>Update note</h3>', unsafe_allow_html=True)
@@ -884,8 +1276,12 @@ elif st.session_state.page == "about":
     st.markdown('<p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>', unsafe_allow_html=True)
     st.markdown('<p class="footer-note"><strong>Last updated:</strong> April 2026</p>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
+# -----------------------------
+# Dashboard page
+# -----------------------------
 elif st.session_state.page == "dashboard":
     st.markdown(
         """
@@ -926,45 +1322,52 @@ elif st.session_state.page == "dashboard":
         filtered_df = df.copy()
 
     filtered_df = filtered_df.sort_values(priority_col, ascending=False).reset_index(drop=True)
+
+    st.sidebar.markdown("Select one county to review details.")
+    county_list = filtered_df[county_col].tolist()
+    selected_county = st.sidebar.selectbox("Select County", county_list)
+
+    county_data = filtered_df[filtered_df[county_col] == selected_county].iloc[0]
     critical_count = int((filtered_df["Urgency Level"] == "Critical").sum())
+    avg_score = filtered_df[priority_col].mean()
+    highest_score = filtered_df[priority_col].max()
+    top_county = filtered_df.iloc[0][county_col]
 
     st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
     if filtered_df.empty:
-        st.markdown("""
+        st.markdown(
+            """
             <div class="pink-box">
                 <h3>No counties available</h3>
                 <p>No counties match the selected urgency level.</p>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
     else:
-        top_county = filtered_df.iloc[0][county_col]
-        top_score = filtered_df.iloc[0][priority_col]
-        avg_score = filtered_df[priority_col].mean()
-
         m1, m2, m3, m4 = st.columns(4)
         with m1:
             st.markdown(metric_card("Counties in current view", str(len(filtered_df))), unsafe_allow_html=True)
         with m2:
             st.markdown(metric_card("Top county", str(top_county)), unsafe_allow_html=True)
         with m3:
-            st.markdown(metric_card("Highest score", f"{top_score:.2f}"), unsafe_allow_html=True)
+            st.markdown(metric_card("Highest score", f"{highest_score:.2f}"), unsafe_allow_html=True)
         with m4:
             st.markdown(metric_card("Critical counties", str(critical_count)), unsafe_allow_html=True)
 
-        top_left, top_right = st.columns([1.7, 1])
+        top_left, top_right = st.columns([1.05, 1.15])
 
         with top_left:
             st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<h3>Top 10 Current View</h3>', unsafe_allow_html=True)
+            st.markdown('<div class="section-caption">These are the top counties inside the current urgency filter view.</div>', unsafe_allow_html=True)
 
-            if selected_urgency == "All":
-                st.markdown('<h3>Top 10 Priority Counties</h3>', unsafe_allow_html=True)
-                st.markdown('<div class="section-caption">Fast visual summary of the highest-priority counties in the current view</div>', unsafe_allow_html=True)
-                chart_df = filtered_df[[county_col, priority_col, "Urgency Level"]].head(10).copy()
-            else:
-                st.markdown(f'<h3>Top {min(len(filtered_df), 10)} {selected_urgency} Counties</h3>', unsafe_allow_html=True)
-                st.markdown('<div class="section-caption">Fast visual summary of counties in the selected urgency level</div>', unsafe_allow_html=True)
-                chart_df = filtered_df[[county_col, priority_col, "Urgency Level"]].head(10).copy()
+            top10_df = filtered_df[[county_col, food_col, health_col, priority_col, "Urgency Level"]].head(10).copy()
+            top10_df.index = range(1, len(top10_df) + 1)
+            st.dataframe(top10_df, use_container_width=True)
+
+            chart_df = filtered_df[[county_col, priority_col, "Urgency Level"]].head(10).copy()
 
             chart = alt.Chart(chart_df).mark_bar(
                 cornerRadiusTopLeft=8,
@@ -978,22 +1381,26 @@ elif st.session_state.page == "dashboard":
                         domain=["Critical", "High", "Moderate", "Low"],
                         range=["#ef4444", "#f59e0b", "#3b82f6", "#22c55e"]
                     ),
-                    legend=alt.Legend(title="Urgency Level")
+                    legend=alt.Legend(title="Urgency")
                 ),
                 tooltip=[county_col, priority_col, "Urgency Level"]
-            ).properties(height=360)
+            ).properties(height=280)
 
             st.altair_chart(chart, use_container_width=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
         with top_right:
-            st.markdown('<div class="white-box">', unsafe_allow_html=True)
-            st.markdown('<h3 style="color:#111827; margin-bottom:6px;">County Detail</h3>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+            st.markdown('<h3>Minnesota County Map</h3>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-caption">Map colors change with urgency level. The selected county is highlighted with a black border.</div>',
+                unsafe_allow_html=True,
+            )
 
-            county_list = filtered_df[county_col].tolist()
-            selected_county = st.selectbox("Select a county", county_list)
-            county_data = filtered_df[filtered_df[county_col] == selected_county].iloc[0]
+            fig = build_map(df, filtered_df, selected_county, selected_urgency)
+            st.plotly_chart(fig, use_container_width=True)
 
+            st.markdown('<h3 style="color:#111827; margin-bottom:6px;">Selected County Detail</h3>', unsafe_allow_html=True)
             st.markdown(metric_card("County", str(county_data[county_col])), unsafe_allow_html=True)
             st.markdown(metric_card("Food Need Score", f"{county_data[food_col]:.2f}"), unsafe_allow_html=True)
             st.markdown(metric_card("Health Risk Score", f"{county_data[health_col]:.2f}"), unsafe_allow_html=True)
@@ -1005,17 +1412,24 @@ elif st.session_state.page == "dashboard":
             )
             st.markdown("</div>", unsafe_allow_html=True)
 
-        bottom_left, bottom_mid, bottom_right = st.columns([1.3, 1.1, 1.1])
+        st.markdown('<div class="green-box">', unsafe_allow_html=True)
+        st.markdown('<h3 style="color:#111827; margin-bottom:6px;">All County Ranking</h3>', unsafe_allow_html=True)
+        st.markdown('<div class="section-caption">Counties ranked by Final Priority Score in the current view</div>', unsafe_allow_html=True)
+        display_df = filtered_df[[county_col, food_col, health_col, priority_col, "Urgency Level"]].copy()
+        display_df.index = range(1, len(display_df) + 1)
+        st.dataframe(display_df, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        with bottom_left:
-            st.markdown('<div class="green-box">', unsafe_allow_html=True)
-            st.markdown('<h3 style="color:#111827; margin-bottom:6px;">All County Ranking</h3>', unsafe_allow_html=True)
-            st.markdown('<div class="section-caption">Counties ranked by Final Priority Score</div>', unsafe_allow_html=True)
-            display_df = filtered_df[[county_col, food_col, health_col, priority_col, "Urgency Level"]].copy()
-            st.dataframe(display_df, use_container_width=True, hide_index=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+        why_title, why_text = why_county_ranked(
+            county_data[food_col],
+            county_data[health_col],
+            county_data[priority_col],
+            county_data["Urgency Level"]
+        )
 
-        with bottom_mid:
+        b1, b2, b3, b4 = st.columns(4)
+
+        with b1:
             st.markdown(
                 f"""
                 <div class="yellow-box">
@@ -1026,13 +1440,7 @@ elif st.session_state.page == "dashboard":
                 unsafe_allow_html=True,
             )
 
-            why_title, why_text = why_county_ranked(
-                county_data[food_col],
-                county_data[health_col],
-                county_data[priority_col],
-                county_data["Urgency Level"]
-            )
-
+        with b2:
             st.markdown(
                 f"""
                 <div class="blue-box">
@@ -1043,31 +1451,56 @@ elif st.session_state.page == "dashboard":
                 unsafe_allow_html=True,
             )
 
-        with bottom_right:
+        with b3:
+            st.markdown(
+                f"""
+                <div class="pink-box">
+                    <h3>Why compared with others</h3>
+                    <p>{compare_county_to_others(county_data, filtered_df)}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with b4:
+            st.markdown(
+                f"""
+                <div class="white-box">
+                    <h3>Average score in current view</h3>
+                    <p style="font-size:28px; font-weight:700;">{avg_score:.2f}</p>
+                    <p class="mini-note">This average changes when the urgency filter changes.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        c1, c2 = st.columns(2)
+        with c1:
             st.markdown(
                 """
-                <div class="pink-box">
+                <div class="white-box">
                     <h3>How dashboard works</h3>
                     <ul>
-                        <li>Scan the chart to identify the strongest need signal.</li>
+                        <li>Scan the top 10 view to identify stronger need quickly.</li>
+                        <li>Use the Minnesota map to see where the selected urgency group appears.</li>
+                        <li>Select a county from the sidebar to review more closely.</li>
                         <li>Use the ranking table to compare counties side by side.</li>
-                        <li>Open County Detail to review one county more closely.</li>
-                        <li>Filter by urgency level from the sidebar for faster planning.</li>
                     </ul>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+
+        with c2:
             st.markdown(
-                """
+                f"""
                 <div class="white-box">
-                    <h3>Score formula used</h3>
-                    <p><strong>Final Priority Score</strong> is based on the combined use of Food Need Score and Health Risk Score.</p>
-                    <p>This version is intended for prioritization and comparison across counties.</p>
+                    <h3>How priority is calculated</h3>
+                    <p>{priority_formula_text()}</p>
+                    <p><strong>Food Need Score</strong> and <strong>Health Risk Score</strong> are used together to support comparison across Minnesota counties.</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            st.markdown(metric_card("Average score in current view", f"{avg_score:.2f}"), unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
