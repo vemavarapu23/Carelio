@@ -950,7 +950,7 @@ elif st.session_state.page == "dashboard":
         with m3:
             st.markdown(metric_card("Highest score", f"{top_score:.2f}"), unsafe_allow_html=True)
         with m4:
-            st.markdown(metric_card("Critical counties", str(critical_count))), unsafe_allow_html=True
+            st.markdown(metric_card("Critical counties", str(critical_count)), unsafe_allow_html=True)
 
         top_left, top_right = st.columns([1.7, 1])
 
