@@ -90,8 +90,8 @@ DATA_SOURCES = [
         "emoji":"⬜","name":"County Health Rankings & Roadmaps — Minnesota Health Data",
         "what":"County-level health outcomes, health factors, and social/economic indicators.",
         "frequency":"Annual",
-        "url":"https://www.countyhealthrankings.org/health-data/minnesota/data",
-        "county_url":"https://www.countyhealthrankings.org/health-data/minnesota/data",
+        "url":"https://www.countyhealthrankings.org/health-data/minnesota/data-and-resources",
+        "county_url":"https://www.countyhealthrankings.org/health-data/minnesota/data-and-resources",
         "county_label":"View Minnesota county-level health data",
         "used_for":"Health Risk Score",
     },
@@ -1026,7 +1026,7 @@ elif st.session_state.page == "about":
             <a href="https://map.feedingamerica.org/" target="_blank" style="color:#f59e0b;font-weight:700;">Feeding America's Map the Meal Gap</a>.
             The US food insecurity rate was 14.3% in 2023. Note: this source has an approximate 2-year reporting lag.</p>
             <p><strong>Health Risk Score</strong> — based on county-level health, social, and economic indicators from
-            <a href="https://www.countyhealthrankings.org/health-data/minnesota/data" target="_blank" style="color:#f59e0b;font-weight:700;">County Health Rankings & Roadmaps — Minnesota Health Data</a>.</p>
+            <a href="https://www.countyhealthrankings.org/health-data/minnesota/data-and-resources" target="_blank" style="color:#f59e0b;font-weight:700;">County Health Rankings & Roadmaps — Minnesota Health Data</a>.</p>
             <p><strong>Final Priority Score (0–100)</strong> — combines both scores to rank counties by overall relative need.</p>
             <ul>
                 <li>Score ≥ 70 → <strong>Critical</strong></li>
@@ -1391,7 +1391,7 @@ border-radius:12px;border:1px solid rgba(220,220,220,0.8);">
 <p style="font-size:12px;color:#6b7280;margin:0;line-height:1.8;">
 <b>Data sources:</b>
 Food Need Score — <a href="https://map.feedingamerica.org/" target="_blank" style="color:#f59e0b;">Feeding America Map the Meal Gap</a> (annual, ~2yr lag) ·
-Health Risk Score — <a href="https://www.countyhealthrankings.org/health-data/minnesota/data" target="_blank" style="color:#f59e0b;">County Health Rankings & Roadmaps Minnesota Health Data</a> ·
+Health Risk Score — <a href="https://www.countyhealthrankings.org/health-data/minnesota/data-and-resources" target="_blank" style="color:#f59e0b;">County Health Rankings & Roadmaps Minnesota Health Data</a> ·
 Population — <a href="https://data.census.gov/table?q=population&g=040XX00US27$0500000" target="_blank" style="color:#f59e0b;">US Census 2020 Decennial Census</a> ·
 People estimates — model based on <a href="https://www.2harvest.org/sites/default/files/2025-01/mhh_2024-statewidehungerstudy_0.pdf" target="_blank" style="color:#f59e0b;">Second Harvest Heartland 2024 Hunger Study</a> ·
 Food shelf visits — <a href="https://www.thefoodgroupmn.org/wp-content/uploads/2025/02/FINAL-Food-Shelf-Visits-2024-Report_22625.pdf" target="_blank" style="color:#f59e0b;">The Food Group + MN DCYF 2024 Report</a> ·
