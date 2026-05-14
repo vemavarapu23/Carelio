@@ -344,7 +344,7 @@ def render_hero(b64):
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;overflow:hidden;}}
 .hero{{
-  position:relative;min-height:590px;display:flex;align-items:center;
+  position:relative;min-height:650px;display:flex;align-items:center;
   justify-content:center;text-align:center;border-radius:34px;overflow:hidden;
   background:linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.60)),
              url('data:image/avif;base64,{b64}');
@@ -364,23 +364,23 @@ canvas{{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}}
   0%,100%{{box-shadow:inset 0 0 0 1.5px rgba(251,191,36,0.15),0 0 60px rgba(251,191,36,0.06)}}
   50%{{box-shadow:inset 0 0 0 1.5px rgba(251,191,36,0.40),0 0 120px rgba(251,191,36,0.18)}}
 }}
-.inner{{position:relative;z-index:3;max-width:880px;padding:28px;}}
-.logo{{color:#fff;font-size:96px;font-weight:900;letter-spacing:2px;line-height:1;
+.inner{{position:relative;z-index:3;max-width:1050px;padding:34px;}}
+.logo{{color:#fff;font-size:118px;font-weight:900;letter-spacing:2px;line-height:1;
   text-shadow:0 6px 40px rgba(0,0,0,0.4);
   animation:logoDrop 1s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;}}
 @keyframes logoDrop{{from{{opacity:0;transform:translateY(-40px) scale(0.85)}}to{{opacity:1;transform:none}}}}
 .tag{{display:inline-block;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.45);
-  color:#fde68a;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  padding:5px 16px;border-radius:999px;margin-bottom:18px;
+  color:#fde68a;font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  padding:7px 20px;border-radius:999px;margin-bottom:22px;
   animation:tagIn 0.6s ease-out 0.6s both;}}
 @keyframes tagIn{{from{{opacity:0;transform:scale(0.85)}}to{{opacity:1;transform:scale(1)}}}}
-.subtitle{{color:#fffaf2;font-size:26px;font-weight:800;line-height:1.4;margin-bottom:14px;
+.subtitle{{color:#fffaf2;font-size:34px;font-weight:800;line-height:1.35;margin-bottom:18px;
   overflow:hidden;white-space:nowrap;border-right:3px solid rgba(255,255,255,0.7);
   width:0;margin-left:auto;margin-right:auto;
   animation:typing 2.4s steps(44,end) 1s both, blink 0.75s step-end 1s infinite;}}
 @keyframes typing{{from{{width:0}}to{{width:100%}}}}
 @keyframes blink{{50%{{border-color:transparent}}}}
-.desc{{color:rgba(255,255,255,0.85);font-size:16px;line-height:1.8;max-width:680px;margin:0 auto;
+.desc{{color:rgba(255,255,255,0.88);font-size:19px;line-height:1.85;max-width:850px;margin:0 auto;
   animation:fadeUp 0.8s ease-out 3.2s both;}}
 @keyframes fadeUp{{from{{opacity:0;transform:translateY(14px)}}to{{opacity:1;transform:none}}}}
 .wave-bottom{{position:absolute;bottom:-1px;left:0;right:0;height:48px;z-index:2;}}
@@ -405,8 +405,8 @@ canvas{{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}}
   <div class="inner">
     <div class="tag">Minnesota · Food Security · 87 Counties</div>
     <div class="logo">Carelio</div>
-    <div class="subtitle">Minnesota food support prioritization</div>
-    <div class="desc">Explore county rankings, compare urgency levels, and review an interactive experience built to support sponsors, nonprofits, and community organizations across Minnesota.</div>
+    <div class="subtitle">Minnesota food support prioritization website</div>
+    <div class="desc">A county-level decision-support website for nonprofits, grant teams, and planning partners to review priority counties, map patterns, and resource planning signals across Minnesota.</div>
   </div>
   <div class="wave-bottom">
     <svg viewBox="0 0 1200 48" preserveAspectRatio="none" width="100%" height="48">
@@ -448,7 +448,7 @@ function draw(){{
 draw();
 </script>
 """
-    components.html(html, height=610, scrolling=False)
+    components.html(html, height=670, scrolling=False)
 
 
 def render_section_hero(title, tagline, subnote, b64):
@@ -916,9 +916,9 @@ elif st.session_state.page == "about":
 
     with st.expander("💼 Data Analyst / Business Analyst View — Professional Summary", expanded=False):
         st.markdown("""<div class="white-box">
-<h3>Carelio — Minnesota Food Support Prioritization Dashboard</h3>
-<p><strong>Professional positioning:</strong> Carelio is a county-level decision-support dashboard, not just a visualization. It helps nonprofit, grant, and planning teams identify where food support resources may need closer attention across Minnesota.</p>
-<p>The dashboard combines public source indicators, transparent scoring logic, planning-level estimates, and an interactive county map to support data-informed decisions.</p>
+<h3>Carelio — Minnesota Food Support Prioritization Website</h3>
+<p><strong>Professional positioning:</strong> Carelio is a county-level decision-support website, not just a visualization. It helps nonprofit, grant, and planning teams identify where food support resources may need closer attention across Minnesota.</p>
+<p>The website combines public source indicators, transparent scoring logic, planning-level estimates, and an interactive county map to support data-informed decisions.</p>
 </div>""", unsafe_allow_html=True)
 
         c1, c2 = st.columns(2)
@@ -992,7 +992,7 @@ elif st.session_state.page == "about":
 
         st.markdown("""<div class="green-box">
 <h3>Project Summary</h3>
-<p>I designed Carelio as a decision-support dashboard for county-level food support planning. It combines public datasets, scoring logic, stakeholder views, and map-based analysis to help identify counties that may need closer review for outreach, funding, and resource planning.</p>
+<p>I designed Carelio as a decision-support website for county-level food support planning. It combines public datasets, scoring logic, stakeholder views, and map-based analysis to help identify counties that may need closer review for outreach, funding, and resource planning.</p>
 </div>""", unsafe_allow_html=True)
 
     with st.expander("🌱 Our Story"):
