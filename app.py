@@ -1,12 +1,13 @@
 import base64
 import io
+import gzip
+import json
+import math
 from html import escape
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import altair as alt
-import plotly.graph_objects as go
-import requests
 from pathlib import Path
 import re
 from urllib.parse import urlencode, urlsplit
@@ -569,66 +570,412 @@ def coverage_gap_badge(gap, median_gap):
 # ============================================================
 # Map builder
 # ============================================================
+# County boundaries are bundled below to keep this a single-file app.
+# Source: https://github.com/plotly/datasets/blob/master/geojson-counties-fips.json
+# Only the 87 Minnesota features are included (gzip-compressed GeoJSON).
+MN_BOUNDARIES_B64 = (
+    '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'
+)
+
+
 @st.cache_data
 def load_county_geojson():
-    url = "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json"
-    r = requests.get(url, timeout=30); r.raise_for_status()
-    return r.json()
+    return json.loads(gzip.decompress(base64.b64decode(MN_BOUNDARIES_B64)))
 
-def build_map(full_df, filtered_df, selected_county, selected_urgency):
-    geojson = load_county_geojson()
-    map_df = full_df.copy()
-    map_df["fips"] = map_df["County"].map(MN_COUNTY_FIPS)
-    map_df = map_df.dropna(subset=["fips"]).copy()
-    color_map = {"Low":"#22c55e","Moderate":"#3b82f6","High":"#f59e0b","Critical":"#ef4444"}
-    fig = go.Figure()
-    if selected_urgency == "All":
-        for urgency, color in color_map.items():
-            subset = map_df[map_df["Urgency Level"] == urgency].copy()
-            if subset.empty: continue
-            fig.add_trace(go.Choropleth(
-                geojson=geojson, locations=subset["fips"], z=[1]*len(subset),
-                featureidkey="id", colorscale=[[0,color],[1,color]],
-                showscale=False, marker_line_color="white", marker_line_width=0.8,
-                customdata=subset[["County","Urgency Level","Food Need Score","Health Risk Score","Final Priority Score","Est. People Food Insecure","Population"]],
-                hovertemplate="<b>%{customdata[0]}</b><br>Urgency: %{customdata[1]}<br>Priority Score: %{customdata[4]:.1f}<br>Est. People Food Insecure: %{customdata[5]:,}<br>Population: %{customdata[6]:,}<extra></extra>",
-                name=urgency,
-            ))
+
+def map_text(value):
+    """Treat missing CSV values as empty text, including optional coordinate fields."""
+    return "" if pd.isna(value) else str(value).strip()
+
+
+def build_food_map_payload(full_df, selected_county, selected_urgency, shelves, error=""):
+    """Use directory coordinates only; retain unmapped listings in the table."""
+    features = load_county_geojson()
+    by_fips = {MN_COUNTY_FIPS.get(r["County"]): r for r in full_df.to_dict("records")}
+    for feature in features["features"]:
+        row = by_fips.get(feature["id"], {})
+        name = row.get("County", feature["properties"].get("NAME", "County"))
+        urgency = row.get("Urgency Level", "Unavailable")
+        details = [f"<strong>{escape(name)} County</strong>", f"Priority level: {escape(urgency)}"]
+        for label, column, pattern in [
+            ("Priority score", "Final Priority Score", ".1f"),
+            ("Population · 2020 Census", "Population", ",.0f"),
+            ("People facing food insecurity · model estimate", "Est. People Food Insecure", ",.0f"),
+        ]:
+            if column in row and pd.notna(row[column]):
+                details.append(f"{label}: {format(float(row[column]), pattern)}")
+        feature["properties"] = {
+            "name": name, "urgency": urgency, "selected": name == selected_county,
+            "highlighted": selected_urgency == "All" or urgency == selected_urgency,
+            "tooltip": "<br>".join(details),
+        }
+
+    selected = county_shelves(shelves, selected_county) if not error else shelves.iloc[:0]
+    locations = {}
+    unmapped = 0
+    for record in selected.to_dict("records"):
+        try:
+            lat, lon = float(record.get("Latitude", "")), float(record.get("Longitude", ""))
+            # Broad Minnesota bounds catch missing, reversed and implausible coordinates.
+            valid = math.isfinite(lat) and math.isfinite(lon) and 43.4 <= lat <= 49.5 and -97.5 <= lon <= -89.0
+        except (TypeError, ValueError):
+            valid = False
+        if not valid:
+            unmapped += 1
+            continue
+        name = map_text(record.get("Food_Shelf_Name", "Food shelf"))
+        address = map_text(record.get("Address", ""))
+        phone = map_text(record.get("Phone", ""))
+        website = safe_url(map_text(record.get("Website", "")))
+        directions = "https://www.google.com/maps/search/?" + urlencode({"api": "1", "query": address or f"{lat},{lon}"})
+        source = safe_url(map_text(record.get("Source_URL", ""))) or DIRECTORY_URL
+        retrieved = map_text(record.get("Retrieved_On", ""))
+        links = [f'<a href="{escape(directions, quote=True)}" target="_blank" rel="noopener noreferrer">Directions</a>']
+        if website:
+            links.append(f'<a href="{escape(website, quote=True)}" target="_blank" rel="noopener noreferrer">Website</a>')
+        popup = (
+            '<article class="provider"><h3>' + escape(name) + '</h3>'
+            '<p>' + escape(address or "Address not listed") + '</p>'
+            '<p><strong>Phone:</strong> ' + escape(phone or "Not listed") + '</p>'
+            '<p class="provider-links">' + " · ".join(links) + '</p>'
+            '<p class="provider-source"><a href="' + escape(source, quote=True)
+            + '" target="_blank" rel="noopener noreferrer">Source directory</a>'
+            + (" · Retrieved " + escape(retrieved) if retrieved else "") + '</p></article>'
+        )
+        # One marker per exact coordinate; every separately listed program stays accessible.
+        location = locations.setdefault((lat, lon), {"lat": lat, "lon": lon, "names": [], "popups": []})
+        location["names"].append(name)
+        location["popups"].append(popup)
+
+    markers = []
+    for location in locations.values():
+        count = len(location["names"])
+        heading = f'<p><strong>{count} listings share this map location.</strong></p>' if count > 1 else ""
+        markers.append({
+            "lat": location["lat"], "lon": location["lon"], "count": count,
+            "title": "; ".join(location["names"]),
+            "popup": heading + "".join(location["popups"])
+                     + '<p class="visit-note">Contact the provider before visiting to confirm hours, appointments and eligibility.</p>',
+        })
+    total = len(selected)
+    mapped = total - unmapped
+    if error:
+        status = "Food-shelf locations are temporarily unavailable. Use the source directory in the food-shelf section below."
+    elif total == 0:
+        status = f"No listings matched {selected_county} County in this snapshot. This does not mean no food support is available."
+    elif not mapped:
+        status = f"None of the {total} listings has usable map coordinates. Their names and contact details are still in the table below."
     else:
-        fig.add_trace(go.Choropleth(
-            geojson=geojson, locations=map_df["fips"], z=[1]*len(map_df),
-            featureidkey="id", colorscale=[[0,"#d1d5db"],[1,"#d1d5db"]],
-            showscale=False, marker_line_color="white", marker_line_width=0.8,
-            hoverinfo="skip", name="Other Counties",
-        ))
-        hdf = filtered_df.copy()
-        hdf["fips"] = hdf["County"].map(MN_COUNTY_FIPS)
-        hdf = hdf.dropna(subset=["fips"]).copy()
-        if not hdf.empty:
-            hc = color_map.get(selected_urgency,"#111827")
-            fig.add_trace(go.Choropleth(
-                geojson=geojson, locations=hdf["fips"], z=[1]*len(hdf),
-                featureidkey="id", colorscale=[[0,hc],[1,hc]],
-                showscale=False, marker_line_color="white", marker_line_width=1.2,
-                customdata=hdf[["County","Urgency Level","Food Need Score","Health Risk Score","Final Priority Score","Est. People Food Insecure","Population"]],
-                hovertemplate="<b>%{customdata[0]}</b><br>Urgency: %{customdata[1]}<br>Priority: %{customdata[4]:.1f}<br>Est. People Food Insecure: %{customdata[5]:,}<extra></extra>",
-                name=selected_urgency,
-            ))
-    if selected_county in map_df["County"].values:
-        sel = map_df[map_df["County"] == selected_county]
-        fig.add_trace(go.Choropleth(
-            geojson=geojson, locations=sel["fips"], z=[1], featureidkey="id",
-            colorscale=[[0,"rgba(0,0,0,0)"],[1,"rgba(0,0,0,0)"]],
-            showscale=False, marker_line_color="black", marker_line_width=3,
-            hoverinfo="skip", name="Selected County",
-        ))
-    fig.update_geos(visible=False, projection_type="mercator",
-                    center={"lat":46.3,"lon":-94.2},
-                    lataxis_range=[43.4,49.5], lonaxis_range=[-97.5,-89.0])
-    fig.update_layout(margin=dict(l=0,r=0,t=0,b=0), height=500,
-                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      legend=dict(orientation="v",yanchor="top",y=0.98,xanchor="left",x=1.01,title="Urgency"))
-    return fig
+        listing_word = "listing" if mapped == 1 else "listings"
+        location_word = "location" if len(markers) == 1 else "locations"
+        status = f"{mapped} food-shelf {listing_word} shown at {len(markers)} map {location_word} in {selected_county} County."
+        if unmapped:
+            status += f" {unmapped} more cannot be mapped; see the table below."
+        if mapped > len(markers):
+            status += " A numbered marker contains multiple listings."
+    return {
+        "county": selected_county, "urgency": selected_urgency, "geojson": features,
+        "markers": markers, "total": total, "mapped": mapped, "unmapped": unmapped,
+        "status": status, "error": bool(error),
+    }
+
+
+def build_map(full_df, filtered_df, selected_county, selected_urgency, shelves, error=""):
+    payload = build_food_map_payload(full_df, selected_county, selected_urgency, shelves, error)
+    # Escape script delimiters as well as HTML in popups, including untrusted CSV names.
+    encoded = json.dumps(payload, ensure_ascii=True, allow_nan=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    return """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#fff;color:#111827;font:14px/1.45 system-ui,sans-serif;color-scheme:light}
+.map-panel{border:1px solid #cbd5e1;border-radius:14px;padding:14px;background:#fff}
+.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+button{font:inherit;color:#111827;background:#fff;border:1px solid #64748b;border-radius:7px;padding:6px 10px;cursor:pointer}
+button:hover{background:#f1f5f9}button[aria-pressed="true"]{background:#e0e7ff;border-color:#1d4ed8}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
+label{display:flex;align-items:center;gap:5px;font-size:13px}input{accent-color:#1d4ed8}
+#map{height:420px;width:100%;border:1px solid #cbd5e1;border-radius:8px;background:#f1f5f9}
+.map-status{margin:8px 0;color:#111827;font-size:13px}.hint{margin:8px 0 0;color:#374151;font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:9px;font-size:12px}
+.legend span{display:inline-flex;align-items:center;gap:5px}.swatch{width:11px;height:11px;border:1px solid #475569;display:inline-block}
+.pin-key{border-radius:50%;background:#1d4ed8;border:2px solid white;box-shadow:0 0 0 1px #1d4ed8}
+.food-marker{display:flex;align-items:center;justify-content:center;background:#1d4ed8;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #111827,0 2px 5px #0004;color:#fff;font-size:11px;font-weight:800}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip,.leaflet-tooltip{background:#fff;color:#111827}
+.leaflet-popup-content{max-height:240px;overflow:auto;margin:14px;font:13px/1.45 system-ui,sans-serif}
+.leaflet-tooltip{max-width:260px;white-space:normal;font-size:12px}
+.provider h3{margin:0 0 5px;font-size:15px;color:#111827}.provider p{margin:5px 0}
+.provider+.provider{border-top:1px solid #cbd5e1;margin-top:12px;padding-top:12px}
+.leaflet-container a,.provider a{color:#1e40af;text-decoration:underline}
+.provider-source,.visit-note{font-size:11px;color:#374151}.visit-note{border-top:1px solid #cbd5e1;padding-top:8px}
+.leaflet-bar a{background:#fff;color:#111827;text-decoration:none}
+.leaflet-control-attribution{background:#fffffff0;color:#374151;font-size:10px}
+#map-error{margin:8px 0;padding:10px;background:#fef3c7;color:#111827}
+</style></head><body><section class="map-panel" aria-label="County food-shelf map">
+<div class="toolbar"><button id="county-view" type="button" aria-pressed="true">County view</button><button id="state-view" type="button" aria-pressed="false">Minnesota view</button>
+<label><input id="show-shelves" type="checkbox" checked>Show food shelves</label></div>
+<p id="map-status" class="map-status" aria-live="polite">__STATUS__</p>
+<p id="map-error" role="status">If the interactive map does not load, use the food-shelf names, addresses and directions in the table below.</p>
+<div id="map" role="region" aria-label="Interactive county map. Use plus and minus to zoom; select a blue marker for food-shelf details."></div>
+<div class="legend" aria-label="Map legend"><span><i class="swatch" style="background:#ef4444"></i>Critical</span><span><i class="swatch" style="background:#f59e0b"></i>High</span><span><i class="swatch" style="background:#3b82f6"></i>Moderate</span><span><i class="swatch" style="background:#22c55e"></i>Low</span><span id="other-legend"><i class="swatch" style="background:#d1d5db"></i>Other urgency levels</span><span><i class="swatch pin-key"></i>Food-shelf location</span></div>
+<p class="hint">Black border = selected county. Click a blue marker for contact details. Hover over a county for its priority and population. To change counties, use the sidebar.</p>
+<p class="hint">Locations come from the directory snapshot, not a live availability check. Listings do not measure capacity; some programs are mobile or restricted-access.</p>
+</section>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const data = __MAP_DATA__;
+if (window.L) {
+ try {
+  const colors = {Low:'#22c55e',Moderate:'#3b82f6',High:'#f59e0b',Critical:'#ef4444'};
+  const map = L.map('map', {scrollWheelZoom:false, minZoom:5, maxZoom:16});
+  map.attributionControl.addAttribution('Boundaries: <a href="https://github.com/plotly/datasets/blob/master/geojson-counties-fips.json" target="_blank" rel="noopener noreferrer">Plotly datasets</a>');
+  let selectedLayer;
+  const counties = L.geoJSON(data.geojson, {
+   style: feature => ({color:feature.properties.selected?'#111827':'#64748b',weight:feature.properties.selected?3:0.8,fillColor:feature.properties.highlighted?(colors[feature.properties.urgency]||'#d1d5db'):'#d1d5db',fillOpacity:0.6}),
+   onEachFeature: (feature,layer) => {
+    layer.bindTooltip(feature.properties.tooltip,{sticky:true});
+    if(feature.properties.selected) selectedLayer=layer;
+   }
+  }).addTo(map);
+  if(selectedLayer) selectedLayer.bringToFront();
+  const markers = L.featureGroup();
+  for(const point of data.markers) {
+   const icon=L.divIcon({className:'food-marker',html:point.count>1?String(point.count):'',iconSize:[24,24],iconAnchor:[12,12],popupAnchor:[0,-10]});
+   const marker=L.marker([point.lat,point.lon],{icon,title:point.title,alt:point.title,keyboard:true,riseOnHover:true});
+   marker.bindPopup(point.popup,{maxWidth:280,minWidth:180,autoPanPadding:[20,20]});
+   markers.addLayer(marker);
+  }
+  markers.addTo(map);
+  const stateBounds=counties.getBounds();
+  const countyBounds=L.latLngBounds([]);
+  if(selectedLayer) countyBounds.extend(selectedLayer.getBounds());
+  if(data.markers.length) countyBounds.extend(markers.getBounds());
+  const countyButton=document.getElementById('county-view');
+  const stateButton=document.getElementById('state-view');
+  const status=document.getElementById('map-status');
+  const showShelves=document.getElementById('show-shelves');
+  function fitView(county) {
+   map.closePopup();
+   map.fitBounds(county && countyBounds.isValid()?countyBounds:stateBounds,{padding:[22,22],maxZoom:12});
+   countyButton.setAttribute('aria-pressed',String(county));stateButton.setAttribute('aria-pressed',String(!county));
+  }
+  countyButton.addEventListener('click',()=>fitView(true));
+  stateButton.addEventListener('click',()=>fitView(false));
+  showShelves.disabled=!data.markers.length;
+  showShelves.addEventListener('change',()=>{
+   if(showShelves.checked){markers.addTo(map);status.textContent=data.status;}
+   else{map.removeLayer(markers);status.textContent='Food-shelf markers are hidden. Turn on “Show food shelves” to see them again.';}
+  });
+  document.getElementById('other-legend').hidden=data.urgency==='All';
+  fitView(true);
+  document.getElementById('map-error').hidden=true;
+ } catch(error) {
+  document.getElementById('map-error').hidden=false;
+ }
+}
+</script></body></html>""".replace("__STATUS__", escape(payload["status"])).replace("__MAP_DATA__", encoded)
+
+
+def render_county_food_map(full_df, filtered_df, selected_county, selected_urgency, shelves, error=""):
+    components.html(build_map(full_df, filtered_df, selected_county, selected_urgency, shelves, error), height=680, scrolling=True)
+
 
 # ============================================================
 # ANIMATED COMPONENTS
@@ -1747,11 +2094,11 @@ Around **14 out of every 100 people** in the U.S. lived in food-insecure househo
 
         with top_right:
             st.markdown('<div class="chart-card">', unsafe_allow_html=True)
-            st.markdown('<h3>Minnesota County Map</h3>', unsafe_allow_html=True)
-            st.markdown('<div class="section-caption">Colors reflect urgency. Black border = selected county. Hover to see population & people food insecure.</div>', unsafe_allow_html=True)
-
-            fig = build_map(df, filtered_df, selected_county, selected_urgency)
-            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('<h3 style="color:#111827;">County Map & Food Shelves</h3>', unsafe_allow_html=True)
+            render_county_food_map(
+                df, filtered_df, selected_county, selected_urgency,
+                food_shelves_df, food_shelves_error,
+            )
 
             st.markdown('<h3 style="color:#111827;margin-bottom:6px;">Selected County Detail</h3>', unsafe_allow_html=True)
             st.markdown(urgency_badge(county_data["Urgency Level"]), unsafe_allow_html=True)
