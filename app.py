@@ -6,8 +6,160 @@ import streamlit.components.v1 as components
 import altair as alt
 import plotly.graph_objects as go
 import requests
+from pathlib import Path
+import re
+from urllib.parse import urlencode, urlsplit
 
 st.set_page_config(page_title="Carelio", layout="wide")
+
+# ============================================================
+# Food-shelf directory helpers (included in app.py)
+# ============================================================
+DIRECTORY_URL = "https://www.hungersolutions.org/find-help/"
+DATA_PATH = Path(__file__).with_name("food_shelves_mn.csv")
+REQUIRED = (
+    "Source_ID", "County", "Food_Shelf_Name", "Address", "Source_URL", "Retrieved_On"
+)
+OPTIONAL = ("City", "Phone", "Website", "Service_Type", "Status")
+
+
+def normalize_county(value):
+    value = re.sub(r"\s+county$", "", str(value).strip(), flags=re.I)
+    value = re.sub(r"\s+", " ", value).casefold()
+    return re.sub(r"^(saint|st\.)\s+", "st ", value)
+
+
+def safe_url(value):
+    value = str(value).strip()
+    try:
+        parsed = urlsplit(value)
+        return value if parsed.scheme in {"https", "http"} and parsed.netloc else ""
+    except ValueError:
+        return ""
+
+
+def load_food_shelves(path=DATA_PATH, valid_counties=None):
+    """Return (validated records, diagnostic). Never turn a broken file into zeroes."""
+    empty = pd.DataFrame(columns=[*REQUIRED, *OPTIONAL, "_county_key"])
+    try:
+        frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+    except (OSError, ValueError, UnicodeError) as exc:
+        return empty, f"Food-shelf data could not be loaded: {type(exc).__name__}."
+    if not set(REQUIRED).issubset(frame.columns):
+        return empty, "Food-shelf data is missing required columns."
+    frame = frame.fillna("").copy()
+    for col in frame:
+        frame[col] = frame[col].astype(str).str.strip()
+    for col in OPTIONAL:
+        if col not in frame:
+            frame[col] = ""
+    frame["_county_key"] = frame["County"].map(normalize_county)
+    for col in ["Website", "Source_URL"]:
+        frame[col] = frame[col].map(safe_url)
+    valid = frame[list(REQUIRED)].ne("").all(axis=1)
+    dates = pd.to_datetime(frame["Retrieved_On"], format="%Y-%m-%d", errors="coerce")
+    valid &= dates.notna() & (dates <= pd.Timestamp.now().normalize())
+    if valid_counties is not None:
+        valid &= frame["_county_key"].isin({normalize_county(c) for c in valid_counties})
+    # Fail visibly instead of silently publishing misleading counts from malformed data.
+    if not valid.all():
+        return empty, "Food-shelf data contains incomplete or invalid records and needs review."
+    if frame["Source_ID"].duplicated().any():
+        return empty, "Food-shelf data contains repeated source IDs and needs review."
+    identity = frame.apply(
+        lambda r: "|".join(re.sub(r"[^a-z0-9]", "", r[c].casefold())
+                           for c in ["County", "Food_Shelf_Name", "Address"]), axis=1
+    )
+    frame = frame.loc[~identity.duplicated()].copy()
+    return frame.sort_values(["County", "Food_Shelf_Name"]).reset_index(drop=True), ""
+
+
+def county_shelves(frame, county):
+    return frame.loc[frame["_county_key"] == normalize_county(county)].copy()
+
+
+def county_listing_count(frame, county, error=""):
+    return None if error else len(county_shelves(frame, county))
+
+
+def render_food_shelves(frame, county, error=""):
+    st.subheader(f"🥫 Food Shelves in {county} County")
+    if error:
+        st.info("Food-shelf listings are temporarily unavailable. Use the directory below to find help.")
+        with st.expander("Data loading details"):
+            st.text(error)
+        st.link_button("Find food support", DIRECTORY_URL)
+        return
+
+    selected = county_shelves(frame, county)
+    if selected.empty:
+        st.info(
+            f"No listings matched {county} County in this snapshot. "
+            "This does not mean there are no food shelves or no services for its residents. "
+            "Nearby counties may also have options."
+        )
+        st.link_button("Search the full food-support directory", DIRECTORY_URL)
+        return
+
+    noun = "food-shelf listing" if len(selected) == 1 else "food-shelf listings"
+    st.write(f"**{len(selected)} {noun}** in {county} County.")
+    st.caption(
+        "Contact the provider before visiting to confirm hours, appointments and eligibility. "
+        "Listings include some mobile and restricted-access programs; some share an address."
+    )
+    query = st.text_input(
+        "Find a food shelf or city", placeholder="Search these listings",
+        key=f"shelf_search_{normalize_county(county)}",
+    ).strip()
+    visible = selected
+    if query:
+        mask = selected[["Food_Shelf_Name", "City", "Address"]].apply(
+            lambda s: s.str.contains(query, case=False, regex=False)
+        ).any(axis=1)
+        visible = selected.loc[mask]
+        st.caption(f"Showing {len(visible)} of {len(selected)} listings.")
+
+    if visible.empty:
+        st.info("No listings match that search. Try the city name or clear the search.")
+    else:
+        display = visible[["Food_Shelf_Name", "City", "Address", "Phone", "Website"]].copy()
+        display["Directions"] = visible["Address"].map(
+            lambda address: "https://www.google.com/maps/search/?" + urlencode({"api": "1", "query": address})
+        )
+        for col in ["City", "Address", "Phone"]:
+            display[col] = display[col].replace("", "Not listed")
+        display["Website"] = display["Website"].replace("", None)
+        display = display.rename(columns={"Food_Shelf_Name": "Food shelf", "Phone": "Contact"})
+        st.dataframe(
+            display, hide_index=True, use_container_width=True,
+            height=min(430, 38 + 35 * len(display)),
+            column_config={
+                "Website": st.column_config.LinkColumn("Website", display_text="Visit website"),
+                "Directions": st.column_config.LinkColumn("Directions", display_text="View location"),
+            },
+        )
+
+    st.caption(
+        "Source: The Food Group / Hunger Solutions, Find Help directory. "
+        f"Retrieved: {', '.join(sorted(selected['Retrieved_On'].unique()))}. "
+        "Listed addresses determine counties; service areas may cross county borders. "
+        "The count does not measure capacity or show that all local services are included."
+    )
+    left, right = st.columns(2)
+    with left:
+        st.link_button("Open the source directory", DIRECTORY_URL)
+    with right:
+        export = selected.drop(columns=[c for c in selected if c.startswith("_")])
+        st.download_button(
+            "Download county food shelves", export.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"carelio_{normalize_county(county).replace(' ', '_')}_food_shelves.csv",
+            mime="text/csv", key=f"shelf_download_{normalize_county(county)}",
+        )
+    st.info(
+        "Next step: contact these providers to understand current services and capacity "
+        "before planning additional support."
+    )
+
 
 # ============================================================
 # Links
@@ -50,6 +202,15 @@ MN_COUNTY_POPULATION = {
 # Data Sources (with county-level download links)
 # ============================================================
 DATA_SOURCES = [
+    {
+        "emoji":"🥫", "name":"The Food Group / Hunger Solutions — Find Help",
+        "what":"Food-shelf directory listings, addresses, contacts and provider links. Includes some mobile and restricted-access programs.",
+        "frequency":"Local snapshot retrieved September 1, 2026; confirm details with providers",
+        "url":"https://www.hungersolutions.org/find-help/",
+        "county_url":"https://www.hungersolutions.org/find-help/?fwp_categories=food-shelves",
+        "county_label":"Open food-shelf directory",
+        "used_for":"Food-shelf listings by county; not service capacity or coverage",
+    },
     {
         "emoji":"🟩","name":"Feeding America — Map the Meal Gap",
         "what":"County food insecurity rates & food budget shortfall. US rate: 14.3% in 2023.",
@@ -852,6 +1013,18 @@ df_raw = df_raw.sort_values(priority_col, ascending=False).reset_index(drop=True
 enriched = df_raw.apply(compute_enriched, axis=1, result_type="expand")
 df = pd.concat([df_raw, enriched], axis=1)
 median_gap = df["Coverage Gap (people/shelter)"].median()
+food_shelves_df, food_shelves_error = load_food_shelves(valid_counties=MN_COUNTY_FIPS)
+df["Food Shelf Listings"] = pd.array(
+    [county_listing_count(food_shelves_df, c, food_shelves_error) for c in df[county_col]],
+    dtype="Int64",
+)
+df["Food Shelf Data Status"] = df["Food Shelf Listings"].apply(
+    lambda count: "Unavailable" if pd.isna(count) else
+    "No matching listings in snapshot" if count == 0 else "Directory listings; not a complete count"
+)
+df["Food Shelf Snapshot"] = (
+    ", ".join(sorted(food_shelves_df["Retrieved_On"].unique())) if not food_shelves_error else ""
+)
 
 # ============================================================
 # Session state
@@ -940,6 +1113,7 @@ elif st.session_state.page == "about":
 <ul>
 <li><strong>Dashboard:</strong> Shows the county ranking, KPI cards, map, and selected county details.</li>
 <li><strong>County Detail:</strong> Explains why a county is ranked higher or lower.</li>
+<li><strong>Food Shelves:</strong> Lists food-shelf names, addresses, contacts, provider websites and directions for the selected county.</li>
 <li><strong>Stakeholder View:</strong> Lets the same dashboard speak differently to data, grant, and planning users.</li>
 <li><strong>Methodology & Data Sources:</strong> Explains where the data came from, what is official, and what is estimated.</li>
 </ul>
@@ -966,6 +1140,7 @@ elif st.session_state.page == "about":
 
         st.markdown("""<div class="blue-box">
 <h3>Data Transparency Note</h3>
+<p><strong>Food-shelf listings:</strong> Sourced from The Food Group / Hunger Solutions Find Help directory. Counts describe listings matched to counties using directory coordinates, not capacity or guaranteed availability. No matching records does not mean no services exist.</p>
 <p><strong>Official data:</strong> County population values are official US Census 2020 counts.</p>
 <p><strong>Planning estimates:</strong> People-level numbers such as estimated food-insecure residents, estimated food shelf visits, SNAP estimates, and coverage gap are planning-level estimates created from population and score-based assumptions.</p>
 <p><strong>Professional use:</strong> These estimates are useful for prioritization and discussion, but should be validated with primary source files before formal grant reporting, policy reporting, or funding decisions.</p>
@@ -1073,9 +1248,9 @@ Scaled from 4% (low-need counties) to 11% (high-need counties) based on Food Nee
         st.markdown("""<div class="formula-box">snap_rate = <span>0.04</span> + (food_score / <span>100</span>) × <span>0.07</span><br>est_snap = <span>int</span>(population × snap_rate)</div>""", unsafe_allow_html=True)
 
         st.markdown("""<div class="white-box">
-<h3>Step 6 — Coverage Gap</h3>
-<p>Minnesota has ~487 TEFAP food shelves serving ~5.7M people = <strong>1 shelter per 11,700 people</strong> statewide.
-A county with more people food insecure per estimated shelter has a <strong>higher gap</strong> — meaning need may outpace available services.</p>
+<h3>Step 6 — Legacy Population-Based Planning Proxy</h3>
+<p>This older model assumes one food-shelf location per 11,700 residents. It is a hypothetical planning assumption, not an observed county shelf count, service capacity measure or verified service gap.</p>
+<p>The new <strong>Food Shelves</strong> section uses sourced directory listings instead. Those counts are kept separate from this formula and do not change county priority scores.</p>
 </div>""", unsafe_allow_html=True)
         st.markdown("""<div class="formula-box">est_shelves = <span>max</span>(<span>1</span>, <span>round</span>(population / <span>11700</span>))<br>gap = est_people_food_insecure / est_shelves<br># Compare to statewide median → High / Moderate / Lower gap</div>""", unsafe_allow_html=True)
 
@@ -1153,7 +1328,8 @@ A county with more people food insecure per estimated shelter has a <strong>high
     st.markdown('<p class="footer-note">Carelio supports planning, prioritization, and outreach using the latest available project dataset.</p>', unsafe_allow_html=True)
     st.markdown('<p class="footer-note">This tool is manually updated and does not refresh in real time.</p>', unsafe_allow_html=True)
     st.markdown('<p class="footer-note"><strong>Current update plan:</strong> Monthly manual data refresh</p>', unsafe_allow_html=True)
-    st.markdown('<p class="footer-note"><strong>Last updated:</strong> April 2026</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-note"><strong>County-score dataset update:</strong> April 2026</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-note"><strong>Food-shelf directory snapshot:</strong> September 1, 2026</p>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1299,7 +1475,12 @@ and statewide rates.</div>""", unsafe_allow_html=True)
 
             st.markdown('<h3 style="color:#111827;margin-bottom:6px;">Selected County Detail</h3>', unsafe_allow_html=True)
             st.markdown(urgency_badge(county_data["Urgency Level"]), unsafe_allow_html=True)
-            st.markdown(coverage_gap_badge(gap_ratio, median_gap), unsafe_allow_html=True)
+            listing_count = county_listing_count(food_shelves_df, selected_county, food_shelves_error)
+            listing_value = "Unavailable" if listing_count is None else (
+                "No listings in snapshot" if listing_count == 0 else str(listing_count)
+            )
+            st.markdown(metric_card("🥫 Food-shelf listings", listing_value), unsafe_allow_html=True)
+            st.caption("From the source directory. See names and contact details below.")
             st.markdown("<br>", unsafe_allow_html=True)
 
             render_triple_gauge(
@@ -1324,14 +1505,17 @@ and statewide rates.</div>""", unsafe_allow_html=True)
                 gap_label = "High" if gap_ratio > median_gap * 1.3 else "Moderate" if gap_ratio > median_gap * 0.8 else "Lower"
                 st.markdown(f"""<div class="green-box" style="margin-top:10px;">
 <h3 style="font-size:17px;">🧭 Planning & Coverage Context</h3>
-<p><b>{gap_ratio:,}</b> people per estimated food shelter</p>
+<p><b>{gap_ratio:,}</b> estimated people per hypothetical food-shelf location</p>
 <p>Statewide median: <b>{int(median_gap):,}</b> &nbsp;·&nbsp; Gap level: <b>{gap_label}</b></p>
-<p style="font-size:11px;color:#9ca3af;margin-top:6px;">Shelter count is a proxy.
+<p style="font-size:11px;color:#9ca3af;margin-top:6px;">This older population-based model is separate from the directory listings below. It does not measure actual service capacity.
 <a href="https://dcyf.mn.gov/emergency-food-assistance-program-tefap" target="_blank" style="color:#f59e0b;">TEFAP site data →</a></p>
 </div>""", unsafe_allow_html=True)
 
             st.markdown('<p class="mini-note" style="margin-top:8px;">Use this panel to review the selected county before making outreach or support decisions.</p>', unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
+
+        # Food-shelf availability is visible in every stakeholder view.
+        render_food_shelves(food_shelves_df, selected_county, food_shelves_error)
 
         # All county ranking + CSV download
         st.markdown('<div class="green-box">', unsafe_allow_html=True)
@@ -1342,7 +1526,8 @@ and statewide rates.</div>""", unsafe_allow_html=True)
         with col_dl:
             export_cols = [county_col,"Urgency Level",food_col,health_col,priority_col,
                            "Population","Est. People Food Insecure","Est. Food Insecurity Rate (%)",
-                           "Est. Food Shelf Visits 2024","Est. SNAP Enrollment","Coverage Gap (people/shelter)"]
+                           "Est. Food Shelf Visits 2024","Est. SNAP Enrollment","Coverage Gap (people/shelter)",
+                           "Food Shelf Listings","Food Shelf Data Status","Food Shelf Snapshot"]
             buf = io.BytesIO()
             filtered_df[export_cols].to_csv(buf, index=False)
             st.download_button("⬇️ Download CSV", data=buf.getvalue(),
