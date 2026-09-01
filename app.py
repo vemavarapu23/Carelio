@@ -177,6 +177,126 @@ def render_food_shelves(frame, county, error=""):
     )
 
 
+def build_county_comparison(data, first, second, shelves, shelf_error=""):
+    """Use existing county values; directory counts never change priority scores."""
+    if first == second:
+        raise ValueError("Choose two different counties.")
+    indexed = data.set_index("County")
+    a, b = indexed.loc[first], indexed.loc[second]
+    ranks = indexed["Final Priority Score"].rank(method="min", ascending=False)
+    counts = [county_listing_count(shelves, name, shelf_error) for name in [first, second]]
+
+    def count_label(value):
+        if value is None:
+            return "Unavailable"
+        return "No listings in snapshot" if value == 0 else str(value)
+
+    rows = [
+        ("Priority score (0–100)", f"{a['Final Priority Score']:.2f}", f"{b['Final Priority Score']:.2f}"),
+        ("Priority level", a["Urgency Level"], b["Urgency Level"]),
+        ("Rank across all counties", f"#{int(ranks[first])} of {len(indexed)}", f"#{int(ranks[second])} of {len(indexed)}"),
+        ("Food need score (0–100)", f"{a['Food Need Score']:.2f}", f"{b['Food Need Score']:.2f}"),
+        ("Health risk score (0–100)", f"{a['Health Risk Score']:.2f}", f"{b['Health Risk Score']:.2f}"),
+        ("Population · 2020 Census", f"{int(a['Population']):,}", f"{int(b['Population']):,}"),
+        ("People facing food insecurity · model estimate", f"~{int(a['Est. People Food Insecure']):,}", f"~{int(b['Est. People Food Insecure']):,}"),
+        ("Food-shelf directory listings", count_label(counts[0]), count_label(counts[1])),
+    ]
+    table = pd.DataFrame(rows, columns=["Indicator", first, second])
+    messages = []
+    difference = round(float(a["Final Priority Score"] - b["Final Priority Score"]), 2)
+    if difference == 0:
+        messages.append(f"{first} and {second} have the same priority score. Review the food need and health risk scores to understand the mix behind that result.")
+    else:
+        higher, lower = (first, second) if difference > 0 else (second, first)
+        messages.append(f"{higher} has the higher priority score by {abs(difference):.2f} points. It shows greater combined food need and health risk in Carelio's scoring model than {lower}.")
+    pop_difference = int(a["Population"]) - int(b["Population"])
+    if pop_difference == 0:
+        messages.append("Both counties have the same population in the 2020 Census data.")
+    else:
+        larger = first if pop_difference > 0 else second
+        messages.append(f"{larger} has {abs(pop_difference):,} more residents in the 2020 Census data. This helps you understand the possible scale of outreach.")
+    if shelf_error:
+        messages.append("Food-shelf listings are unavailable, so a directory comparison cannot be made right now.")
+    elif 0 in counts:
+        missing = first if counts[0] == 0 else second
+        if counts == [0, 0]:
+            messages.append("Neither county has matching listings in this snapshot. This does not mean that food support is unavailable to residents.")
+        else:
+            messages.append(f"No directory listings match {missing} in this snapshot. This does not mean the county has no food shelves or that its residents have no support.")
+    else:
+        first_noun = "listing" if counts[0] == 1 else "listings"
+        second_noun = "listing" if counts[1] == 1 else "listings"
+        messages.append(f"The directory contains {counts[0]} {first_noun} for {first} and {counts[1]} {second_noun} for {second}. These counts show listed programs, not how many people they can serve.")
+    return table, messages
+
+
+def render_county_compare(data, shelves, shelf_error=""):
+    counties = sorted(data["County"].dropna().unique().tolist())
+    if len(counties) < 2:
+        st.info("At least two counties are needed for a comparison.")
+        return
+    if st.session_state.get("compare_first") not in counties:
+        st.session_state.compare_first = "Mahnomen" if "Mahnomen" in counties else counties[0]
+
+    with st.container(border=True, key="county_compare_panel"):
+        st.subheader("⚖️ Compare two counties")
+        st.write("Choose two counties to see their need, population and listed food shelves together.")
+        st.caption("You can choose from all counties, regardless of the dashboard's urgency filter.")
+        left, right = st.columns(2)
+        with left:
+            first = st.selectbox("First county", counties, key="compare_first")
+        remaining = [name for name in counties if name != first]
+        if st.session_state.get("compare_second") not in remaining:
+            st.session_state.compare_second = "Beltrami" if "Beltrami" in remaining else remaining[0]
+        with right:
+            second = st.selectbox("Second county", remaining, key="compare_second")
+
+        table, messages = build_county_comparison(data, first, second, shelves, shelf_error)
+        headers = "".join(f'<th scope="col">{escape(str(c))}</th>' for c in table.columns)
+        body = "".join(
+            '<tr><th scope="row">' + escape(str(row[0])) + '</th>'
+            + "".join(f'<td>{escape(str(value))}</td>' for value in row[1:]) + '</tr>'
+            for row in table.itertuples(index=False, name=None)
+        )
+        st.markdown(
+            '<div class="shelf-table-scroll" role="region" aria-label="County comparison" tabindex="0">'
+            '<table class="shelf-table compare-table"><thead><tr>' + headers
+            + '</tr></thead><tbody>' + body + '</tbody></table></div>',
+            unsafe_allow_html=True,
+        )
+        st.caption("Higher scores indicate greater relative need. Scores are not percentages of residents.")
+        st.subheader("What does this tell us?")
+        for message in messages:
+            st.write("• " + message)
+        st.info("Next step: review the county indicators and speak with local food-support providers about current needs, eligibility and capacity before deciding where to add support.")
+
+        with st.expander("What do these numbers mean?"):
+            st.markdown("""
+**Priority score and level:** Carelio combines food need and health risk to help compare counties. Critical, High, Moderate and Low are the existing score bands.
+
+**Rank:** Where the county sits among all counties in the dataset. A rank of 1 means the highest priority score. Tied scores share a rank.
+
+**Food need and health risk scores:** Summaries of the county indicators already used in Carelio. They are relative scores, not counts of people.
+
+**Population:** The county's total residents counted in the 2020 Census.
+
+**People facing food insecurity — model estimate:** An estimate from Carelio's existing population-and-score assumptions. It is not an official county count or a prediction of how many people will visit a food shelf.
+
+**Food-shelf directory listings:** Programs matched to the county in the directory snapshot. Some are mobile, have eligibility rules or share an address. Fewer listings alone do not prove a shortage of services.
+""")
+        snapshot = ", ".join(sorted(shelves["Retrieved_On"].unique())) if not shelf_error and not shelves.empty else "Unavailable"
+        st.caption(f"Sources: existing Carelio county indicators; 2020 Census population; food-shelf directory snapshot: {snapshot}.")
+        st.markdown("[Food-shelf source directory](https://www.hungersolutions.org/find-help/) · [Census population source](https://data.census.gov/table?q=population&g=040XX00US27$0500000)")
+        export = table.copy()
+        export["Food-shelf snapshot"] = snapshot
+        export["Notes"] = "Scores are relative; people counts are model estimates except Census population; directory listings do not measure capacity."
+        st.download_button(
+            "Download this comparison", export.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"carelio_compare_{normalize_county(first).replace(' ', '_')}_{normalize_county(second).replace(' ', '_')}.csv",
+            mime="text/csv", key="compare_download",
+        )
+
+
 # ============================================================
 # Links
 # ============================================================
@@ -1053,31 +1173,31 @@ div[data-baseweb="popover"] div[role="option"]:hover{{background:#fff7dd !import
 [data-testid="stTextInput"]:focus-within {{ outline: 2px solid #1d4ed8; outline-offset: 2px; border-radius: 8px; }}
 
 /* The entire section is one native Streamlit container, with an opaque surface. */
-.st-key-food_shelves_panel {{
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) {{
   background: #ffffff !important; color: #111111 !important;
   border: 1px solid #cbd5e1 !important; border-radius: 18px !important;
   padding: 24px !important; margin: 18px 0 !important; color-scheme: light;
   box-shadow: 0 4px 16px rgba(0,0,0,.07);
 }}
-.st-key-food_shelves_panel :is(h1,h2,h3,h4,p,li,span,strong,label,small,caption),
-.st-key-food_shelves_panel [data-testid="stCaptionContainer"] p,
-.st-key-food_shelves_panel [data-testid="stWidgetLabel"] p {{
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) :is(h1,h2,h3,h4,p,li,span,strong,label,small,caption),
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) [data-testid="stCaptionContainer"] p,
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) [data-testid="stWidgetLabel"] p {{
   color: #111111 !important; opacity: 1 !important;
 }}
-.st-key-food_shelves_panel [data-testid="stCaptionContainer"] p {{
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) [data-testid="stCaptionContainer"] p {{
   font-size: 14px !important; line-height: 1.6 !important;
 }}
-.st-key-food_shelves_panel [data-testid="stAlert"] {{
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) [data-testid="stAlert"] {{
   background: #eef5ff !important; color: #111111 !important; border: 1px solid #bfd3f5;
 }}
-.st-key-food_shelves_panel [data-testid="stLinkButton"] a,
-.st-key-food_shelves_panel [data-testid="stDownloadButton"] button {{
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) [data-testid="stLinkButton"] a,
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) [data-testid="stDownloadButton"] button {{
   background: #fff3d6 !important; color: #111111 !important;
   border: 1px solid #9b741f !important; border-radius: 8px !important;
   font-weight: 600 !important;
 }}
-.st-key-food_shelves_panel a {{ color: #111111 !important; }}
-.st-key-food_shelves_panel :is(a,button):focus-visible,
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) a {{ color: #111111 !important; }}
+:is(.st-key-food_shelves_panel, .st-key-county_compare_panel) :is(a,button):focus-visible,
 .shelf-table-scroll:focus-visible {{ outline: 2px solid #1d4ed8; outline-offset: 3px; }}
 .shelf-table-scroll {{
   width: 100%; max-height: 450px; overflow: auto;
@@ -1094,7 +1214,11 @@ div[data-baseweb="popover"] div[role="option"]:hover{{background:#fff7dd !import
 .shelf-table td:nth-child(3) {{ min-width: 180px; }}
 .shelf-table tr:nth-child(even) td {{ background: #f8fafc !important; }}
 .shelf-table a {{ color: #111111 !important; text-decoration: underline !important; font-weight: 600; }}
-@media (max-width: 640px) {{ .st-key-food_shelves_panel {{ padding: 16px !important; }} }}
+@media (max-width: 640px) {{ :is(.st-key-food_shelves_panel, .st-key-county_compare_panel) {{ padding: 16px !important; }} }}
+
+.compare-table tbody th {{ position: static; background: #ffffff !important; min-width: 190px; }}
+.compare-table tbody tr:nth-child(even) th {{ background: #f8fafc !important; }}
+.compare-table thead th {{ min-width: 160px; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1156,10 +1280,10 @@ elif st.session_state.page == "menu":
     render_section_hero(
         "Welcome to Carelio",
         "Choose how you want to explore the project",
-        "Open the dashboard for practical county analysis or About Me to understand the story, scoring, and support options.",
+        "Explore the dashboard, compare two counties, or learn about the project and its scoring.",
         header_banner,
     )
-    col1, col2, col3 = st.columns([1,1,1])
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         if st.button("⌂ Home", use_container_width=True):
             st.session_state.started = False; st.session_state.page = "menu"; st.rerun()
@@ -1167,8 +1291,29 @@ elif st.session_state.page == "menu":
         if st.button("Dashboard", use_container_width=True):
             st.session_state.page = "dashboard"; st.rerun()
     with col3:
+        if st.button("Compare Counties", use_container_width=True):
+            st.session_state.page = "compare"; st.rerun()
+    with col4:
         if st.button("About Me", use_container_width=True):
             st.session_state.page = "about"; st.rerun()
+
+# ============================================================
+# Compare counties
+# ============================================================
+elif st.session_state.page == "compare":
+    render_section_hero(
+        "Compare Counties", "Understand the differences",
+        "Two counties, one clear view of need, population and food-support listings.",
+        header_banner,
+    )
+    nav1, nav2, nav3 = st.columns(3)
+    with nav1:
+        if st.button("← Menu", use_container_width=True): st.session_state.page = "menu"; st.rerun()
+    with nav2:
+        if st.button("Open Dashboard", use_container_width=True): st.session_state.page = "dashboard"; st.rerun()
+    with nav3:
+        if st.button("⌂ Home", use_container_width=True): st.session_state.started = False; st.session_state.page = "menu"; st.rerun()
+    render_county_compare(df, food_shelves_df, food_shelves_error)
 
 # ============================================================
 # About page
@@ -1216,6 +1361,7 @@ elif st.session_state.page == "about":
 <h3>How the Website Should Be Read</h3>
 <ul>
 <li><strong>Dashboard:</strong> Shows the county ranking, KPI cards, map, and selected county details.</li>
+<li><strong>Compare Counties:</strong> Puts two counties side by side and explains differences in scores, population and listed food shelves.</li>
 <li><strong>County Detail:</strong> Explains why a county is ranked higher or lower.</li>
 <li><strong>Food Shelves:</strong> Lists food-shelf names, addresses, contacts, provider websites and directions for the selected county.</li>
 <li><strong>Stakeholder View:</strong> Lets the same dashboard speak differently to data, grant, and planning users.</li>
@@ -1448,12 +1594,14 @@ elif st.session_state.page == "dashboard":
         header_banner,
     )
 
-    nav1, nav2, nav3 = st.columns(3)
+    nav1, nav2, nav3, nav4 = st.columns(4)
     with nav1:
         if st.button("← Back", use_container_width=True): st.session_state.page = "menu"; st.rerun()
     with nav2:
         if st.button("⌂ Home", use_container_width=True): st.session_state.started = False; st.session_state.page = "menu"; st.rerun()
     with nav3:
+        if st.button("Compare Counties", use_container_width=True): st.session_state.page = "compare"; st.rerun()
+    with nav4:
         if st.button("About Me", use_container_width=True): st.session_state.page = "about"; st.rerun()
 
     # Sidebar
