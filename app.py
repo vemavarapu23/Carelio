@@ -1,5 +1,6 @@
 import base64
 import io
+from html import escape
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -130,13 +131,28 @@ def render_food_shelves(frame, county, error=""):
             display[col] = display[col].replace("", "Not listed")
         display["Website"] = display["Website"].replace("", None)
         display = display.rename(columns={"Food_Shelf_Name": "Food shelf", "Phone": "Contact"})
-        st.dataframe(
-            display, hide_index=True, use_container_width=True,
-            height=min(430, 38 + 35 * len(display)),
-            column_config={
-                "Website": st.column_config.LinkColumn("Website", display_text="Visit website"),
-                "Directions": st.column_config.LinkColumn("Directions", display_text="View location"),
-            },
+        # A real HTML table keeps both text and backgrounds readable in dark or light mode.
+        rows = []
+        for record in display.to_dict("records"):
+            cells = []
+            for column in display.columns:
+                value = record[column]
+                if column in {"Website", "Directions"}:
+                    url = safe_url(value) if value else ""
+                    label = "Visit website" if column == "Website" else "View location"
+                    content = (
+                        f'<a href="{escape(url, quote=True)}" target="_blank" '
+                        f'rel="noopener noreferrer">{label}</a>' if url else "Not listed"
+                    )
+                else:
+                    content = escape(str(value))
+                cells.append(f"<td>{content}</td>")
+            rows.append("<tr>" + "".join(cells) + "</tr>")
+        headers = "".join(f'<th scope="col">{escape(c)}</th>' for c in display.columns)
+        st.markdown(
+            '<div class="shelf-table-scroll" role="region" aria-label="County food-shelf listings" tabindex="0">'
+            '<table class="shelf-table"><thead><tr>' + headers + '</tr></thead><tbody>'
+            + "".join(rows) + '</tbody></table></div>', unsafe_allow_html=True,
         )
 
     st.caption(
@@ -991,6 +1007,94 @@ div[data-baseweb="popover"] div[role="option"]:hover{{background:#fff7dd !import
 @keyframes slideUp{{from{{opacity:0;transform:translateY(22px) scale(0.96)}}to{{opacity:1;transform:none}}}}
 @keyframes popIn{{0%{{opacity:0;transform:scale(0.88)}}60%{{opacity:1;transform:scale(1.06)}}100%{{opacity:1;transform:scale(1)}}}}
 @keyframes shine{{0%{{left:-120%}}28%{{left:120%}}100%{{left:120%}}}}
+
+/* Readable native controls, including when a visitor chooses Streamlit dark mode. */
+[data-testid="stSidebar"] {{ color-scheme: light; }}
+[data-testid="stSidebar"] :is(p, label, span, h1, h2, h3, h4, small),
+[data-testid="stMain"] [data-testid="stHeading"] :is(h1, h2, h3, h4),
+[data-testid="stMain"] [data-testid="stWidgetLabel"] :is(p, label),
+[data-testid="stMain"] [data-testid="stCaptionContainer"] p {{
+  color: #111111 !important; opacity: 1 !important;
+}}
+[data-testid="stSidebar"] a {{ color: #111111 !important; text-decoration: underline; }}
+[data-testid="stSelectbox"], [data-testid="stMultiSelect"], [data-testid="stTextInput"] {{
+  color: #111111 !important; color-scheme: light;
+}}
+[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div,
+[data-testid="stTextInput"] [data-baseweb="input"],
+[data-testid="stTextInput"] [data-baseweb="base-input"],
+[data-testid="stSelectbox"] button,
+[data-testid="stSelectbox"] div:has(> input[role="combobox"]),
+[data-testid="stSelectbox"] [role="combobox"] {{
+  background: #ffffff !important; color: #111111 !important;
+  border-color: #64748b !important; border-radius: 8px !important;
+}}
+[data-testid="stSelectbox"] [data-baseweb="select"] *,
+[data-testid="stMultiSelect"] [data-baseweb="select"] *,
+[data-testid="stSelectbox"] input,
+[data-testid="stTextInput"] input {{
+  color: #111111 !important; -webkit-text-fill-color: #111111 !important;
+  caret-color: #111111 !important; opacity: 1 !important;
+}}
+[data-testid="stTextInput"] input {{ background: #ffffff !important; }}
+[data-testid="stTextInput"] input::placeholder {{
+  color: #454545 !important; -webkit-text-fill-color: #454545 !important; opacity: 1 !important;
+}}
+[data-testid="stSelectbox"] svg {{ color: #111111 !important; fill: #111111 !important; }}
+[data-baseweb="popover"], [data-baseweb="popover"] [data-baseweb="menu"],
+[role="listbox"], [role="option"] {{
+  background: #ffffff !important; color: #111111 !important; color-scheme: light;
+}}
+[role="option"] *, [data-baseweb="menu"] * {{ color: #111111 !important; }}
+[role="option"][aria-selected="true"], [role="option"][data-highlighted],
+[role="option"]:hover {{ background: #fff0c2 !important; color: #111111 !important; }}
+[data-testid="stSelectbox"]:focus-within,
+[data-testid="stTextInput"]:focus-within {{ outline: 2px solid #1d4ed8; outline-offset: 2px; border-radius: 8px; }}
+
+/* The entire section is one native Streamlit container, with an opaque surface. */
+.st-key-food_shelves_panel {{
+  background: #ffffff !important; color: #111111 !important;
+  border: 1px solid #cbd5e1 !important; border-radius: 18px !important;
+  padding: 24px !important; margin: 18px 0 !important; color-scheme: light;
+  box-shadow: 0 4px 16px rgba(0,0,0,.07);
+}}
+.st-key-food_shelves_panel :is(h1,h2,h3,h4,p,li,span,strong,label,small,caption),
+.st-key-food_shelves_panel [data-testid="stCaptionContainer"] p,
+.st-key-food_shelves_panel [data-testid="stWidgetLabel"] p {{
+  color: #111111 !important; opacity: 1 !important;
+}}
+.st-key-food_shelves_panel [data-testid="stCaptionContainer"] p {{
+  font-size: 14px !important; line-height: 1.6 !important;
+}}
+.st-key-food_shelves_panel [data-testid="stAlert"] {{
+  background: #eef5ff !important; color: #111111 !important; border: 1px solid #bfd3f5;
+}}
+.st-key-food_shelves_panel [data-testid="stLinkButton"] a,
+.st-key-food_shelves_panel [data-testid="stDownloadButton"] button {{
+  background: #fff3d6 !important; color: #111111 !important;
+  border: 1px solid #9b741f !important; border-radius: 8px !important;
+  font-weight: 600 !important;
+}}
+.st-key-food_shelves_panel a {{ color: #111111 !important; }}
+.st-key-food_shelves_panel :is(a,button):focus-visible,
+.shelf-table-scroll:focus-visible {{ outline: 2px solid #1d4ed8; outline-offset: 3px; }}
+.shelf-table-scroll {{
+  width: 100%; max-height: 450px; overflow: auto;
+  border: 1px solid #94a3b8; border-radius: 8px; background: #ffffff;
+}}
+.shelf-table {{ width: 100%; border-collapse: collapse; font-size: 14px; color: #111111; }}
+.shelf-table th, .shelf-table td {{
+  color: #111111 !important; padding: 12px; border-bottom: 1px solid #d8e0e8;
+  text-align: left; vertical-align: top; line-height: 1.5;
+}}
+.shelf-table th {{ background: #f0f4f8 !important; position: sticky; top: 0; z-index: 1; }}
+.shelf-table td {{ background: #ffffff !important; min-width: 105px; }}
+.shelf-table td:first-child {{ min-width: 170px; font-weight: 600; }}
+.shelf-table td:nth-child(3) {{ min-width: 180px; }}
+.shelf-table tr:nth-child(even) td {{ background: #f8fafc !important; }}
+.shelf-table a {{ color: #111111 !important; text-decoration: underline !important; font-weight: 600; }}
+@media (max-width: 640px) {{ .st-key-food_shelves_panel {{ padding: 16px !important; }} }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1402,16 +1506,44 @@ elif st.session_state.page == "dashboard":
 (<a href="https://data.census.gov" target="_blank" style="color:#f59e0b;">US Census 2020</a>)
 and statewide rates.</div>""", unsafe_allow_html=True)
 
-    # MN 2024 Context
+    # Historical context with explicit units and source links.
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📈 MN 2024 Context")
-    st.sidebar.markdown("""<div style="font-size:13px;line-height:1.8;color:#374151;">
-🔺 <b>18.4%</b> avg increase in food shelf visits 2024<br>
-👥 <b>1 in 5</b> MN households food insecure<br>
-🏪 <b>487</b> TEFAP food shelves statewide<br>
-📊 <b>14.3%</b> US food insecurity rate (2023)<br>
-<i style="font-size:11px;color:#9ca3af;">Sources: Feeding America · The Food Group · Second Harvest Heartland</i>
-</div>""", unsafe_allow_html=True)
+    st.sidebar.markdown("### 📈 Food Support Background")
+    st.sidebar.markdown("**2023–2024 · Minnesota and U.S.**")
+    st.sidebar.caption("These background facts stay the same when you select a county.")
+    st.sidebar.markdown(
+        "**Food insecurity** means not always being able to afford enough food. "
+        "A **household** is one person or a group living together and sharing food."
+    )
+    st.sidebar.markdown("""
+**🔺 18.4% average increase in visits**
+
+Across Minnesota counties, food-shelf visits increased by an average of **18.4% from 2023 to 2024**. These are visits: one person visiting several times is counted several times.
+
+[Source: The Food Group](https://www.thefoodgroupmn.org/more-minnesotans-visited-food-shelves-in-2024-than-ever-before-whats-behind-the-numbers/)
+
+**👥 1 in 5 Minnesota households**
+
+About **20 out of every 100 households** experienced difficulty affording enough food, according to the statewide study released in January 2025.
+
+[Source: Second Harvest Heartland](https://www.2harvest.org/sites/default/files/2025-01/1.29.25-shh-2025-hunger-study-summit-press-release_final.pdf)
+
+**🏪 487 food shelves tracked in 2024**
+
+The 2024 report covered **487 food shelves participating in The Emergency Food Assistance Program (TEFAP)**. This is the report's coverage, not a complete count of every food-support location today.
+
+[Source: The Food Group](https://www.thefoodgroupmn.org/more-minnesotans-visited-food-shelves-in-2024-than-ever-before-whats-behind-the-numbers/)
+
+**📊 14.3% of U.S. people in 2023**
+
+Around **14 out of every 100 people** in the U.S. lived in food-insecure households in 2023. This measures people; Minnesota's “1 in 5” figure measures households, so the figures are not directly comparable.
+
+[Source: USDA](https://ers.usda.gov/media/9109/err-337.pdf?v=89305)
+""")
+    st.sidebar.caption(
+        "The 487 sites in the historical report and Carelio's directory listings use different dates "
+        "and inclusion rules. Their difference does not show how many new food shelves opened."
+    )
 
     # Dashboard body
     county_data    = filtered_df[filtered_df[county_col] == selected_county].iloc[0]
@@ -1515,7 +1647,8 @@ and statewide rates.</div>""", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
         # Food-shelf availability is visible in every stakeholder view.
-        render_food_shelves(food_shelves_df, selected_county, food_shelves_error)
+        with st.container(border=True, key="food_shelves_panel"):
+            render_food_shelves(food_shelves_df, selected_county, food_shelves_error)
 
         # All county ranking + CSV download
         st.markdown('<div class="green-box">', unsafe_allow_html=True)
