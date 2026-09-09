@@ -408,79 +408,6 @@ h1,h2,h3,h4,p,div,span,label{font-family:Inter,Segoe UI,Arial,sans-serif}
 st.markdown(CSS, unsafe_allow_html=True)
 st.markdown("""
 <style>
-/* Carelio Community: true phone layout, not a squeezed desktop page */
-@media (max-width:700px){
-  /* Hide only the column that actually contains the Community desktop sidebar. */
-  [data-testid="column"]:has(.carelio-community-sidebar-marker){
-    display:none!important;
-  }
-
-  /* Let the Community main column use the full phone width. */
-  section.main:has(.carelio-community-page-marker) [data-testid="stHorizontalBlock"]{
-    flex-wrap:wrap!important;
-    gap:.45rem!important;
-  }
-  section.main:has(.carelio-community-page-marker) [data-testid="column"]{
-    flex:1 1 100%!important;
-    width:100%!important;
-    min-width:100%!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .block-container{
-    padding:.45rem .55rem 6.4rem!important;
-    max-width:100%!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .page-title{
-    font-size:1.65rem!important;
-    line-height:1.15!important;
-    margin-top:.1rem!important;
-  }
-  section.main:has(.carelio-community-page-marker) .page-sub{
-    font-size:.92rem!important;
-    line-height:1.35!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .stButton>button{
-    width:100%!important;
-    min-height:50px!important;
-    border-radius:14px!important;
-    font-size:.95rem!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stTextInput"] input{
-    min-height:52px!important;
-    border-radius:14px!important;
-    font-size:16px!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .result-card{
-    padding:14px!important;
-    margin:9px 0!important;
-    border-radius:16px!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .action-link{
-    display:block!important;
-    width:100%!important;
-    text-align:center!important;
-    box-sizing:border-box!important;
-    min-height:48px!important;
-    line-height:24px!important;
-    border-radius:14px!important;
-    margin-top:7px!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stImage"] img{
-    height:150px!important;
-    object-fit:contain!important;
-  }
-
-  
-</style>
-""", unsafe_allow_html=True)
-st.markdown("""
-<style>
 /* Responsive Carelio experience: desktop/tablet/phone */
 @media (max-width: 1100px){
   .block-container{padding:.6rem .7rem 5rem!important}
@@ -518,6 +445,156 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
+st.markdown("""
+<style>
+/* ---------------------------------------------------------
+   Carelio phone app experience.
+   IMPORTANT: these rules apply ONLY <=700px.
+   Desktop/tablet retain the approved website format.
+   --------------------------------------------------------- */
+.st-key-carelio_mobile_nav,
+.st-key-carelio_mobile_home_categories{display:none}
+
+@media (max-width:700px){
+  /* Clean app surface instead of the desktop hero background. */
+  html,body,[data-testid="stAppViewContainer"]{
+    background:#111312!important;
+    background-image:none!important;
+  }
+  [data-testid="stAppViewContainer"]::before{display:none!important}
+
+  /* Hide ONLY the Community desktop sidebar column. */
+  [data-testid="column"]:has(.carelio-community-sidebar-marker){
+    display:none!important;
+  }
+
+  .block-container{
+    max-width:100%!important;
+    padding:.45rem .72rem calc(6.4rem + env(safe-area-inset-bottom))!important;
+  }
+
+  /* Prevent squeezed desktop columns. */
+  [data-testid="stHorizontalBlock"]{
+    flex-wrap:wrap!important;
+    gap:.5rem!important;
+  }
+  [data-testid="column"]{
+    min-width:0!important;
+  }
+
+  /* Compact phone header. */
+  .topbar-title{font-size:1rem!important;padding-top:3px!important}
+  .topbar-place{font-size:.72rem!important;padding-top:2px!important;text-align:left!important}
+  .page-title{font-size:1.58rem!important;line-height:1.15!important}
+  .page-sub{font-size:.88rem!important}
+  .profile-wrap{display:none!important}
+
+  /* Phone controls and cards. */
+  [data-testid="stTextInput"] input,
+  [data-testid="stTextArea"] textarea{
+    min-height:50px!important;
+    font-size:16px!important;
+    border-radius:14px!important;
+    background:#212524!important;
+    border-color:#363d3b!important;
+  }
+  [data-testid="stSelectbox"]>div>div,
+  [data-testid="stMultiSelect"]>div>div{
+    min-height:48px!important;
+    border-radius:14px!important;
+    background:#212524!important;
+    border-color:#363d3b!important;
+  }
+  .result-card{
+    background:#202423!important;
+    border:1px solid #303735!important;
+    border-radius:17px!important;
+    box-shadow:none!important;
+    padding:13px!important;
+  }
+  .stButton>button,.action-link{
+    min-height:47px!important;
+    border-radius:14px!important;
+    box-shadow:none!important;
+  }
+
+  /* Hide the large desktop photo-card category grid on phone. */
+  .st-key-carelio_desktop_home_categories{
+    display:none!important;
+  }
+
+  /* Show phone-only compact category buttons. */
+  .st-key-carelio_mobile_home_categories{
+    display:block!important;
+    margin-top:4px!important;
+  }
+  .st-key-carelio_mobile_home_categories .stButton>button{
+    min-height:72px!important;
+    background:#222625!important;
+    border:1px solid #343a38!important;
+    color:#fff!important;
+    border-radius:17px!important;
+    font-size:.78rem!important;
+    line-height:1.3!important;
+    padding:8px 4px!important;
+  }
+
+  /* Fixed DoorDash-style bottom nav using Streamlit buttons.
+     Because these are st.button widgets, navigation does not reload/logout. */
+  .st-key-carelio_mobile_nav{
+    display:block!important;
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    z-index:999999!important;
+    background:rgba(18,20,19,.98)!important;
+    border-top:1px solid #303634!important;
+    box-shadow:0 -8px 24px rgba(0,0,0,.32)!important;
+    padding:7px 7px calc(7px + env(safe-area-inset-bottom))!important;
+  }
+  .st-key-carelio_mobile_nav [data-testid="stHorizontalBlock"]{
+    flex-wrap:nowrap!important;
+    gap:4px!important;
+  }
+  .st-key-carelio_mobile_nav [data-testid="column"]{
+    flex:1 1 25%!important;
+    width:25%!important;
+    min-width:0!important;
+  }
+  .st-key-carelio_mobile_nav .stButton>button{
+    min-height:54px!important;
+    border:none!important;
+    background:transparent!important;
+    color:#f4f7f5!important;
+    box-shadow:none!important;
+    padding:5px 2px!important;
+    font-size:.68rem!important;
+    line-height:1.25!important;
+  }
+  .st-key-carelio_mobile_nav .stButton>button:hover{
+    color:#9cff28!important;
+    background:#252927!important;
+  }
+
+  .daily-note{
+    background:#202423!important;
+    border-color:#303735!important;
+    box-shadow:none!important;
+  }
+}
+
+/* Desktop/tablet remain exactly the website layout. */
+@media (min-width:701px){
+  .st-key-carelio_mobile_nav,
+  .st-key-carelio_mobile_home_categories{
+    display:none!important;
+  }
+}
+</style>
+""",unsafe_allow_html=True)
+
 LOGO_HTML = """
 <div class='brand'>
 <svg viewBox='0 0 64 64'><circle cx='20' cy='14' r='7' fill='#9cff28'/><circle cx='44' cy='14' r='7' fill='#9cff28'/><path d='M32 58C21 50 9 41 9 29c0-8 6-14 14-14 4 0 7 2 9 5 2-3 5-5 9-5 8 0 14 6 14 14 0 12-12 21-23 29z' fill='#9cff28'/><path d='M32 45c-7-5-13-10-13-16 0-4 3-7 7-7 3 0 5 2 6 4 1-2 3-4 6-4 4 0 7 3 7 7 0 6-6 11-13 16z' fill='#07301f'/></svg>
@@ -528,166 +605,6 @@ LOGO_HTML = """
 # ------------------------------------------------------------
 # State
 # ------------------------------------------------------------
-
-
-st.markdown("""
-<style>
-@media (min-width:701px){
-  section.main:has(.carelio-community-page-marker) [data-testid="stRadio"]{
-    display:none!important;
-  }
-}
-
-@media (max-width:700px){
-  body:has(.carelio-community-page-marker) [data-testid="stAppViewContainer"]{
-    background:#111312!important;
-  }
-
-  [data-testid="column"]:has(.carelio-community-sidebar-marker){
-    display:none!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .block-container{
-    padding:.45rem .78rem 6.8rem!important;
-    max-width:100%!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stHorizontalBlock"]{
-    flex-wrap:wrap!important;
-    gap:.55rem!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="column"]{
-    flex:1 1 100%!important;
-    width:100%!important;
-    min-width:100%!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stRadio"]{
-    display:block!important;
-    position:fixed!important;
-    left:0!important;
-    right:0!important;
-    bottom:0!important;
-    z-index:999999!important;
-    margin:0!important;
-    padding:8px 6px calc(8px + env(safe-area-inset-bottom))!important;
-    background:rgba(20,22,21,.98)!important;
-    border-top:1px solid #343a38!important;
-    box-shadow:0 -8px 25px rgba(0,0,0,.35)!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stRadio"] [role="radiogroup"]{
-    display:flex!important;
-    justify-content:space-around!important;
-    gap:4px!important;
-    width:100%!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stRadio"] label{
-    flex:1!important;
-    justify-content:center!important;
-    text-align:center!important;
-    min-height:45px!important;
-    border-radius:12px!important;
-    padding:7px 4px!important;
-    font-size:.72rem!important;
-    font-weight:850!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .page-title{
-    font-size:1.55rem!important;
-    line-height:1.15!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .page-sub{
-    font-size:.88rem!important;
-    line-height:1.35!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .section-title{
-    font-size:1.18rem!important;
-    margin-top:18px!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .photo-card{
-    border-radius:15px!important;
-    background:#202423!important;
-    border:1px solid #303735!important;
-    box-shadow:none!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .photo-card img{
-    display:none!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .photo-card .body{
-    padding:12px 14px!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .stButton>button{
-    width:100%!important;
-    min-height:47px!important;
-    border-radius:14px!important;
-    background:#252927!important;
-    border:1px solid #3a4441!important;
-    color:#fff!important;
-    box-shadow:none!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .stButton>button[kind="primary"]{
-    background:#9cff28!important;
-    color:#111!important;
-    border:none!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stTextInput"] input{
-    min-height:50px!important;
-    font-size:16px!important;
-    border-radius:14px!important;
-    background:#222625!important;
-    border:1px solid #363d3b!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .result-card{
-    background:#202423!important;
-    border:1px solid #303735!important;
-    border-radius:17px!important;
-    padding:14px!important;
-    margin:9px 0!important;
-    box-shadow:none!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .action-link{
-    display:block!important;
-    width:100%!important;
-    text-align:center!important;
-    box-sizing:border-box!important;
-    min-height:46px!important;
-    padding:11px 8px!important;
-    border-radius:14px!important;
-    margin-top:6px!important;
-    background:#282d2b!important;
-    border:1px solid #3b4441!important;
-    color:#fff!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) [data-testid="stImage"] img{
-    max-height:105px!important;
-    object-fit:contain!important;
-  }
-
-  section.main:has(.carelio-community-page-marker) .daily-note{
-    margin-top:8px!important;
-    padding:11px 13px!important;
-    border-radius:14px!important;
-    background:#202423!important;
-    border:1px solid #303735!important;
-    box-shadow:none!important;
-  }
-}
-</style>
-""",unsafe_allow_html=True)
 
 LANGUAGES = {
     "English":"en","Español":"es","Français":"fr","Türkçe":"tr","Deutsch":"de",
@@ -856,46 +773,25 @@ def community_sidebar():
         logout()
     st.markdown("<div style='color:#9cff28;font-weight:800;margin-top:18px'>People · Communities</div><div style='color:#a9c0bd;font-size:.8rem'>Stronger Together</div>",unsafe_allow_html=True)
 
-
-def community_mobile_nav_change():
-    choice=st.session_state.get("community_mobile_nav")
-    if choice=="Home":
-        st.session_state.page="home"
-    elif choice=="Support":
-        st.session_state.page="support_hub"
-    elif choice=="My Support":
-        st.session_state.page="my_support"
-    elif choice=="Profile":
-        st.session_state.page="profile"
+def mobile_community_nav():
+    """Phone-only app navigation. Uses Streamlit buttons so login/session is preserved."""
+    with st.container(key="carelio_mobile_nav"):
+        c1,c2,c3,c4=st.columns(4)
+        with c1:
+            if st.button("⌂\nHome",key="mnav_home"):
+                goto("home")
+        with c2:
+            if st.button("⌕\nSupport",key="mnav_support"):
+                goto("support_hub")
+        with c3:
+            if st.button("♡\nMy Support",key="mnav_support_saved"):
+                goto("my_support")
+        with c4:
+            if st.button("◉\nProfile",key="mnav_profile"):
+                goto("profile")
 
 def community_topbar(title=None):
-    """Original Carelio desktop topbar plus session-safe phone navigation."""
-    st.markdown("<span class='carelio-community-page-marker'></span>",unsafe_allow_html=True)
-
-    page=st.session_state.get("page","home")
-    if page=="home":
-        mobile_default="Home"
-    elif page=="my_support":
-        mobile_default="My Support"
-    elif page=="profile":
-        mobile_default="Profile"
-    else:
-        mobile_default="Support"
-
-    if "community_mobile_nav" not in st.session_state:
-        st.session_state.community_mobile_nav=mobile_default
-    elif st.session_state.community_mobile_nav!=mobile_default:
-        st.session_state.community_mobile_nav=mobile_default
-
-    st.radio(
-        "Carelio phone navigation",
-        ["Home","Support","My Support","Profile"],
-        horizontal=True,
-        key="community_mobile_nav",
-        on_change=community_mobile_nav_change,
-        label_visibility="collapsed"
-    )
-
+    """Top bar kept visually identical to the approved Carelio layout."""
     u=st.session_state.community or {}
     c1,c2,c3=st.columns([3.3,1.4,.55])
     with c1:
@@ -913,6 +809,7 @@ def community_topbar(title=None):
     with c3:
         if st.button("↪",key="top_signout",help=tr("Sign out")):
             logout()
+    mobile_community_nav()
 
 def render_daily_note():
     notes=[
@@ -1058,39 +955,66 @@ def render_otp():
 def render_home():
     u=st.session_state.community
     left,main=st.columns([.15,.85],gap="large")
-    with left: community_sidebar()
+    with left:
+        community_sidebar()
     with main:
         community_topbar('Home')
         top1,top2,top3=st.columns([1.05,.9,.25])
         with top1:
             st.markdown("<div class='page-title'>Hello, "+esc(u["name"])+" 👋</div><div class='page-sub'>How can we support you today?</div>",unsafe_allow_html=True)
-        with top2: render_daily_note()
-        with top3: st.markdown(profile_html(u),unsafe_allow_html=True)
+        with top2:
+            render_daily_note()
+        with top3:
+            st.markdown(profile_html(u),unsafe_allow_html=True)
 
         s1,s2,s3=st.columns([3.8,1.1,1.5])
-        with s1: query=st.text_input("Search",placeholder="Search for food, health, clothing ...",label_visibility="collapsed")
+        with s1:
+            query=st.text_input("Search",placeholder="Search for food, health, clothing ...",label_visibility="collapsed")
         with s2:
             if st.button("Search",type="primary",key="homesearch"):
                 term=query.lower()
                 mapping=[("food","Food"),("health","Health"),("medical","Health"),("foot","Health"),("baby","Baby & Family"),("diaper","Baby & Family"),("cloth","Clothing"),("shoe","Clothing"),("hygiene","Hygiene"),("soap","Hygiene"),("housing","Community Services"),("transport","Community Services"),("counsel","Community Services")]
                 for k,c in mapping:
                     if k in term:
-                        st.session_state.category=c; st.session_state.selected=[]; st.session_state.food_group=None; goto("category")
+                        st.session_state.category=c
+                        st.session_state.selected=[]
+                        st.session_state.food_group=None
+                        goto("category")
                 st.info("Choose a category below.")
         with s3:
             if st.button("📍 Use my location"):
-                st.info("Allow browser location when deployed, or enter ZIP/city in the category search.")
+                st.info("Enter ZIP, street/city, or county in the support category page.")
 
-        st.markdown("<div class='section-title'>Need Support?</div><div class='section-sub'>Browse categories to find free and low-cost resources in your community.</div>",unsafe_allow_html=True)
-        cats=[
-          ("Food","Groceries & Meals"),("Health","Medical, Dental, Vision"),
-          ("Baby & Family","Diapers, Formula, Parenting Support"),("Clothing","Shirts, Pants, Shoes & More"),
-          ("Hygiene","Personal Care Items"),("Community Services","Housing, Transportation, Counseling")
-        ]
-        cols=st.columns(6)
-        for i,(c,sub) in enumerate(cats):
-            with cols[i]: category_card(c,sub)
+        # PHONE-ONLY compact app-style categories.
+        with st.container(key="carelio_mobile_home_categories"):
+            st.markdown("<div class='section-title'>Support near you</div>",unsafe_allow_html=True)
+            mobile_cats=[
+                ("🛒","Food"),("⚕","Health"),("◉","Baby & Family"),
+                ("♧","Clothing"),("✦","Hygiene"),("⌂","Community Services")
+            ]
+            for row_start in (0,3):
+                cols=st.columns(3)
+                for j in range(3):
+                    icon,cat=mobile_cats[row_start+j]
+                    with cols[j]:
+                        if st.button(icon+"\\n"+cat,key="mobile_cat_"+re.sub(r"\\W+","_",cat)):
+                            st.session_state.category=cat
+                            st.session_state.selected=[]
+                            st.session_state.food_group=None
+                            goto("category")
 
+        # DESKTOP/TABLET: preserve the approved original category-card design.
+        with st.container(key="carelio_desktop_home_categories"):
+            st.markdown("<div class='section-title'>Need Support?</div><div class='section-sub'>Browse categories to find free and low-cost resources in your community.</div>",unsafe_allow_html=True)
+            cats=[
+              ("Food","Groceries & Meals"),("Health","Medical, Dental, Vision"),
+              ("Baby & Family","Diapers, Formula, Parenting Support"),("Clothing","Shirts, Pants, Shoes & More"),
+              ("Hygiene","Personal Care Items"),("Community Services","Housing, Transportation, Counseling")
+            ]
+            cols=st.columns(6)
+            for i,(c,sub) in enumerate(cats):
+                with cols[i]:
+                    category_card(c,sub)
 
 def render_support_hub():
     u=st.session_state.community
@@ -1099,25 +1023,26 @@ def render_support_hub():
         community_sidebar()
     with main:
         community_topbar("Support")
-        st.markdown("<div class='page-title'>Find Support Near You</div>",unsafe_allow_html=True)
-        st.markdown("<div class='page-sub'>Choose a support category. Carelio will ask for your ZIP or location first, then show nearby resources. You can refine by a specific item or service afterward.</div>",unsafe_allow_html=True)
+        st.markdown("<div class='page-title'>Find Support</div><div class='page-sub'>Choose a category to see locations first, then refine by ZIP, street/city, county, or a specific need.</div>",unsafe_allow_html=True)
         cats=[
-          ("Food","Free food shelves, groceries & meals"),
-          ("Health","Medical, dental, vision & foot care"),
-          ("Baby & Family","Diapers, formula & family support"),
-          ("Clothing","Clothing, shoes & winter items"),
-          ("Hygiene","Personal care & hygiene supplies"),
-          ("Community Services","Housing, transportation & counseling")
+            ("🛒","Food","Food shelves, groceries & meals"),
+            ("⚕","Health","Medical, dental, vision & foot care"),
+            ("◉","Baby & Family","Diapers, formula & family support"),
+            ("♧","Clothing","Clothing, shoes & winter essentials"),
+            ("✦","Hygiene","Personal care & hygiene supplies"),
+            ("⌂","Community Services","Housing, transportation & counseling"),
         ]
-        cols=st.columns(2)
-        for i,(cat,sub) in enumerate(cats):
-            with cols[i%2]:
-                st.markdown("<div class='result-card'><div class='result-title'>"+esc(cat)+"</div><div class='result-meta'>"+esc(sub)+"</div></div>",unsafe_allow_html=True)
-                if st.button("Find "+cat,key="supporthub_"+re.sub(r"\\W+","_",cat)):
-                    st.session_state.category=cat
-                    st.session_state.selected=[]
-                    st.session_state.food_group=None
-                    goto("category")
+        for row_start in (0,3):
+            cols=st.columns(3)
+            for j in range(3):
+                icon,cat,desc=cats[row_start+j]
+                with cols[j]:
+                    st.markdown("<div class='result-card'><div class='result-title'>"+icon+" "+esc(cat)+"</div><div class='result-meta'>"+esc(desc)+"</div></div>",unsafe_allow_html=True)
+                    if st.button("Open "+cat,key="supporthub_"+re.sub(r"\\W+","_",cat)):
+                        st.session_state.category=cat
+                        st.session_state.selected=[]
+                        st.session_state.food_group=None
+                        goto("category")
 
 # ------------------------------------------------------------
 # Category pages
@@ -1128,85 +1053,102 @@ def render_category():
     left,main=st.columns([.15,.85],gap="large")
     with left:
         community_sidebar()
-
     with main:
-        community_topbar("Support")
+        community_topbar('Support')
 
-        if cat=="Food":
-            title="Free Food Support"
-            subtitle="See food shelves and free food-support locations first. Narrow the list by street, city, county or ZIP, then optionally choose Dairy, Rice & Grains, Fresh Produce, Pantry Groceries or Prepared Meals."
-        else:
-            title=cat+" Support"
-            subtitle="See available "+cat.lower()+" resources first. Narrow by street, city, county or ZIP, then optionally choose the specific service or item you need."
+        t1,t2=st.columns([1,.25])
+        with t1:
+            if cat=="Food":
+                subtitle="Free food shelves and food-support locations"
+            else:
+                subtitle="Nearby "+cat.lower()+" support locations"
+            st.markdown("<div class='page-title'>"+esc(cat)+"</div><div class='page-sub'>"+esc(subtitle)+"</div>",unsafe_allow_html=True)
+        with t2:
+            st.markdown(profile_html(u),unsafe_allow_html=True)
 
-        st.markdown("<div class='page-title'>"+esc(title)+"</div>",unsafe_allow_html=True)
-        st.markdown("<div class='page-sub'>"+esc(subtitle)+"</div>",unsafe_allow_html=True)
+        # Location filters first. Blank means show all known locations.
+        st.markdown("<div class='section-title'>Find locations</div><div class='section-sub'>See all known locations now, or narrow them by ZIP, street/city, or county.</div>",unsafe_allow_html=True)
 
-        st.markdown("<div class='section-title'>Find a location</div>",unsafe_allow_html=True)
-        q1,q2=st.columns([2.5,1.2])
-        with q1:
-            q=st.text_input(
-                "Street, city or county",
-                placeholder="Street, city or county — e.g. St. Paul or Ramsey",
-                label_visibility="collapsed",
-                key="locq_"+cat
-            )
-        with q2:
+        mode=st.selectbox(
+            "Location filter",
+            ["All locations","ZIP code","Street / City","County"],
+            label_visibility="collapsed",
+            key="location_mode_"+cat
+        )
+
+        q=""
+        zipc=""
+        if mode=="ZIP code":
             zipc=st.text_input(
                 "ZIP",
-                placeholder="ZIP code — e.g. 55105",
+                placeholder="Enter ZIP code, e.g. 55105",
                 label_visibility="collapsed",
                 key="zip_"+cat
             )
+        elif mode=="Street / City":
+            q=st.text_input(
+                "Street / City",
+                placeholder="Enter street or city, e.g. St. Paul",
+                label_visibility="collapsed",
+                key="locq_city_"+cat
+            )
+        elif mode=="County":
+            q=st.text_input(
+                "County",
+                placeholder="Enter county, e.g. Ramsey",
+                label_visibility="collapsed",
+                key="locq_county_"+cat
+            )
 
-        st.markdown("<div class='section-title'>Refine your need <span style='font-size:.8rem;color:#9fb2af'>(optional)</span></div>",unsafe_allow_html=True)
-
-        if cat=="Food":
-            groups=list(FOOD_GROUPS)
-            gcols=st.columns(5)
-            for i,g in enumerate(groups):
-                with gcols[i]:
-                    label=("✓ " if st.session_state.food_group==g else "")+g
-                    if st.button(label,key="fg"+str(i)):
-                        if st.session_state.food_group==g:
-                            st.session_state.food_group=None
-                            st.session_state.selected=[]
-                        else:
-                            st.session_state.food_group=g
-                            st.session_state.selected=[]
-                        st.rerun()
-
-            if st.session_state.food_group:
-                st.markdown("<div class='section-sub'>"+esc(st.session_state.food_group)+"</div>",unsafe_allow_html=True)
-                items=FOOD_GROUPS[st.session_state.food_group]
-                cols=st.columns(5)
-                for i,item in enumerate(items):
-                    with cols[i%len(cols)]:
-                        item_card(cat,item,"item_"+re.sub(r"\W+","_",cat+"_"+item))
-        else:
-            with st.expander("Choose a specific "+cat+" need",expanded=False):
-                items=SUPPORT_ITEMS[cat]
-                cols=st.columns(4)
-                for i,item in enumerate(items):
-                    with cols[i%len(cols)]:
-                        item_card(cat,item,"item_"+re.sub(r"\W+","_",cat+"_"+item))
-
-        st.markdown("<div class='section-title'>Locations</div>",unsafe_allow_html=True)
-
-        if zipc:
-            st.caption("Exact ZIP matches are shown first. If Carelio has no exact ZIP match, it stays inside the known county instead of showing unrelated counties.")
-        elif q:
-            st.caption("Showing locations matching the street, city, county or organization text you entered.")
-        else:
-            st.caption("Showing reviewed public resources and verified Carelio partner locations already available in Carelio.")
-
-        # Show results even before the user enters a filter.
+        # Show locations immediately — BEFORE requiring Dairy/Milk/etc.
         render_location_results(cat,st.session_state.selected,q,zipc)
 
-        if q or zipc or st.session_state.selected:
-            if st.button("Save this search",key="save_search_"+re.sub(r"\W+","_",cat)):
-                save_search(cat,st.session_state.selected,q,zipc)
-                st.success("Search saved.")
+        # Optional refinement comes AFTER the location list.
+        st.markdown("<div class='section-title'>Refine by need <span style='font-size:.82rem;color:#9fb2af;font-weight:600'>(optional)</span></div>",unsafe_allow_html=True)
+
+        if cat=="Food":
+            groups=["All Food"]+list(FOOD_GROUPS.keys())
+            group=st.selectbox(
+                "Food group",
+                groups,
+                label_visibility="collapsed",
+                key="food_group_select_"+cat
+            )
+            if group=="All Food":
+                if st.session_state.food_group is not None or st.session_state.selected:
+                    st.session_state.food_group=None
+                    st.session_state.selected=[]
+            else:
+                st.session_state.food_group=group
+                chosen=st.multiselect(
+                    "Specific food items",
+                    FOOD_GROUPS[group],
+                    default=[x for x in st.session_state.selected if x in FOOD_GROUPS[group]],
+                    placeholder="Optional: Milk, Eggs, Rice...",
+                    key="food_items_select_"+group
+                )
+                st.session_state.selected=list(chosen)
+        else:
+            chosen=st.multiselect(
+                "Specific service or item",
+                SUPPORT_ITEMS.get(cat,[]),
+                default=[x for x in st.session_state.selected if x in SUPPORT_ITEMS.get(cat,[])],
+                placeholder="Optional: choose a specific need",
+                key="support_items_"+re.sub(r"\\W+","_",cat)
+            )
+            st.session_state.selected=list(chosen)
+
+        if st.session_state.selected:
+            st.markdown(
+                "<div class='daily-note'><div class='eyebrow'>FILTERING FOR ("+
+                str(len(st.session_state.selected))+
+                ")</div><div class='note'>"+
+                " ".join("<span class='chip'>"+esc(x)+"</span>" for x in st.session_state.selected)+
+                "</div></div>",
+                unsafe_allow_html=True
+            )
+            st.markdown("<div class='section-title'>Updated matches</div>",unsafe_allow_html=True)
+            render_location_results(cat,st.session_state.selected,q,zipc)
 
 def access(label,value):
     value=(value or "").strip()
@@ -1265,7 +1207,8 @@ def real_public_name(r):
     return "Reviewed Public Resource"
 
 def render_public_result(r,idx):
-    st.markdown("<div class='result-card'><span class='badge-public'>"+esc(r.get("status","Reviewed Public Resource"))+"</span><div class='result-title'>"+esc(real_public_name(r))+"</div><div class='result-meta'>"+esc(r.get("address",""))+"<br>"+esc(r.get("city",""))+(" , " if r.get("city") else "")+esc(r.get("state",""))+" "+esc(r.get("zip",""))+((" · "+esc(r.get("county",""))+" County") if r.get("county") else "")+"<br>"+esc(r.get("hours",""))+"<br>"+(("Phone: "+esc(r.get("phone",""))+"<br>") if r.get("phone") else "")+access("Walk-in",r.get("walk_in"))+"<br>"+access("Appointment",r.get("appointment"))+"<br>"+access("ID required",r.get("id_required"))+"<br>"+access("Eligibility",r.get("eligibility"))+"</div><div class='result-meta' style='margin-top:7px'><b>Availability:</b> not live-confirmed · <b>Source:</b> "+esc(r.get("source",""))+"</div></div>",unsafe_allow_html=True)
+    proximity=(("<span class='chip' style='margin-left:6px'>"+esc(r.get("_proximity",""))+"</span>") if r.get("_proximity") else "")
+    st.markdown("<div class='result-card'><span class='badge-public'>"+esc(r.get("status","Reviewed Public Resource"))+"</span>"+proximity+"<div class='result-title'>"+esc(real_public_name(r))+"</div><div class='result-meta'>"+esc(r.get("address",""))+"<br>"+esc(r.get("city",""))+(" , " if r.get("city") else "")+esc(r.get("state",""))+" "+esc(r.get("zip",""))+((" · "+esc(r.get("county",""))+" County") if r.get("county") else "")+"<br>"+esc(r.get("hours",""))+"<br>"+(("Phone: "+esc(r.get("phone",""))+"<br>") if r.get("phone") else "")+access("Walk-in",r.get("walk_in"))+"<br>"+access("Appointment",r.get("appointment"))+"<br>"+access("ID required",r.get("id_required"))+"<br>"+access("Eligibility",r.get("eligibility"))+"</div><div class='result-meta' style='margin-top:7px'><b>Availability:</b> not live-confirmed · <b>Source:</b> "+esc(r.get("source",""))+"</div></div>",unsafe_allow_html=True)
     c1,c2,c3=st.columns(3)
     with c1:
         if st.button("View Details",key="pub_detail_"+str(idx)): set_location_detail(r,"public")
@@ -1282,7 +1225,8 @@ def render_public_result(r,idx):
 def render_partner_result(l,matched,idx):
     st.markdown(
         "<div class='result-card'><span class='badge-live'>LIVE · Verified Carelio Partner</span>"
-        "<div class='result-title'>"+esc(l.get("org_name",""))+" · "+esc(l.get("name",""))+"</div>"
+        +(("<span class='chip' style='margin-left:6px'>"+esc(l.get("_proximity",""))+"</span>") if l.get("_proximity") else "")
+        +"<div class='result-title'>"+esc(l.get("org_name",""))+" · "+esc(l.get("name",""))+"</div>"
         "<div class='result-meta'>"+esc(l.get("address",""))+"<br>"+esc(l.get("city",""))+", "
         +esc(l.get("state",""))+" "+esc(l.get("zip",""))
         +(("</br>" if False else "")+(" · "+esc(l.get("county",""))+" County") if l.get("county") else "")
@@ -1389,7 +1333,7 @@ def render_location_results(category, selected, q, zipc):
 
     # Build category/item candidates.
     if category=="Food":
-        candidates=[r for r in PUBLIC_FOOD if isinstance(r,dict)]
+        candidates=[dict(r) for r in PUBLIC_FOOD if isinstance(r,dict)]
     else:
         selected_set=set(selected or [])
         exact=[]
@@ -1399,34 +1343,33 @@ def render_location_results(category, selected, q, zipc):
                 continue
             items=set(r.get("items",[]))
             if not selected_set or (selected_set & items):
-                exact.append(r)
+                exact.append(dict(r))
             else:
-                broad.append(r)
+                broad.append(dict(r))
         candidates=exact if exact else broad
         if broad and not exact and selected_set:
             st.caption("No reviewed public source confirms the exact selected item yet. Showing relevant "+category+" resources in your area; call before visiting to confirm the item/service.")
 
     # Geography filter.
+    # Exact ZIP first. If no exact ZIP exists, stay in the resolved county.
+    # We do not invent mileage from ZIP numbers; true travel distance is shown by Google Maps Directions.
     if z:
-        exact_zip=[r for r in candidates if str(r.get("zip","")).strip()==z]
+        exact_zip=[dict(r) for r in candidates if str(r.get("zip","")).strip()==z]
         if exact_zip:
+            for r in exact_zip:
+                r["_proximity"]="Same ZIP"
             candidates=exact_zip
             st.caption("Showing resources in ZIP "+z+".")
         elif zip_county:
             same_county=[
-                r for r in candidates
+                dict(r) for r in candidates
                 if str(r.get("county","")).strip().lower()==zip_county.lower()
             ]
-            def _zip_distance(rec):
-                rz=str(rec.get("zip","")).strip()
-                try:
-                    return abs(int(rz)-int(z))
-                except Exception:
-                    return 999999
-            candidates=sorted(same_county,key=lambda r:(_zip_distance(r),str(r.get("city","")),str(r.get("name",""))))
-            st.caption("No exact ZIP "+z+" match is currently listed. Showing nearby reviewed resources in "+zip_county+" County, with the closest ZIP codes first.")
+            for r in same_county:
+                r["_proximity"]="Nearby · "+zip_county+" County"
+            candidates=same_county
+            st.caption("No exact ZIP "+z+" location is listed. Showing resources in "+zip_county+" County only. Use Directions for the exact route and travel distance.")
         else:
-            # Safer than showing every county in Minnesota.
             candidates=[]
             st.caption("No exact reviewed resource is currently mapped to ZIP "+z+". Carelio will not show unrelated counties.")
     elif qlow:
@@ -1434,15 +1377,19 @@ def render_location_results(category, selected, q, zipc):
         for r in candidates:
             hay=" ".join(str(r.get(k,"")) for k in ["name","city","county","address","zip"]).lower()
             if qlow in hay:
-                filtered.append(r)
+                rr=dict(r)
+                rr["_proximity"]="Location match"
+                filtered.append(rr)
         candidates=filtered
+    else:
+        for r in candidates:
+            r["_proximity"]=""
 
-    # Sort alphabetically only when ZIP-specific proximity ordering was not already applied.
-    if not z:
-        candidates=sorted(
-            candidates,
-            key=lambda r:(str(r.get("city","")),str(r.get("name","")))
-        )
+    # Sort only within the already-filtered geography.
+    candidates=sorted(
+        candidates,
+        key=lambda r:(str(r.get("city","")),str(r.get("name","")))
+    )
 
     public_for_map=list(candidates[:20])
     shown=0
@@ -1459,21 +1406,18 @@ def render_location_results(category, selected, q, zipc):
                    AND COALESCE(o.is_test,0)=0""")
 
     if z:
-        exact_partner=[l for l in locs if str(l.get("zip","")).strip()==z]
+        exact_partner=[dict(l) for l in locs if str(l.get("zip","")).strip()==z]
         if exact_partner:
+            for l in exact_partner:
+                l["_proximity"]="Same ZIP"
             locs=exact_partner
         elif zip_county:
             locs=[
-                l for l in locs
+                dict(l) for l in locs
                 if str(l.get("county","")).strip().lower()==zip_county.lower()
             ]
-            def _partner_zip_distance(rec):
-                rz=str(rec.get("zip","")).strip()
-                try:
-                    return abs(int(rz)-int(z))
-                except Exception:
-                    return 999999
-            locs=sorted(locs,key=lambda r:(_partner_zip_distance(r),str(r.get("city","")),str(r.get("org_name",""))))
+            for l in locs:
+                l["_proximity"]="Nearby · "+zip_county+" County"
         else:
             locs=[]
     elif qlow:
