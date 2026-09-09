@@ -662,7 +662,7 @@ def category_card(category, subtitle):
         goto("category")
 
 def item_card(category,item,key):
-    st.image(photo_for_item(category,item),use_column_width=True)
+    st.image(photo_for_item(category,item))
     checked=st.checkbox(item,value=item in set(st.session_state.selected),key=key)
     current=set(st.session_state.selected)
     if checked:
@@ -1438,7 +1438,7 @@ def event_img(e):
     return photo_for_category(cat if cat in ASSETS["category"] else "Community Services")
 
 def render_event_card(e,key,compact=False):
-    st.image(event_img(e),use_column_width=True)
+    st.image(event_img(e))
     badge_class="badge-live" if e.get("badge")=="Verified Carelio Partner" else "badge-public"
     st.markdown("<div class='result-card'><span class='"+badge_class+"'>"+esc(e.get("badge",""))+"</span><div class='result-title'>"+esc(e.get("title",""))+
                 "</div><div class='result-meta'>"+esc(e.get("source_name") or e.get("location_name") or "")+"<br>"+esc(e.get("location_name",""))+
