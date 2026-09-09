@@ -433,7 +433,72 @@ def load_public_food_rows():
           "status":"Reviewed Public Resource"
         })
     return out
+
+# Official, street-level food-support records used by the Community Food page.
+# These are real organizations/meal sites with addresses published by their
+# official providers.  County analytics are NEVER converted into location cards.
+OFFICIAL_FOOD_RESOURCES=[
+ {"category":"Food","food_groups":["Dairy","Rice & Grains","Fresh Produce","Pantry Groceries"],
+  "items":["Fresh Vegetables","Fresh Fruit","Seasonal Produce","Pantry Groceries"],
+  "name":"Neighborhood House — Wellstone Center Food Market","address":"179 Robie St E","city":"St. Paul","county":"Ramsey","state":"MN","zip":"55107",
+  "phone":"651-789-3630","hours":"Food Market: appointment only; call for current shopping hours. Seasonal fresh-produce distributions run on published dates.",
+  "walk_in":"Seasonal fresh-produce distributions are open to the public; Food Market shopping is by appointment",
+  "appointment":"Required for Food Market shopping","id_required":"No ID required for seasonal fresh-produce distributions",
+  "eligibility":"Food support is available through Neighborhood House; check the official page for the current program process",
+  "source":"Neighborhood House — official Food Support page","source_url":"https://neighborhoodhousemn.org/programs/food-support/",
+  "status":"Reviewed Public Resource","last_reviewed":"2026-09-09","weekly_windows":{}},
+ {"category":"Food","food_groups":["Dairy","Rice & Grains","Fresh Produce","Pantry Groceries"],
+  "items":["Fresh Vegetables","Fresh Fruit","Seasonal Produce","Pantry Groceries"],
+  "name":"Neighborhood House on Montreal — Food Market","address":"1080 Montreal Ave","city":"St. Paul","county":"Ramsey","state":"MN","zip":"55116",
+  "phone":"651-789-3602","hours":"Call or check the official Food Support page for current Food Market shopping hours and seasonal produce dates.",
+  "walk_in":"Seasonal fresh-produce distributions are open to the public; check current Food Market access before visiting",
+  "appointment":"Check current Food Market shopping process","id_required":"No ID required for seasonal fresh-produce distributions",
+  "eligibility":"Food support is available through Neighborhood House; check the official page for the current program process",
+  "source":"Neighborhood House — official Food Support page","source_url":"https://neighborhoodhousemn.org/programs/food-support/",
+  "status":"Reviewed Public Resource","last_reviewed":"2026-09-09","weekly_windows":{}},
+ {"category":"Food","food_groups":["Hot / Prepared Meals"],"items":["Lunch Meal","Hot Meal","Prepared Meal"],
+  "name":"ICCM Life Center — Loaves & Fishes","address":"1812 Park Ave S","city":"Minneapolis","county":"Hennepin","state":"MN","zip":"55404",
+  "phone":"612-377-9810","hours":"Tuesday–Friday · 1:00 PM–3:00 PM","walk_in":"In-person meal service",
+  "appointment":"Not required","id_required":"No ID required","eligibility":"Free community meal; open to people who need a meal",
+  "source":"Loaves & Fishes — official meal location","source_url":"https://www.loavesandfishesmn.org/meal-locations/iccm-life-center/",
+  "status":"Reviewed Public Resource","last_reviewed":"2026-09-09",
+  "weekly_windows":{"tue":[[13,15]],"wed":[[13,15]],"thu":[[13,15]],"fri":[[13,15]]}},
+ {"category":"Food","food_groups":["Hot / Prepared Meals"],"items":["Lunch Meal","Hot Meal","Prepared Meal"],
+  "name":"Salvation Army Temple Corps — Loaves & Fishes","address":"1604 E Lake St","city":"Minneapolis","county":"Hennepin","state":"MN","zip":"55407",
+  "phone":"612-377-9810","hours":"Monday–Wednesday · 12:00 PM–1:00 PM","walk_in":"To-go meals served from the Lake Street side",
+  "appointment":"Not required","id_required":"No ID required","eligibility":"Free community meal; open to people who need a meal",
+  "source":"Loaves & Fishes — official meal location","source_url":"https://www.loavesandfishesmn.org/meal-locations/salvation-army-temple-corps/",
+  "status":"Reviewed Public Resource","last_reviewed":"2026-09-09",
+  "weekly_windows":{"mon":[[12,13]],"tue":[[12,13]],"wed":[[12,13]]}},
+ {"category":"Food","food_groups":["Hot / Prepared Meals"],"items":["Dinner Meal","Hot Meal","Prepared Meal"],
+  "name":"Prospect Park United Methodist Church — Loaves & Fishes","address":"22 Orlin Ave SE","city":"Minneapolis","county":"Hennepin","state":"MN","zip":"55414",
+  "phone":"612-377-9810","hours":"3rd Wednesday of the month · 5:30 PM–6:30 PM","walk_in":"In-person community meal",
+  "appointment":"Not required","id_required":"No ID required","eligibility":"Free community meal; open to people who need a meal",
+  "source":"Loaves & Fishes — official meal location","source_url":"https://www.loavesandfishesmn.org/propsect-park-united-methodist-church/",
+  "status":"Reviewed Public Resource","last_reviewed":"2026-09-09","weekly_windows":{}},
+ {"category":"Food","food_groups":["Hot / Prepared Meals"],"items":["Dinner Meal","Hot Meal","Prepared Meal"],
+  "name":"St. Matthew’s Catholic Church — Loaves & Fishes","address":"510 Hall Ave","city":"St. Paul","county":"Ramsey","state":"MN","zip":"55107",
+  "phone":"612-377-9810","hours":"Monday–Friday · 5:00 PM–6:00 PM","walk_in":"Dining-in and to-go community meal",
+  "appointment":"Not required","id_required":"No ID required","eligibility":"Free community meal; open to people who need a meal",
+  "source":"Loaves & Fishes — official meal location","source_url":"https://www.loavesandfishesmn.org/meal-locations/st-matthews-catholic-church/",
+  "status":"Reviewed Public Resource","last_reviewed":"2026-09-09",
+  "weekly_windows":{"mon":[[17,18]],"tue":[[17,18]],"wed":[[17,18]],"thu":[[17,18]],"fri":[[17,18]]}},
+ {"category":"Food","food_groups":["Pantry Groceries"],"items":["Pantry Groceries"],
+  "name":"Proverbs Christian Fellowship Church — Loaves & Fishes","address":"3210 N Oliver Ave","city":"Minneapolis","county":"Hennepin","state":"MN","zip":"55412",
+  "phone":"612-377-9810","hours":"2nd & 4th Saturday of the month · 1:00 PM–3:00 PM","walk_in":"Grocery distribution",
+  "appointment":"Not required","id_required":"No ID required","eligibility":"Free grocery distribution",
+  "source":"Loaves & Fishes — official community meal directory","source_url":"https://www.loavesandfishesmn.org/find-a-community-meal-list/",
+  "status":"Reviewed Public Resource","last_reviewed":"2026-09-09","weekend":True,"weekly_windows":{}}
+]
+
+# Merge any dedicated user-provided food-location CSV with the reviewed official
+# starter records.  Do not use county-level mn_food_access_data.csv here.
 PUBLIC_FOOD=load_public_food_rows()
+_seen_food={(str(r.get("name","")).lower(),str(r.get("address","")).lower()) for r in PUBLIC_FOOD}
+for _r in OFFICIAL_FOOD_RESOURCES:
+    _key=(str(_r.get("name","")).lower(),str(_r.get("address","")).lower())
+    if _key not in _seen_food:
+        PUBLIC_FOOD.append(dict(_r)); _seen_food.add(_key)
 
 # ------------------------------------------------------------
 # CSS
@@ -739,6 +804,7 @@ st.markdown("""
 defaults={
  "auth":None,"community":None,"staff":None,"org":None,"admin":None,"language":"en",
  "page":"landing","category":None,"food_group":None,"selected":[],
+ "food_active_filters":[],"food_search_text":"","food_near_me":False,
  "event_filter":"Today","profile_edit":False
 }
 for k,v in defaults.items():
@@ -1064,10 +1130,101 @@ def render_category():
     with main:
         community_topbar(cat)
         icon={"Food":"🛒","Health":"⚕","Baby & Family":"◉","Clothing":"♧","Hygiene":"✦","Community Services":"⌂"}.get(cat,"⌕")
-        subtitle="Free food shelves and food-support locations" if cat=="Food" else "Reviewed public and verified Carelio "+cat.lower()+" resources"
+        subtitle="Free food shelves, groceries and community meals" if cat=="Food" else "Reviewed public and verified Carelio "+cat.lower()+" resources"
         st.markdown("<div class='carelio-category-head'><span>"+icon+"</span><div><b>"+esc(cat)+"</b><small>"+esc(subtitle)+"</small></div></div>",
                     unsafe_allow_html=True)
 
+        # FOOD follows the Community flow we designed: locations appear immediately;
+        # item/location controls only narrow and re-rank them.
+        if cat=="Food":
+            st.markdown("<div class='carelio-results-title' style='margin-top:8px'>What do you need today?</div>",unsafe_allow_html=True)
+            st.caption("Optional — choose a food group or specific items. Carelio prioritizes places that can cover more of your needs in one trip.")
+
+            group_names=list(FOOD_GROUPS.keys())
+            gcols=st.columns(len(group_names))
+            for i,g in enumerate(group_names):
+                with gcols[i]:
+                    active=st.session_state.get("food_group")==g
+                    if st.button(("✓ " if active else "")+g,key="food_group_btn_"+str(i),use_container_width=True):
+                        st.session_state.food_group=None if active else g
+                        st.session_state.selected=[]
+                        st.rerun()
+
+            selected=[]
+            group=st.session_state.get("food_group")
+            if group:
+                selected=st.multiselect(
+                    "Specific items",
+                    FOOD_GROUPS[group],
+                    default=[x for x in st.session_state.get("selected",[]) if x in FOOD_GROUPS[group]],
+                    placeholder="Optional: choose one or more items",
+                    key="food_items_app_v2"
+                )
+            st.session_state.selected=list(selected)
+
+            st.markdown("<div class='carelio-results-title' style='margin-top:18px'>Find food support near you</div>",unsafe_allow_html=True)
+            search=st.text_input(
+                "Search Carelio Connect",
+                value=st.session_state.get("food_search_text",""),
+                placeholder="Search ZIP code, street, city, county, food shelf, or food item",
+                label_visibility="collapsed",
+                key="food_search_box_v2"
+            )
+            st.session_state.food_search_text=search.strip()
+
+            a,b=st.columns([3,1])
+            with a:
+                if st.button("🔎 Search Carelio Connect",key="food_search_go",use_container_width=True):
+                    st.rerun()
+            with b:
+                if st.button("📍 Use my location",key="food_near_me_btn",use_container_width=True):
+                    u=st.session_state.get("community") or {}
+                    place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x]).strip(", ")
+                    if place:
+                        st.session_state.food_search_text=place
+                        st.session_state.food_near_me=True
+                    else:
+                        st.session_state.food_near_me=True
+                    st.rerun()
+
+            st.markdown("<div class='carelio-filter-label'>Quick filters</div>",unsafe_allow_html=True)
+            filters=["Open Now","Near Me","No ID","Fresh Produce","Weekend","Walk-ins"]
+            fcols=st.columns(3)
+            active_filters=list(st.session_state.get("food_active_filters",[]))
+            for i,label in enumerate(filters):
+                with fcols[i%3]:
+                    active=label in active_filters
+                    if st.button(("✓ " if active else "")+label,key="food_filter_"+re.sub(r"\\W+","_",label),use_container_width=True):
+                        if active:
+                            active_filters.remove(label)
+                        else:
+                            active_filters.append(label)
+                        st.session_state.food_active_filters=active_filters
+                        if label=="Near Me" and not active:
+                            u=st.session_state.get("community") or {}
+                            place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x]).strip(", ")
+                            if place:
+                                st.session_state.food_search_text=place
+                        st.rerun()
+
+            if active_filters:
+                st.caption("Active filters: "+" · ".join(active_filters))
+
+            view_col,title_col=st.columns([1,3])
+            with view_col:
+                if st.button("📍 View all locations",key="food_view_all",use_container_width=True):
+                    st.session_state.food_search_text=""
+                    st.session_state.food_active_filters=[]
+                    st.session_state.food_near_me=False
+                    st.rerun()
+            with title_col:
+                st.markdown("<div class='carelio-results-title' style='margin-top:0'>Food shelves & meals near you</div>",unsafe_allow_html=True)
+
+            st.caption("Reviewed public locations show services offered; current stock is not assumed. LIVE availability is shown only when a verified Carelio partner publishes it.")
+            render_location_results(cat,selected,st.session_state.get("food_search_text",""),"",active_filters)
+            return
+
+        # Other support categories keep the compact location + need controls.
         st.markdown("<div class='carelio-filter-label'>Location</div>",unsafe_allow_html=True)
         mode=st.selectbox("Location",["All locations","ZIP code","City / street","County"],
                           label_visibility="collapsed",key="loc_mode_"+cat)
@@ -1080,20 +1237,9 @@ def render_category():
             q=st.text_input("County",placeholder="County, e.g. Ramsey",label_visibility="collapsed",key="loc_county_"+cat)
 
         st.markdown("<div class='carelio-filter-label'>Specific need <span>optional</span></div>",unsafe_allow_html=True)
-        selected=[]
-        if cat=="Food":
-            group=st.selectbox("Food group",["All food"]+list(FOOD_GROUPS.keys()),label_visibility="collapsed",key="food_group_app")
-            if group!="All food":
-                st.session_state.food_group=group
-                selected=st.multiselect("Items",FOOD_GROUPS[group],
-                    default=[x for x in st.session_state.selected if x in FOOD_GROUPS[group]],
-                    placeholder="Milk, Eggs, Rice...",key="food_items_app")
-            else:
-                st.session_state.food_group=None
-        else:
-            selected=st.multiselect("Service or item",SUPPORT_ITEMS.get(cat,[]),
-                default=[x for x in st.session_state.selected if x in SUPPORT_ITEMS.get(cat,[])],
-                placeholder="Optional: choose a specific need",key="support_need_"+re.sub(r"\\W+","_",cat))
+        selected=st.multiselect("Service or item",SUPPORT_ITEMS.get(cat,[]),
+            default=[x for x in st.session_state.selected if x in SUPPORT_ITEMS.get(cat,[])],
+            placeholder="Optional: choose a specific need",key="support_need_"+re.sub(r"\\W+","_",cat))
         st.session_state.selected=list(selected)
 
         if mode=="All locations":
@@ -1106,8 +1252,7 @@ def render_category():
         else:
             st.markdown("<div class='carelio-results-title'>Available locations</div>",unsafe_allow_html=True)
 
-        # Key behavior: clicking a category shows locations immediately.
-        render_location_results(cat,selected,q,zipc)
+        render_location_results(cat,selected,q,zipc,[])
 
 def access(label,value):
     value=(value or "").strip()
@@ -1321,15 +1466,74 @@ def render_result_map(public_rows,partner_rows):
             url="https://www.google.com/maps/dir/?api=1&destination="+quote_plus(addr)
             st.markdown("<a class='action-link' target='_blank' href='"+esc(url)+"'>Get Directions</a>",unsafe_allow_html=True)
 
-def render_location_results(category, selected, q, zipc):
+def _food_group_for_selected_item(item):
+    for _g,_vals in FOOD_GROUPS.items():
+        if item in _vals:
+            return _g
+    return ""
+
+
+def _resource_open_now(r):
+    windows=r.get("weekly_windows") or {}
+    if not isinstance(windows,dict) or not windows:
+        return False
+    now=datetime.now()
+    day=now.strftime("%a").lower()[:3]
+    t=now.hour+now.minute/60.0
+    for pair in windows.get(day,[]):
+        try:
+            if float(pair[0]) <= t <= float(pair[1]):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _matches_food_need(r,selected):
+    if not selected:
+        return True
+    groups=set(str(x) for x in (r.get("food_groups") or []))
+    exact=set(str(x) for x in (r.get("items") or []))
+    for item in selected:
+        if item in exact or _food_group_for_selected_item(item) in groups:
+            return True
+    return False
+
+
+def _food_match_score(r,selected):
+    if not selected:
+        return 0
+    groups=set(str(x) for x in (r.get("food_groups") or []))
+    exact=set(str(x) for x in (r.get("items") or []))
+    score=0
+    for item in selected:
+        if item in exact or _food_group_for_selected_item(item) in groups:
+            score+=1
+    return score
+
+
+def _apply_quick_filters(records,filters,category):
+    out=list(records)
+    fs=set(filters or [])
+    if not fs:
+        return out
+    if "Open Now" in fs:
+        out=[r for r in out if _resource_open_now(r)]
+    if "No ID" in fs:
+        out=[r for r in out if "no id" in str(r.get("id_required","")).lower() or "not required" in str(r.get("id_required","")).lower()]
+    if "Fresh Produce" in fs and category=="Food":
+        out=[r for r in out if "Fresh Produce" in (r.get("food_groups") or []) or any("fresh" in str(x).lower() or "produce" in str(x).lower() for x in (r.get("items") or []))]
+    if "Weekend" in fs:
+        out=[r for r in out if r.get("weekend") or any(k in (r.get("weekly_windows") or {}) for k in ["sat","sun"]) or any(x in str(r.get("hours","")).lower() for x in ["saturday","sunday","weekend","sat ","sun "])]
+    if "Walk-ins" in fs:
+        out=[r for r in out if str(r.get("walk_in","")).strip() and "no" not in str(r.get("walk_in","")).lower() and "appointment only" not in str(r.get("walk_in","")).lower()]
+    return out
+
+
+def render_location_results(category, selected, q, zipc, quick_filters=None):
     qlow=(q or "").strip().lower()
     z=(zipc or "").strip()
-
-    # Resolve ZIP -> county from known Carelio/public data at runtime.
-    # 55105 is Ramsey County; keep this explicit fallback in case the local
-    # CSV does not contain an exact 55105 row.
-    manual_zip_county={"55105":"Ramsey"}
-    zip_county=manual_zip_county.get(z,"")
+    quick_filters=list(quick_filters or [])
 
     all_public=[]
     try:
@@ -1341,116 +1545,82 @@ def render_location_results(category, selected, q, zipc):
     except Exception:
         pass
 
-    if z and not zip_county:
-        county_hits=[
-            str(r.get("county","")).strip()
-            for r in all_public
-            if str(r.get("zip","")).strip()==z and str(r.get("county","")).strip()
-        ]
-        if county_hits:
-            # Use the most common county associated with the ZIP in loaded data.
-            zip_county=max(set(county_hits),key=county_hits.count)
-
-    # Build category/item candidates.
     if category=="Food":
-        candidates=[dict(r) for r in PUBLIC_FOOD if public_location_is_valid(r)]
+        candidates=[dict(r) for r in PUBLIC_FOOD if public_location_is_valid(r) and _matches_food_need(r,selected)]
     else:
         selected_set=set(selected or [])
-        exact=[]
-        broad=[]
+        candidates=[]
         for r in PUBLIC_RESOURCES:
             if not public_location_is_valid(r) or r.get("category")!=category:
                 continue
             items=set(r.get("items",[]))
             if not selected_set or (selected_set & items):
-                exact.append(dict(r))
-            else:
-                broad.append(dict(r))
-        candidates=exact if exact else broad
-        if broad and not exact and selected_set:
-            st.caption("No reviewed public source confirms the exact selected item yet. Showing relevant "+category+" resources in your area; call before visiting to confirm the item/service.")
+                candidates.append(dict(r))
 
-    # Geography filter: exact ZIP first, then same known county. Do not fake mileage from ZIP numbers.
+    # Search is a narrowing tool, not a prerequisite for seeing locations.
     if z:
-        exact_zip=[r for r in candidates if str(r.get("zip","")).strip()==z]
-        if exact_zip:
-            candidates=exact_zip
-            st.caption("Showing resources in ZIP "+z+".")
-        elif zip_county:
-            same_county=[r for r in candidates if str(r.get("county","")).strip().lower()==zip_county.lower()]
-            candidates=sorted(same_county,key=lambda r:(str(r.get("city","")),str(r.get("zip","")),str(r.get("name",""))))
-            st.caption("No exact ZIP "+z+" location is listed. Showing resources in "+zip_county+" County. Use Directions for the true travel distance to an exact address.")
-        else:
-            candidates=[]
-            st.caption("No reviewed resource is mapped to ZIP "+z+". Carelio will not show unrelated counties.")
+        candidates=[r for r in candidates if str(r.get("zip","")).strip()==z]
     elif qlow:
-        candidates=[r for r in candidates if qlow in " ".join(str(r.get(k,"")) for k in ["name","city","county","address","zip"]).lower()]
+        candidates=[r for r in candidates if qlow in " ".join(str(r.get(k,"")) for k in ["name","city","county","address","zip","source"]).lower()]
 
-    # Sort alphabetically only when ZIP-specific proximity ordering was not already applied.
-    if not z:
-        candidates=sorted(
-            candidates,
-            key=lambda r:(str(r.get("city","")),str(r.get("name","")))
-        )
+    candidates=_apply_quick_filters(candidates,quick_filters,category)
 
-    public_for_map=list(candidates[:20])
-    shown=0
+    # Prioritize selected-need coverage; otherwise place the signed-in user's city first.
+    user=st.session_state.get("community") or {}
+    user_city=str(user.get("city") or "").strip().lower()
+    candidates=sorted(candidates,key=lambda r:(
+        -_food_match_score(r,selected) if category=="Food" else 0,
+        0 if user_city and str(r.get("city","")).strip().lower()==user_city else 1,
+        str(r.get("city","")),str(r.get("name",""))
+    ))
 
-    # Verified Carelio Partners — apply the SAME geography rule.
+    # Verified Carelio Partners use the same geography filter and appear first.
     locs=rows("""SELECT l.*,o.name org_name,o.website,o.verified_at
                  FROM locations l
                  JOIN organizations o ON o.id=l.org_id
                  WHERE l.active=1
                    AND o.verification_status='verified'
                    AND COALESCE(o.is_test,0)=0""")
-
     if z:
-        exact_partner=[l for l in locs if str(l.get("zip","")).strip()==z]
-        if exact_partner:
-            locs=exact_partner
-        elif zip_county:
-            locs=[
-                l for l in locs
-                if str(l.get("county","")).strip().lower()==zip_county.lower()
-            ]
-            # Sort consistently within the same county. Do not treat ZIP-number difference as physical distance.
-            locs=sorted(locs,key=lambda r:(str(r.get("city","")),str(r.get("zip","")),str(r.get("org_name",""))))
-        else:
-            locs=[]
+        locs=[l for l in locs if str(l.get("zip","")).strip()==z]
     elif qlow:
-        locs=[
-            l for l in locs
-            if qlow in " ".join(str(l.get(k,"")) for k in ["name","org_name","city","county","address","zip"]).lower()
-        ]
+        locs=[l for l in locs if qlow in " ".join(str(l.get(k,"")) for k in ["name","org_name","city","county","address","zip"]).lower()]
 
-    partners_for_map=list(locs)
+    # Quick filters for partners only when their published profile supports it.
+    if "No ID" in quick_filters:
+        locs=[l for l in locs if "no id" in str(l.get("id_required","")).lower() or "not required" in str(l.get("id_required","")).lower()]
+    if "Walk-ins" in quick_filters:
+        locs=[l for l in locs if str(l.get("walk_in","")).strip() and "no" not in str(l.get("walk_in","")).lower()]
+    if "Weekend" in quick_filters:
+        locs=[l for l in locs if any(x in str(l.get("hours","")).lower() for x in ["saturday","sunday","weekend","sat ","sun "])]
+    if "Open Now" in quick_filters:
+        # Partner hours are free text in this single-file build; do not claim Open Now
+        # unless a live service update exists for the selected need.
+        confirmed=[]
+        for l in locs:
+            ups=rows("SELECT * FROM service_updates WHERE location_id=? ORDER BY updated_at DESC",(l["id"],))
+            if any((not selected or x.get("item") in selected) and str(x.get("status","")).lower() in ["available","low"] for x in ups):
+                confirmed.append(l)
+        locs=confirmed
 
-    render_result_map(public_for_map,partners_for_map)
-
-    # Live verified partners appear first because they can publish current status.
-    for idx,l in enumerate(partners_for_map):
+    shown=0
+    for idx,l in enumerate(locs):
         ups=rows("SELECT * FROM service_updates WHERE location_id=? ORDER BY updated_at DESC",(l["id"],))
-        matched=[x for x in ups if not selected or x["item"] in selected]
+        matched=[x for x in ups if not selected or x.get("item") in selected]
         if selected and not matched:
             continue
         render_partner_result(l,matched,idx)
         shown+=1
 
-    # Then show source-backed public locations with honest non-live wording.
-    for i,r in enumerate(public_for_map):
+    for i,r in enumerate(candidates):
         if render_public_result(r,i,selected):
             shown+=1
 
     if shown==0:
-        if z and zip_county:
-            st.info("No exact reviewed-public or verified Carelio location currently matches this need in ZIP "+z+" or "+zip_county+" County. Try another nearby ZIP or a broader item.")
-        elif z:
-            st.info("No exact reviewed-public or verified Carelio location currently matches ZIP "+z+". Carelio will not invent or show unrelated counties.")
+        if q or z or quick_filters or selected:
+            st.info("No locations match the current search and filters. Remove a filter, clear the location search, or choose a broader need.")
         else:
-            if category=="Food" and not PUBLIC_FOOD:
-                st.info("No real food-shelf location records are loaded for this selection yet. Carelio does not convert county-level food-access statistics into organization/location cards.")
-            else:
-                st.info("No exact reviewed-public or verified Carelio location matches this selection yet. Try another ZIP/city or a broader item.")
+            st.info("No reviewed public or verified Carelio locations are available for this category right now.")
 
 
 def render_location_detail():
