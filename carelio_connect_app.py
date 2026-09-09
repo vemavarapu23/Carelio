@@ -804,6 +804,23 @@ st.markdown("""
 
 st.markdown("""
 <style>
+/* Approved Carelio Community dashboard reference */
+.carelio-side{position:sticky;top:14px;padding:4px 8px 14px 2px;min-height:calc(100vh - 34px);border-right:1px solid rgba(255,255,255,.08)}
+.carelio-side-brand{display:flex;align-items:center;gap:9px;color:#fff;font-size:1.08rem;font-weight:850;margin:4px 0 22px;padding:6px 8px}.carelio-side-brand b{color:#9cff28}.carelio-side-mark{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#9cff28;color:#06130a;font-weight:950;box-shadow:0 0 18px rgba(156,255,40,.2)}
+.carelio-side-nav{display:flex;flex-direction:column;gap:5px}.carelio-side-link{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:12px;color:#e8f1ee!important;text-decoration:none!important;font-size:.82rem;font-weight:800;border:1px solid transparent}.carelio-side-link:hover{background:rgba(255,255,255,.05)}.carelio-side-link.active{background:linear-gradient(90deg,rgba(116,217,48,.24),rgba(22,54,33,.35));border-color:rgba(156,255,40,.42);color:#baff82!important}.side-icon{width:24px;text-align:center;font-size:1rem}
+.carelio-top-utility{display:flex;align-items:center;justify-content:space-between;min-height:48px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:12px}.carelio-top-right{display:flex;align-items:center;gap:13px}.carelio-top-place{font-size:.82rem;color:#d6e3df}.carelio-top-bell{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#12262a;color:#ff5a5a;font-size:.55rem;border:1px solid #2f4446}.carelio-top-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid #5a6965}.carelio-top-initial{display:inline-flex;align-items:center;justify-content:center;background:#172a2e;color:#fff;font-weight:900}
+.carelio-desktop-nav,.carelio-app-header{display:none!important}
+.carelio-hello{font-size:2rem;font-weight:950;letter-spacing:-.035em;color:#fff;margin-top:3px}.carelio-hello-sub{font-size:.94rem;color:#b9c8c3;margin-top:4px;margin-bottom:14px}.carelio-home-quote{text-align:right;font-style:italic;color:#e3ebe8;font-size:.86rem;line-height:1.5;padding-top:5px}.carelio-home-quote span{color:#98aaa5;font-style:normal;font-size:.76rem}
+.carelio-home-section{font-size:1.18rem;font-weight:950;color:#fff;margin:17px 0 10px}.carelio-home-cat-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.carelio-home-cat{min-height:118px;border-radius:16px;border:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-decoration:none!important;color:#fff!important;box-shadow:0 8px 24px rgba(0,0,0,.14);transition:.18s ease}.carelio-home-cat:hover{transform:translateY(-2px);border-color:rgba(156,255,40,.5)}.home-cat-icon{width:50px;height:50px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;background:rgba(0,0,0,.18)}.home-cat-name{font-size:.8rem;font-weight:900;text-align:center;line-height:1.15}.carelio-home-cat.food{background:linear-gradient(145deg,#173d29,#0d281d)}.carelio-home-cat.health{background:linear-gradient(145deg,#173249,#102337)}.carelio-home-cat.baby{background:linear-gradient(145deg,#4a253c,#2e1928)}.carelio-home-cat.clothing{background:linear-gradient(145deg,#4c3322,#302116)}.carelio-home-cat.hygiene{background:linear-gradient(145deg,#303050,#20203b)}.carelio-home-cat.services{background:linear-gradient(145deg,#174443,#102c2c)}
+.carelio-note-card{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:18px 0 8px;padding:15px 17px;border:1px solid rgba(117,210,59,.42);border-radius:16px;background:linear-gradient(90deg,rgba(25,67,39,.72),rgba(15,40,31,.48))}.carelio-note-kicker{font-size:.72rem;font-weight:950;color:#9cff28;letter-spacing:.055em}.carelio-note-text{font-size:.94rem;color:#fff;font-weight:700;margin-top:5px}.carelio-note-sprout{font-size:2rem}
+.carelio-events-heading{margin-top:18px}.carelio-view-all{display:block;text-align:right;padding:20px 0 8px;color:#9cff28!important;text-decoration:none!important;font-size:.8rem;font-weight:850}.carelio-event-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.carelio-event-preview{overflow:hidden;border:1px solid #2c4649;border-radius:16px;background:rgba(5,27,30,.93)}.carelio-event-art{height:92px;position:relative;display:flex;align-items:center;justify-content:center;font-size:2.35rem;background:linear-gradient(135deg,#23382e,#14282b)}.carelio-date-badge{position:absolute;left:10px;top:10px;width:46px;border-radius:10px;background:rgba(4,18,20,.93);border:1px solid rgba(255,255,255,.15);text-align:center;padding:5px 2px}.carelio-date-badge b{display:block;color:#9cff28;font-size:.58rem;letter-spacing:.05em}.carelio-date-badge span{display:block;color:#fff;font-size:1rem;font-weight:950}.carelio-event-body{padding:11px 12px}.carelio-event-title{font-size:.94rem;font-weight:900;color:#fff}.carelio-event-meta{font-size:.73rem;color:#b7c7c3;line-height:1.45;margin-top:5px}.carelio-event-trust{display:inline-block;margin-top:8px;padding:4px 7px;border-radius:999px;background:#203b2b;color:#c9ffab;font-size:.62rem;font-weight:800}.carelio-event-empty{padding:16px;border:1px solid #2e4648;border-radius:14px;background:rgba(6,27,30,.9);color:#b8c8c4;font-size:.82rem}
+@media(max-width:1050px){.carelio-home-cat-grid{grid-template-columns:repeat(3,1fr)}.carelio-event-grid{grid-template-columns:1fr}.carelio-side-link{font-size:.74rem;padding:9px 7px}}
+@media(max-width:700px){.carelio-side{display:none!important}.carelio-top-utility{min-height:42px}.carelio-top-place{font-size:.72rem}.carelio-hello{font-size:1.55rem}.carelio-home-quote{display:none}.carelio-home-cat-grid{grid-template-columns:repeat(3,1fr);gap:8px}.carelio-home-cat{min-height:96px}.home-cat-icon{width:42px;height:42px;font-size:1.2rem}.home-cat-name{font-size:.7rem}.carelio-note-card{margin-top:14px}.carelio-event-grid{grid-template-columns:1fr}}
+</style>
+""",unsafe_allow_html=True)
+
+st.markdown("""
+<style>
 /* Approved Carelio category-page format */
 .food-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin:20px 0 14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.09)}
 .food-title{font-size:2rem;font-weight:950;letter-spacing:-.035em;color:#fff;line-height:1.05}
@@ -889,14 +906,38 @@ def profile_html(user):
     return "<div class='profile-wrap'><div class='profile-circle'>"+inner+"</div></div>"
 
 def community_sidebar():
-    """Community navigation is handled by the desktop top bar and phone bottom bar."""
+    """Approved Carelio desktop sidebar; phone navigation is rendered separately."""
     st.markdown("<span class='carelio-community-sidebar-marker'></span>",unsafe_allow_html=True)
+    page=st.session_state.get("page","home")
+    cat=st.session_state.get("category") or ""
+    nav=[
+        ("⌂","Home","home",""),
+        ("◫","Food","category","Food"),
+        ("♡","Health","category","Health"),
+        ("♟","Baby & Family","category","Baby & Family"),
+        ("◇","Clothing","category","Clothing"),
+        ("▣","Hygiene","category","Hygiene"),
+        ("▦","Events","events",""),
+        ("◉","My Support","my_support",""),
+        ("●","Profile","profile","")
+    ]
+    parts=["<aside class='carelio-side'><div class='carelio-side-brand'><span class='carelio-side-mark'>C</span><span>Carelio <b>CONNECT</b></span></div><div class='carelio-side-nav'>"]
+    for icon,label,target,target_cat in nav:
+        active=(page==target and (target!="category" or cat==target_cat))
+        href="?nav="+target+("&cat="+quote_plus(target_cat) if target_cat else "")
+        parts.append("<a class='carelio-side-link "+("active" if active else "")+"' href='"+href+"'><span class='side-icon'>"+icon+"</span><span>"+esc(label)+"</span></a>")
+    parts.append("</div></aside>")
+    st.markdown("".join(parts),unsafe_allow_html=True)
+    if st.button("Sign out",key="community_sidebar_signout",use_container_width=True):
+        logout()
+
 
 def community_topbar(title=None):
     st.markdown("<span class='carelio-community-page-marker'></span>",unsafe_allow_html=True)
     u=st.session_state.community or {}
     place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x]) or "Minneapolis, MN"
 
+    # Approved phone navigation remains compact and separate from desktop sidebar.
     st.markdown("""
     <nav class="carelio-mobile-bottom-nav">
       <a href="?nav=home"><span>⌂</span>Home</a>
@@ -908,37 +949,34 @@ def community_topbar(title=None):
 
     pb=u.get("profile_b64")
     if pb:
-        avatar="<img class='carelio-app-avatar' src='"+img_data_uri(pb)+"'>"
+        avatar="<img class='carelio-top-avatar' src='"+img_data_uri(pb)+"'>"
     else:
         initial=esc((u.get("name","U")[:1] or "U").upper())
-        avatar="<span class='carelio-app-avatar carelio-app-initial'>"+initial+"</span>"
+        avatar="<span class='carelio-top-avatar carelio-top-initial'>"+initial+"</span>"
 
     st.markdown(
-        "<div class='carelio-app-header'>"
-        "<div><div class='carelio-app-title'>"+esc(title or "Home")+"</div>"
-        "<div class='carelio-app-place'>⌖ "+esc(place)+"</div></div>"
-        +avatar+"</div>",unsafe_allow_html=True
+        "<div class='carelio-top-utility'>"
+        "<div class='carelio-top-spacer'></div>"
+        "<div class='carelio-top-right'><span class='carelio-top-place'>⌖ "+esc(place)+"</span>"
+        "<span class='carelio-top-bell'>●</span>"+avatar+"</div></div>",
+        unsafe_allow_html=True
     )
 
-    nav=[("Home","home",""),("Food","category","Food"),("Health","category","Health"),
-         ("Baby & Family","category","Baby & Family"),("Clothing","category","Clothing"),
-         ("Hygiene","category","Hygiene"),("Community Services","category","Community Services"),
-         ("Events","events",""),("My Support","my_support",""),("Profile","profile","")]
-    links=[]
-    for label,page,cat in nav:
-        href="?nav="+page+(("&cat="+quote_plus(cat)) if cat else "")
-        links.append("<a href='"+href+"'>"+esc(label)+"</a>")
-    st.markdown("<div class='carelio-desktop-nav'>"+"".join(links)+"</div>",unsafe_allow_html=True)
 
 def render_daily_note():
     notes=[
+      "A little support at the right time can change the direction of a whole day.",
       "Small support, big change. One step at a time, care gets closer to home.",
-      "A little help today can make tomorrow feel lighter.",
       "Strong communities begin when support is easier to find.",
       "You do not have to search alone. Carelio brings trusted options closer."
     ]
     note=notes[date.today().toordinal()%len(notes)]
-    st.markdown("<div class='daily-note'><div class='eyebrow'>CARELIO CONNECT DAILY NOTE</div><div class='note'>"+esc(note)+"</div></div>",unsafe_allow_html=True)
+    st.markdown(
+        "<div class='carelio-note-card'><div><div class='carelio-note-kicker'>☘ CARELIO CONNECT NOTE</div>"
+        "<div class='carelio-note-text'>“"+esc(note)+"”</div></div>"
+        "<div class='carelio-note-sprout'>🌱</div></div>",
+        unsafe_allow_html=True
+    )
 
 def category_card(category, subtitle):
     img=ASSETS["category"][category]
@@ -1072,58 +1110,141 @@ def render_otp():
 # Community home
 # ------------------------------------------------------------
 def render_home():
-    u=st.session_state.community
-    left,main=st.columns([0.001,0.999],gap="small")
+    u=st.session_state.community or {}
+    left,main=st.columns([.17,.83],gap="large")
     with left:
         community_sidebar()
     with main:
         community_topbar("Home")
         first=(u.get("name") or "there").split()[0]
-        st.markdown("<div class='carelio-welcome'>Welcome back, "+esc(first)+"</div>"
-                    "<div class='carelio-sub'>What support do you need today?</div>",unsafe_allow_html=True)
 
-        cats=[("Food","🛒","Food"),("Health","⚕","Health"),("Baby & Family","◉","Baby"),
-              ("Clothing","♧","Clothing"),("Hygiene","✦","Hygiene"),("Community Services","⌂","Services")]
-        rail=[]
-        for cat,icon,label in cats:
-            rail.append("<a class='carelio-cat' href='?nav=category&cat="+quote_plus(cat)+"'>"
-                        "<span>"+icon+"</span><b>"+esc(label)+"</b></a>")
-        st.markdown("<div class='carelio-cat-rail'>"+"".join(rail)+"</div>",unsafe_allow_html=True)
+        # Greeting + Carelio quote, as in the approved Community dashboard reference.
+        g1,g2=st.columns([3.2,1.3],gap="large")
+        with g1:
+            st.markdown(
+                "<div class='carelio-hello'>Hello, "+esc(first)+"</div>"
+                "<div class='carelio-hello-sub'>How can we support you today?</div>",
+                unsafe_allow_html=True
+            )
+        with g2:
+            st.markdown(
+                "<div class='carelio-home-quote'>“Small support, big change.”<br><span>— Carelio Connect</span></div>",
+                unsafe_allow_html=True
+            )
 
-        query=st.text_input("Search",placeholder="Search food, diapers, foot care, clothing...",
-                            label_visibility="collapsed",key="home_app_search")
-        if query:
-            term=query.lower()
-            mapping=[("food","Food"),("meal","Food"),("grocery","Food"),("health","Health"),
-                     ("medical","Health"),("dental","Health"),("foot","Health"),("baby","Baby & Family"),
-                     ("diaper","Baby & Family"),("formula","Baby & Family"),("cloth","Clothing"),
-                     ("shoe","Clothing"),("hygiene","Hygiene"),("soap","Hygiene"),
-                     ("housing","Community Services"),("transport","Community Services"),("counsel","Community Services")]
-            match=next((c for k,c in mapping if k in term),None)
+        # Large global search + Search + Use my location.
+        s1,s2,s3=st.columns([4.1,1.05,1.35],gap="small")
+        with s1:
+            query=st.text_input(
+                "Search support",
+                placeholder="Search for food, health, clothing ...",
+                label_visibility="collapsed",
+                key="home_reference_search"
+            )
+        with s2:
+            do_search=st.button("Search",type="primary",use_container_width=True,key="home_reference_search_btn")
+        with s3:
+            use_location=st.button("📍 Use my location",use_container_width=True,key="home_reference_location_btn")
+
+        if use_location:
+            city=str(u.get("city") or "").strip()
+            state=str(u.get("state") or "").strip()
+            z=str(u.get("zip") or u.get("zip_code") or "").strip()
+            st.session_state.geo_label=", ".join([x for x in [city,state,z] if x]) or "Current profile location"
+            if city:
+                st.session_state.search_text=city
+            if z:
+                st.session_state.search_zip=z
+            st.success("Using "+st.session_state.geo_label+" for support searches.")
+
+        if do_search:
+            term=(query or "").strip().lower()
+            if "event" in term:
+                goto("events")
+            mapping=[
+                (["food","meal","grocery","grocer","pantry","milk","rice","produce"],"Food"),
+                (["health","medical","clinic","dental","vision","foot"],"Health"),
+                (["baby","diaper","formula","family"],"Baby & Family"),
+                (["cloth","shirt","shoe","coat","jacket"],"Clothing"),
+                (["hygiene","soap","shampoo","tooth","deodorant"],"Hygiene"),
+                (["housing","transport","counsel","community service"],"Community Services")
+            ]
+            match=next((cat for keys,cat in mapping if any(k in term for k in keys)),None)
             if match:
-                st.markdown("<a class='carelio-search-result' href='?nav=category&cat="+quote_plus(match)+"'>"
-                            "Open "+esc(match)+" support →</a>",unsafe_allow_html=True)
+                st.session_state.category=match
+                st.session_state.selected=[]
+                st.session_state.selected_needs=[]
+                st.session_state.search_text=query.strip()
+                st.session_state.last_explore=True
+                st.session_state.last_explore_category=match
+                goto("category")
+            elif term:
+                st.info("Choose a support category below, then Carelio will use your search inside that category.")
 
-        st.markdown("<div class='carelio-section-title'>Support near you</div>",unsafe_allow_html=True)
-        desc={
-            "Food":"Food shelves, groceries and meals",
-            "Health":"Medical, dental, vision and foot care",
-            "Baby & Family":"Diapers, formula and family support",
-            "Clothing":"Clothing, shoes and winter essentials",
-            "Hygiene":"Personal care and hygiene supplies",
-            "Community Services":"Housing, transportation and counseling"
-        }
-        rows=[]
-        for cat,icon,label in cats:
-            rows.append("<a class='carelio-support-row' href='?nav=category&cat="+quote_plus(cat)+"'>"
-                        "<span class='carelio-row-icon'>"+icon+"</span>"
-                        "<span class='carelio-row-text'><b>"+esc(label)+"</b><small>"+esc(desc[cat])+"</small></span>"
-                        "<span class='carelio-arrow'>›</span></a>")
-        st.markdown("<div class='carelio-support-list'>"+"".join(rows)+"</div>",unsafe_allow_html=True)
+        # One row of approved support category tiles. No long duplicate 'Support near you' list.
+        st.markdown("<div class='carelio-home-section'>Need Support?</div>",unsafe_allow_html=True)
+        cats=[
+            ("Food","🛒","food"),
+            ("Health","♡","health"),
+            ("Baby & Family","♟","baby"),
+            ("Clothing","◇","clothing"),
+            ("Hygiene","▣","hygiene"),
+            ("Community Services","◉","services")
+        ]
+        cards=[]
+        for cat,icon,cls in cats:
+            cards.append(
+                "<a class='carelio-home-cat "+cls+"' href='?nav=category&cat="+quote_plus(cat)+"'>"
+                "<span class='home-cat-icon'>"+icon+"</span><span class='home-cat-name'>"+esc(cat)+"</span></a>"
+            )
+        st.markdown("<div class='carelio-home-cat-grid'>"+"".join(cards)+"</div>",unsafe_allow_html=True)
+
         render_daily_note()
 
+        # Upcoming Support Events is part of the approved Home page.
+        e1,e2=st.columns([5,1],gap="small")
+        with e1:
+            st.markdown("<div class='carelio-home-section carelio-events-heading'>Upcoming Support Events</div>",unsafe_allow_html=True)
+        with e2:
+            st.markdown("<a class='carelio-view-all' href='?nav=events'>View All →</a>",unsafe_allow_html=True)
+
+        try:
+            today=date.today()
+            events=[e for e in get_all_events() if event_day(e)>=today][:3]
+        except Exception:
+            events=[]
+
+        if events:
+            event_cards=[]
+            for e in events:
+                try:
+                    dt=datetime.fromisoformat(str(e.get("start_at","")).replace("Z",""))
+                    mon=dt.strftime("%b").upper(); day=dt.strftime("%d").lstrip("0") or "1"
+                    when=dt.strftime("%b %d · %I:%M %p").replace(" 0"," ")
+                except Exception:
+                    mon="DATE"; day=""; when=str(e.get("start_at","")).replace("T"," · ")
+                source=str(e.get("source_name") or e.get("org_name") or e.get("location_name") or "Official public source")
+                city=str(e.get("city") or "").strip(); state=str(e.get("state") or "MN").strip()
+                place=", ".join([x for x in [city,state] if x])
+                cat=str(e.get("category") or "").lower()
+                emo="🥕" if "food" in cat else "🩺" if ("health" in cat or "medical" in cat) else "🦶" if "foot" in cat else "♡"
+                badge=str(e.get("badge") or "Not yet verified by Carelio")
+                event_cards.append(
+                    "<div class='carelio-event-preview'><div class='carelio-event-art'>"+emo+"<div class='carelio-date-badge'><b>"+esc(mon)+"</b><span>"+esc(day)+"</span></div></div>"
+                    "<div class='carelio-event-body'><div class='carelio-event-title'>"+esc(str(e.get("title") or "Support Event"))+"</div>"
+                    "<div class='carelio-event-meta'>"+esc(source)+(('<br>'+esc(place)) if place else '')+"<br>"+esc(when)+"</div>"
+                    "<div class='carelio-event-trust'>"+esc(badge)+"</div></div></div>"
+                )
+            st.markdown("<div class='carelio-event-grid'>"+"".join(event_cards)+"</div>",unsafe_allow_html=True)
+        else:
+            st.markdown(
+                "<div class='carelio-event-empty'>No upcoming support events are published yet. "
+                "Carelio shows verified partner events and reviewed official public events when available.</div>",
+                unsafe_allow_html=True
+            )
+
 def render_support_hub():
-    left,main=st.columns([0.001,0.999],gap="small")
+    left,main=st.columns([.17,.83],gap="large")
     with left:
         community_sidebar()
     with main:
@@ -1144,7 +1265,7 @@ def render_support_hub():
 
 def render_category():
     cat=st.session_state.category or "Food"
-    left,main=st.columns([0.001,0.999],gap="small")
+    left,main=st.columns([.17,.83],gap="large")
     with left:
         community_sidebar()
     with main:
@@ -1660,7 +1781,7 @@ def render_location_detail():
 
     # Keep normal Community layout when user is signed in.
     if st.session_state.get("community"):
-        left,main=st.columns([0.001,0.999],gap="small")
+        left,main=st.columns([.17,.83],gap="large")
         with left:
             community_sidebar()
         content_ctx=main
@@ -1996,7 +2117,7 @@ def render_my_support():
         return
 
     try:
-        left,main=st.columns([0.001,0.999],gap="small")
+        left,main=st.columns([.17,.83],gap="large")
         with left:
             community_sidebar()
 
@@ -2107,7 +2228,7 @@ def render_my_support():
 
 def render_profile():
     u=st.session_state.community
-    left,main=st.columns([0.001,0.999],gap="small")
+    left,main=st.columns([.17,.83],gap="large")
     with left:
         community_sidebar()
     with main:
