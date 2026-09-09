@@ -905,9 +905,32 @@ def profile_html(user):
         inner="<div class='profile-initial'>"+initial+"</div>"
     return "<div class='profile-wrap'><div class='profile-circle'>"+inner+"</div></div>"
 
+def _community_nav(target, target_cat=""):
+    """Navigate inside the current Streamlit session; never use browser href reloads."""
+    if target=="category":
+        if st.session_state.get("category") != target_cat:
+            st.session_state.selected=[]
+            st.session_state.selected_needs=[]
+            st.session_state.active_food_group="Dairy"
+            st.session_state.search_text=""
+            st.session_state.search_zip=""
+            st.session_state.geo_label=""
+            st.session_state.last_explore=False
+            st.session_state.last_explore_category=None
+        st.session_state.category=target_cat
+        st.session_state.food_group=None
+    st.session_state.page=target
+
+
 def community_sidebar():
-    """Approved Carelio desktop sidebar; phone navigation is rendered separately."""
+    """Approved Carelio desktop sidebar using Streamlit-native navigation.
+
+    Important: these are st.button controls, not <a href="?nav=..."> links.
+    Browser href navigation starts a new Streamlit connection in some deployments
+    and can make an authenticated user appear signed out.
+    """
     st.markdown("<span class='carelio-community-sidebar-marker'></span>",unsafe_allow_html=True)
+    st.markdown("<div class='carelio-side-brand'><span class='carelio-side-mark'>C</span><span>Carelio <b>CONNECT</b></span></div>",unsafe_allow_html=True)
     page=st.session_state.get("page","home")
     cat=st.session_state.get("category") or ""
     nav=[
@@ -921,13 +944,13 @@ def community_sidebar():
         ("◉","My Support","my_support",""),
         ("●","Profile","profile","")
     ]
-    parts=["<aside class='carelio-side'><div class='carelio-side-brand'><span class='carelio-side-mark'>C</span><span>Carelio <b>CONNECT</b></span></div><div class='carelio-side-nav'>"]
-    for icon,label,target,target_cat in nav:
+    for i,(icon,label,target,target_cat) in enumerate(nav):
         active=(page==target and (target!="category" or cat==target_cat))
-        href="?nav="+target+("&cat="+quote_plus(target_cat) if target_cat else "")
-        parts.append("<a class='carelio-side-link "+("active" if active else "")+"' href='"+href+"'><span class='side-icon'>"+icon+"</span><span>"+esc(label)+"</span></a>")
-    parts.append("</div></aside>")
-    st.markdown("".join(parts),unsafe_allow_html=True)
+        text=("✓ " if active else "")+icon+"  "+label
+        if st.button(text,key=f"community_nav_{i}_{target}_{target_cat}",use_container_width=True):
+            _community_nav(target,target_cat)
+            st.rerun()
+    st.markdown("<div style='height:18px'></div>",unsafe_allow_html=True)
     if st.button("Sign out",key="community_sidebar_signout",use_container_width=True):
         logout()
 
@@ -937,15 +960,9 @@ def community_topbar(title=None):
     u=st.session_state.community or {}
     place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x]) or "Minneapolis, MN"
 
-    # Approved phone navigation remains compact and separate from desktop sidebar.
-    st.markdown("""
-    <nav class="carelio-mobile-bottom-nav">
-      <a href="?nav=home"><span>⌂</span>Home</a>
-      <a href="?nav=support"><span>⌕</span>Support</a>
-      <a href="?nav=my_support"><span>♡</span>My Support</a>
-      <a href="?nav=profile"><span>◉</span>Profile</a>
-    </nav>
-    """,unsafe_allow_html=True)
+    # Do not use raw ?nav= href links here: they can create a new Streamlit
+    # browser session and drop authentication. Mobile navigation is rendered
+    # from the same native controls as the authenticated app.
 
     pb=u.get("profile_b64")
     if pb:
@@ -1191,13 +1208,17 @@ def render_home():
             ("Hygiene","▣","hygiene"),
             ("Community Services","◉","services")
         ]
-        cards=[]
-        for cat,icon,cls in cats:
-            cards.append(
-                "<a class='carelio-home-cat "+cls+"' href='?nav=category&cat="+quote_plus(cat)+"'>"
-                "<span class='home-cat-icon'>"+icon+"</span><span class='home-cat-name'>"+esc(cat)+"</span></a>"
-            )
-        st.markdown("<div class='carelio-home-cat-grid'>"+"".join(cards)+"</div>",unsafe_allow_html=True)
+        cat_cols=st.columns(6,gap="small")
+        for i,(cat,icon,cls) in enumerate(cats):
+            with cat_cols[i]:
+                st.markdown(
+                    "<div class='carelio-home-cat "+cls+"' style='min-height:116px'>"
+                    "<span class='home-cat-icon'>"+icon+"</span><span class='home-cat-name'>"+esc(cat)+"</span></div>",
+                    unsafe_allow_html=True
+                )
+                if st.button(cat,key=f"home_category_{i}_{cat}",use_container_width=True):
+                    _community_nav("category",cat)
+                    st.rerun()
 
         render_daily_note()
 
@@ -1206,7 +1227,9 @@ def render_home():
         with e1:
             st.markdown("<div class='carelio-home-section carelio-events-heading'>Upcoming Support Events</div>",unsafe_allow_html=True)
         with e2:
-            st.markdown("<a class='carelio-view-all' href='?nav=events'>View All →</a>",unsafe_allow_html=True)
+            if st.button("View All →",key="home_view_all_events",use_container_width=True):
+                _community_nav("events")
+                st.rerun()
 
         try:
             today=date.today()
@@ -1255,13 +1278,17 @@ def render_support_hub():
         cats=[("Food","🛒","Food shelves, groceries & meals"),("Health","⚕","Medical, dental, vision & foot care"),
               ("Baby & Family","◉","Diapers, formula & family support"),("Clothing","♧","Clothes, shoes & winter items"),
               ("Hygiene","✦","Personal care & hygiene supplies"),("Community Services","⌂","Housing, transportation & counseling")]
-        rows=[]
-        for cat,icon,desc in cats:
-            rows.append("<a class='carelio-support-row' href='?nav=category&cat="+quote_plus(cat)+"'>"
-                        "<span class='carelio-row-icon'>"+icon+"</span>"
-                        "<span class='carelio-row-text'><b>"+esc(cat)+"</b><small>"+esc(desc)+"</small></span>"
-                        "<span class='carelio-arrow'>›</span></a>")
-        st.markdown("<div class='carelio-support-list'>"+"".join(rows)+"</div>",unsafe_allow_html=True)
+        for i,(cat,icon,desc) in enumerate(cats):
+            c1,c2=st.columns([5,1],gap="small")
+            with c1:
+                st.markdown("<div class='carelio-support-row' style='margin-bottom:0'>"
+                            "<span class='carelio-row-icon'>"+icon+"</span>"
+                            "<span class='carelio-row-text'><b>"+esc(cat)+"</b><small>"+esc(desc)+"</small></span>"
+                            "</div>",unsafe_allow_html=True)
+            with c2:
+                if st.button("Open",key=f"support_hub_open_{i}_{cat}",use_container_width=True):
+                    _community_nav("category",cat)
+                    st.rerun()
 
 def render_category():
     cat=st.session_state.category or "Food"
@@ -3208,46 +3235,15 @@ def render_admin():
 # ------------------------------------------------------------
 # Router
 # ------------------------------------------------------------
-# Consume phone bottom-navigation links, then clear the query parameter so
-# normal Streamlit reruns do not get trapped on the same page.
-if st.session_state.get("auth")=="community":
-    try:
-        _mobile_nav=st.query_params.get("nav")
-    except Exception:
-        _mobile_nav=None
-    if _mobile_nav:
-        try:
-            _nav_cat=st.query_params.get("cat")
-        except Exception:
-            _nav_cat=None
-        if _mobile_nav=="home":
-            st.session_state.page="home"
-        elif _mobile_nav=="support":
-            st.session_state.page="support_hub"
-        elif _mobile_nav=="category":
-            if _nav_cat in ["Food","Health","Baby & Family","Clothing","Hygiene","Community Services"]:
-                if st.session_state.get("category") != _nav_cat:
-                    st.session_state.selected=[]
-                    st.session_state.selected_needs=[]
-                    st.session_state.active_food_group="Dairy"
-                    st.session_state.search_text=""
-                    st.session_state.search_zip=""
-                    st.session_state.geo_label=""
-                    st.session_state.last_explore=False
-                    st.session_state.last_explore_category=None
-                st.session_state.category=_nav_cat
-                st.session_state.food_group=None
-            st.session_state.page="category"
-        elif _mobile_nav=="events":
-            st.session_state.page="events"
-        elif _mobile_nav=="my_support":
-            st.session_state.page="my_support"
-        elif _mobile_nav=="profile":
-            st.session_state.page="profile"
-        try:
-            del st.query_params["nav"]
-        except Exception:
-            pass
+# Authenticated Community navigation is handled only by Streamlit-native controls.
+# Raw ?nav= links were intentionally removed because they can reconnect the app
+# and make an authenticated session appear signed out.
+try:
+    if st.session_state.get("auth")=="community":
+        if "nav" in st.query_params: del st.query_params["nav"]
+        if "cat" in st.query_params: del st.query_params["cat"]
+except Exception:
+    pass
 
 if admin_route():
     if not st.session_state.admin: render_admin_login()
