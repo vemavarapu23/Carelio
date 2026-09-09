@@ -406,128 +406,6 @@ h1,h2,h3,h4,p,div,span,label{font-family:Inter,Segoe UI,Arial,sans-serif}
 </style>
 """.replace("__CARELIO_BACKGROUND_B64__", ASSETS["background"])
 st.markdown(CSS, unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-/* Mobile-only Community presentation. Desktop/tablet styling is untouched. */
-@media (min-width:701px){
-  div[data-testid="stVerticalBlock"]:has(.carelio-mobile-nav-marker){display:none!important}
-}
-
-@media (max-width:700px){
-  /* Community page becomes an app surface instead of a cut desktop page. */
-  [data-testid="stAppViewContainer"]{
-    background:#111312!important;
-    background-image:none!important;
-  }
-  [data-testid="stAppViewContainer"]::before{display:none!important}
-
-  .block-container{
-    padding:.55rem .75rem calc(6.4rem + env(safe-area-inset-bottom))!important;
-    max-width:100%!important;
-  }
-
-  /* Hide only the Community desktop sidebar column. */
-  [data-testid="column"]:has(.carelio-community-sidebar-marker){
-    display:none!important;
-  }
-
-  /* Main Community column takes the full phone width. */
-  [data-testid="stHorizontalBlock"]{
-    flex-wrap:wrap!important;
-    gap:.5rem!important;
-  }
-
-  /* Streamlit buttons become comfortable touch targets. */
-  .stButton>button{
-    min-height:47px!important;
-    border-radius:14px!important;
-  }
-
-  [data-testid="stTextInput"] input{
-    min-height:49px!important;
-    font-size:16px!important;
-    border-radius:14px!important;
-  }
-
-  [data-testid="stSelectbox"]>div>div,
-  [data-testid="stMultiSelect"]>div>div{
-    min-height:48px!important;
-    border-radius:14px!important;
-  }
-
-  /* Home support cards: reduce the oversized website-card feeling. */
-  .photo-card{
-    border-radius:17px!important;
-    margin-bottom:5px!important;
-  }
-  .photo-card img{
-    height:135px!important;
-    object-fit:cover!important;
-  }
-  .photo-card .body{
-    padding:10px 12px!important;
-  }
-  .photo-card .title{
-    font-size:1.02rem!important;
-  }
-  .photo-card .meta{
-    font-size:.78rem!important;
-  }
-
-  .result-card{
-    border-radius:16px!important;
-    padding:13px!important;
-    margin:8px 0!important;
-  }
-
-  .page-title{
-    font-size:1.65rem!important;
-    line-height:1.15!important;
-  }
-
-  /* Safe bottom navigation: these are real Streamlit buttons,
-     so they preserve the authenticated session. */
-  div[data-testid="stVerticalBlock"]:has(.carelio-mobile-nav-marker){
-    display:block!important;
-    position:fixed!important;
-    left:0!important;
-    right:0!important;
-    bottom:0!important;
-    z-index:999999!important;
-    background:rgba(17,19,18,.98)!important;
-    border-top:1px solid rgba(255,255,255,.12)!important;
-    box-shadow:0 -8px 25px rgba(0,0,0,.35)!important;
-    padding:7px 7px calc(7px + env(safe-area-inset-bottom))!important;
-  }
-
-  div[data-testid="stVerticalBlock"]:has(.carelio-mobile-nav-marker) [data-testid="stHorizontalBlock"]{
-    display:flex!important;
-    flex-wrap:nowrap!important;
-    gap:5px!important;
-  }
-
-  div[data-testid="stVerticalBlock"]:has(.carelio-mobile-nav-marker) [data-testid="column"]{
-    display:block!important;
-    flex:1 1 25%!important;
-    width:25%!important;
-    min-width:0!important;
-  }
-
-  div[data-testid="stVerticalBlock"]:has(.carelio-mobile-nav-marker) .stButton>button{
-    width:100%!important;
-    min-height:52px!important;
-    padding:5px 2px!important;
-    font-size:.70rem!important;
-    line-height:1.15!important;
-    border:none!important;
-    background:transparent!important;
-    box-shadow:none!important;
-  }
-}
-</style>
-""",unsafe_allow_html=True)
-
 st.markdown("""
 <style>
 /* Responsive Carelio experience: desktop/tablet/phone */
@@ -650,6 +528,134 @@ def language_selector(key):
     choice=st.selectbox("🌐 Language",labels,index=idx,key=key)
     st.session_state.language=LANGUAGES[choice]
 
+
+st.markdown("""
+<style>
+/* Mobile Community app layer. Desktop website keeps the approved old design. */
+.mobile-support-card{
+  border:1px solid #21494b;border-radius:14px;padding:12px 14px;margin:6px 0;
+  background:rgba(4,31,32,.82)
+}
+.mobile-support-card b{display:block;color:#fff;font-size:1rem}
+.mobile-support-card span{display:block;color:#a9c0bd;font-size:.76rem;margin-top:3px}
+.location-help{color:#a9c0bd;font-size:.86rem;padding:11px 0}
+
+@media (min-width:701px){
+  /* Hide the phone-only Streamlit radio on desktop without changing any desktop layout. */
+  div[data-testid="stRadio"]:has(input[value="Home"]){display:none!important}
+  .carelio-mobile-nav-marker{display:none!important}
+}
+
+@media (max-width:700px){
+  /* Community only: remove the desktop sidebar and use the full phone width. */
+  [data-testid="stHorizontalBlock"]:has(.carelio-community-sidebar-marker) > [data-testid="column"]:first-child{
+    display:none!important;
+  }
+  [data-testid="stHorizontalBlock"]:has(.carelio-community-sidebar-marker) > [data-testid="column"]:last-child{
+    flex:1 1 100%!important;width:100%!important;min-width:100%!important;
+  }
+
+  /* App-like phone surface; desktop background stays unchanged. */
+  [data-testid="stAppViewContainer"]:has(.carelio-community-page-marker){
+    background:#111312!important;
+    background-image:none!important;
+  }
+  [data-testid="stAppViewContainer"]:has(.carelio-community-page-marker)::before{
+    display:none!important;
+  }
+
+  section.main:has(.carelio-community-page-marker) .block-container{
+    padding:.55rem .72rem 6.3rem!important;
+    max-width:100%!important;
+  }
+
+  /* Prevent wide desktop structures from looking cut-off on phone. */
+  section.main:has(.carelio-community-page-marker) [data-testid="stHorizontalBlock"]{
+    flex-wrap:wrap!important;
+    gap:.45rem!important;
+  }
+  section.main:has(.carelio-community-page-marker) [data-testid="column"]{
+    min-width:0!important;
+  }
+
+  section.main:has(.carelio-community-page-marker) .page-title{
+    font-size:1.55rem!important;line-height:1.15!important;
+  }
+  section.main:has(.carelio-community-page-marker) .page-sub{
+    font-size:.88rem!important;line-height:1.35!important;
+  }
+
+  /* Home category cards become compact instead of giant photo blocks. */
+  section.main:has(.carelio-community-page-marker) .photo-card{
+    border-radius:15px!important;
+    min-height:auto!important;
+    background:#202423!important;
+    border:1px solid #303735!important;
+  }
+  section.main:has(.carelio-community-page-marker) .photo-card img{
+    display:none!important;
+  }
+  section.main:has(.carelio-community-page-marker) .photo-card .body{
+    padding:11px 12px!important;
+  }
+  section.main:has(.carelio-community-page-marker) .photo-card .title{
+    font-size:.96rem!important;
+  }
+  section.main:has(.carelio-community-page-marker) .photo-card .meta{
+    font-size:.72rem!important;
+  }
+
+  section.main:has(.carelio-community-page-marker) .stButton>button{
+    min-height:46px!important;
+    border-radius:14px!important;
+    font-size:.9rem!important;
+  }
+  section.main:has(.carelio-community-page-marker) [data-testid="stTextInput"] input{
+    min-height:49px!important;
+    border-radius:14px!important;
+    font-size:16px!important;
+  }
+
+  /* Fixed DoorDash-style bottom navigation, but Streamlit-native = no logout/reload. */
+  div[data-testid="stRadio"]:has(input[value="Home"]){
+    display:block!important;
+    position:fixed!important;
+    left:0!important;right:0!important;bottom:0!important;
+    z-index:999999!important;
+    background:rgba(18,20,19,.98)!important;
+    border-top:1px solid #303634!important;
+    padding:7px 6px calc(8px + env(safe-area-inset-bottom))!important;
+    box-shadow:0 -8px 24px rgba(0,0,0,.30)!important;
+  }
+  div[data-testid="stRadio"]:has(input[value="Home"]) > label{
+    display:none!important;
+  }
+  div[data-testid="stRadio"]:has(input[value="Home"]) [role="radiogroup"]{
+    display:flex!important;
+    justify-content:space-around!important;
+    gap:2px!important;
+  }
+  div[data-testid="stRadio"]:has(input[value="Home"]) [role="radiogroup"] > label{
+    flex:1!important;
+    justify-content:center!important;
+    text-align:center!important;
+    padding:6px 2px!important;
+    border-radius:12px!important;
+  }
+  div[data-testid="stRadio"]:has(input[value="Home"]) [role="radiogroup"] p{
+    font-size:.68rem!important;
+    font-weight:800!important;
+  }
+
+  /* Hide the normal desktop topbar columns on phone; mobile nav remains. */
+  section.main:has(.carelio-community-page-marker) .topbar-title,
+  section.main:has(.carelio-community-page-marker) .topbar-place{
+    display:none!important;
+  }
+}
+</style>
+""",unsafe_allow_html=True)
+
 defaults={
  "auth":None,"community":None,"staff":None,"org":None,"admin":None,"language":"en",
  "page":"landing","category":None,"food_group":None,"selected":[],
@@ -745,29 +751,49 @@ def community_sidebar():
         logout()
     st.markdown("<div style='color:#9cff28;font-weight:800;margin-top:18px'>People · Communities</div><div style='color:#a9c0bd;font-size:.8rem'>Stronger Together</div>",unsafe_allow_html=True)
 
-
-def mobile_community_nav():
-    """Phone-only Community nav using Streamlit buttons so session/auth is preserved."""
-    with st.container():
-        st.markdown("<span class='carelio-mobile-nav-marker'></span>",unsafe_allow_html=True)
-        c1,c2,c3,c4=st.columns(4)
-        with c1:
-            if st.button("⌂\nHome",key="mobile_nav_home"):
-                goto("home")
-        with c2:
-            if st.button("⌕\nSupport",key="mobile_nav_support"):
-                goto("support_hub")
-        with c3:
-            if st.button("♡\nMy Support",key="mobile_nav_support_saved"):
-                goto("my_support")
-        with c4:
-            if st.button("◉\nProfile",key="mobile_nav_profile"):
-                goto("profile")
-
 def community_topbar(title=None):
-    """Desktop remains unchanged; phone gets a separate safe bottom nav."""
-    mobile_community_nav()
+    """Approved desktop topbar + safe app-style mobile navigation."""
     u=st.session_state.community or {}
+
+    # Marker used only by mobile CSS.
+    st.markdown("<span class='carelio-community-page-marker'></span>",unsafe_allow_html=True)
+
+    # Safe Streamlit-native bottom navigation.
+    # This avoids URL/query-param reloads that can lose the Streamlit session.
+    current_page=st.session_state.get("page","home")
+    if current_page in ["category","support_hub","events"]:
+        desired="Support"
+    elif current_page=="my_support":
+        desired="My Support"
+    elif current_page=="profile":
+        desired="Profile"
+    else:
+        desired="Home"
+
+    st.session_state["carelio_mobile_nav"]=desired
+
+    def _carelio_mobile_nav_change():
+        choice=st.session_state.get("carelio_mobile_nav","Home")
+        if choice=="Home":
+            st.session_state.page="home"
+        elif choice=="Support":
+            st.session_state.page="support_hub"
+        elif choice=="My Support":
+            st.session_state.page="my_support"
+        elif choice=="Profile":
+            st.session_state.page="profile"
+
+    st.markdown("<span class='carelio-mobile-nav-marker'></span>",unsafe_allow_html=True)
+    st.radio(
+        "Mobile navigation",
+        ["Home","Support","My Support","Profile"],
+        horizontal=True,
+        key="carelio_mobile_nav",
+        label_visibility="collapsed",
+        on_change=_carelio_mobile_nav_change
+    )
+
+    # ORIGINAL DESKTOP TOPBAR — preserved.
     c1,c2,c3=st.columns([3.3,1.4,.55])
     with c1:
         if title:
@@ -970,22 +996,22 @@ def render_support_hub():
         community_sidebar()
     with main:
         community_topbar("Support")
-        st.markdown("<div class='page-title'>Find Support Near You</div>",unsafe_allow_html=True)
-        st.markdown("<div class='page-sub'>Choose a category to see available reviewed resources. Then narrow by ZIP, city/street, county, or a specific need.</div>",unsafe_allow_html=True)
+        st.markdown("<div class='page-title'>Find Support</div>",unsafe_allow_html=True)
+        st.markdown("<div class='page-sub'>Choose a category to see available locations. Then narrow by ZIP, city/street, county, or a specific need.</div>",unsafe_allow_html=True)
 
-        cats=[
-          ("Food","Food shelves, groceries & meals"),
-          ("Health","Medical, dental, vision & foot care"),
-          ("Baby & Family","Diapers, formula & family support"),
-          ("Clothing","Clothes, shoes & winter items"),
-          ("Hygiene","Personal care & hygiene supplies"),
-          ("Community Services","Housing, transportation & counseling")
+        categories=[
+            ("Food","Food shelves, groceries & meals"),
+            ("Health","Medical, dental, vision & foot care"),
+            ("Baby & Family","Diapers, formula & family support"),
+            ("Clothing","Clothes, shoes & winter essentials"),
+            ("Hygiene","Personal care & hygiene supplies"),
+            ("Community Services","Housing, transportation & counseling"),
         ]
         cols=st.columns(3)
-        for i,(cat,sub) in enumerate(cats):
+        for i,(cat,sub) in enumerate(categories):
             with cols[i%3]:
-                st.markdown("<div class='result-card'><div class='result-title'>"+esc(cat)+"</div><div class='result-meta'>"+esc(sub)+"</div></div>",unsafe_allow_html=True)
-                if st.button("Open "+cat,key="support_hub_"+re.sub(r"\\W+","_",cat)):
+                st.markdown("<div class='mobile-support-card'><b>"+esc(cat)+"</b><span>"+esc(sub)+"</span></div>",unsafe_allow_html=True)
+                if st.button("Open "+cat,key="support_"+re.sub(r"\W+","_",cat)):
                     st.session_state.category=cat
                     st.session_state.selected=[]
                     st.session_state.food_group=None
@@ -1000,81 +1026,109 @@ def render_category():
     left,main=st.columns([.15,.85],gap="large")
     with left:
         community_sidebar()
+
     with main:
-        community_topbar('Support')
+        community_topbar("Support")
+
         t1,t2=st.columns([1,.25])
         with t1:
             if cat=="Food":
-                st.markdown("<div class='page-title'>Food</div><div class='page-sub'>Free food shelves and food-support locations near you</div>",unsafe_allow_html=True)
+                subtitle="Free food shelves and food-support locations"
             else:
-                st.markdown("<div class='page-title'>"+esc(cat)+"</div><div class='page-sub'>Available "+esc(cat.lower())+" resources near you</div>",unsafe_allow_html=True)
+                subtitle="Nearby "+cat.lower()+" resources"
+            st.markdown("<div class='page-title'>"+esc(cat)+"</div><div class='page-sub'>"+esc(subtitle)+"</div>",unsafe_allow_html=True)
         with t2:
             st.markdown(profile_html(u),unsafe_allow_html=True)
 
-        # LOCATION FIRST
+        # LOCATION FILTER — optional. Default is All locations.
         st.markdown("<div class='section-title'>Find locations</div>",unsafe_allow_html=True)
-        mode=st.selectbox(
-            "Location filter",
-            ["All locations","ZIP code","City / street","County"],
-            label_visibility="collapsed",
-            key="location_mode_"+cat
-        )
+        f1,f2=st.columns([1.05,2.95])
+        with f1:
+            location_mode=st.selectbox(
+                "Location filter",
+                ["All locations","ZIP code","City / street","County"],
+                label_visibility="collapsed",
+                key="location_mode_"+cat
+            )
 
         q=""
         zipc=""
-        if mode=="ZIP code":
-            zipc=st.text_input("ZIP",placeholder="Enter ZIP, e.g. 55105",label_visibility="collapsed",key="zip_"+cat)
-        elif mode=="City / street":
-            q=st.text_input("City or street",placeholder="Enter city or street, e.g. St. Paul",label_visibility="collapsed",key="citystreet_"+cat)
-        elif mode=="County":
-            q=st.text_input("County",placeholder="Enter county, e.g. Ramsey",label_visibility="collapsed",key="county_"+cat)
+        with f2:
+            if location_mode=="ZIP code":
+                zipc=st.text_input(
+                    "ZIP",
+                    placeholder="Enter ZIP code, e.g. 55105",
+                    label_visibility="collapsed",
+                    key="zip_"+cat
+                )
+            elif location_mode=="City / street":
+                q=st.text_input(
+                    "City or street",
+                    placeholder="Enter city or street, e.g. St. Paul",
+                    label_visibility="collapsed",
+                    key="locq_"+cat
+                )
+            elif location_mode=="County":
+                q=st.text_input(
+                    "County",
+                    placeholder="Enter county, e.g. Ramsey",
+                    label_visibility="collapsed",
+                    key="loccounty_"+cat
+                )
+            else:
+                st.markdown("<div class='location-help'>Showing all reviewed and verified locations currently available in Carelio.</div>",unsafe_allow_html=True)
 
-        # OPTIONAL FILTERS AFTER LOCATION
-        st.markdown("<div class='section-title'>Refine your need <span style='font-size:.78rem;color:#9fb0ad'>(optional)</span></div>",unsafe_allow_html=True)
+        # SPECIFIC NEED — optional, after location discovery.
+        st.markdown("<div class='section-title'>Refine by need <span style='font-size:.8rem;color:#8ca19d'>(optional)</span></div>",unsafe_allow_html=True)
 
         selected=[]
         if cat=="Food":
-            food_group=st.selectbox(
+            group=st.selectbox(
                 "Food group",
-                ["All food"]+list(FOOD_GROUPS.keys()),
+                ["All Food"]+list(FOOD_GROUPS.keys()),
                 label_visibility="collapsed",
-                key="food_group_location_first"
+                key="food_group_select"
             )
-            if food_group!="All food":
-                st.session_state.food_group=food_group
+            if group!="All Food":
+                st.session_state.food_group=group
                 selected=st.multiselect(
                     "Specific food items",
-                    FOOD_GROUPS[food_group],
-                    default=[x for x in st.session_state.selected if x in FOOD_GROUPS[food_group]],
+                    FOOD_GROUPS[group],
+                    default=[x for x in st.session_state.selected if x in FOOD_GROUPS[group]],
                     placeholder="Optional: Milk, Eggs, Rice...",
-                    key="food_specific_items"
+                    key="food_items_select"
                 )
             else:
                 st.session_state.food_group=None
+                selected=[]
         else:
             selected=st.multiselect(
-                "Specific service or item",
+                "Specific service/item",
                 SUPPORT_ITEMS.get(cat,[]),
                 default=[x for x in st.session_state.selected if x in SUPPORT_ITEMS.get(cat,[])],
                 placeholder="Optional: choose a specific need",
-                key="specific_need_"+re.sub(r"\\W+","_",cat)
+                key="support_items_"+re.sub(r"\W+","_",cat)
             )
 
         st.session_state.selected=list(selected)
 
-        # SHOW LOCATIONS IMMEDIATELY — no item selection required.
-        if mode=="All locations":
+        if location_mode=="All locations":
             st.markdown("<div class='section-title'>Available locations</div>",unsafe_allow_html=True)
-            st.caption("Reviewed public resources can appear before an organization registers with Carelio. Verified Carelio partners can additionally publish live availability.")
+            st.caption("Reviewed public resources can appear before an organization registers with Carelio. Verified Carelio partners can also publish live availability.")
         elif zipc:
             st.markdown("<div class='section-title'>Locations for ZIP "+esc(zipc)+"</div>",unsafe_allow_html=True)
         elif q:
-            st.markdown("<div class='section-title'>Locations matching "+esc(q)+"</div>",unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>Matching locations</div>",unsafe_allow_html=True)
         else:
             st.markdown("<div class='section-title'>Available locations</div>",unsafe_allow_html=True)
 
+        # IMPORTANT: show category locations immediately, even with no item selected.
         render_location_results(cat,selected,q,zipc)
 
+        if q or zipc or selected:
+            if st.button("Save this search",key="save_search_"+re.sub(r"\W+","_",cat)):
+                save_search(cat,selected,q,zipc)
+                st.success("Search saved.")
 
 def access(label,value):
     value=(value or "").strip()
@@ -1342,8 +1396,12 @@ def render_location_results(category, selected, q, zipc):
 
     for idx,l in enumerate(partners_for_map):
         ups=rows("SELECT * FROM service_updates WHERE location_id=? ORDER BY updated_at DESC",(l["id"],))
-        matched=[x for x in ups if not selected or x["item"] in selected]
-        if selected and not matched:
+        matched=[
+            x for x in ups
+            if str(x.get("category","")).strip()==category
+            and (not selected or x.get("item") in selected)
+        ]
+        if not matched:
             continue
         render_partner_result(l,matched,idx)
         shown+=1
