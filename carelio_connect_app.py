@@ -149,6 +149,15 @@ def ensure_schema():
         CREATE TABLE IF NOT EXISTS appointments(
           id TEXT PRIMARY KEY,slot_id TEXT,org_id TEXT,user_id TEXT,status TEXT DEFAULT 'Booked',created_at TEXT
         );
+        CREATE TABLE IF NOT EXISTS support_forms(
+          id TEXT PRIMARY KEY,org_id TEXT,title TEXT,category TEXT,description TEXT,form_url TEXT,
+          start_at TEXT,end_at TEXT,capacity INTEGER DEFAULT 0,active INTEGER DEFAULT 1,
+          created_by TEXT,created_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS form_registrations(
+          id TEXT PRIMARY KEY,form_id TEXT,org_id TEXT,user_id TEXT,status TEXT DEFAULT 'Registered',
+          response_note TEXT,created_at TEXT
+        );
         CREATE TABLE IF NOT EXISTS searches(
           id TEXT PRIMARY KEY,user_id TEXT,category TEXT,needs_json TEXT,search_text TEXT,zip TEXT,created_at TEXT
         );
@@ -1244,8 +1253,9 @@ def community_sidebar():
     ]
     with st.sidebar:
         st.markdown(
-            "<div class='carelio-side-brand'><span class='carelio-side-mark'>🌿</span>"
-            "<span>Carelio <b>CONNECT</b></span></div>"
+            "<div class='carelio-side-brand'><span class='carelio-side-mark'>"
+            "<svg viewBox='0 0 64 64' aria-hidden='true'><circle cx='20' cy='14' r='7' fill='#9cff28'/><circle cx='44' cy='14' r='7' fill='#9cff28'/><path d='M32 58C21 50 9 41 9 29c0-8 6-14 14-14 4 0 7 2 9 5 2-3 5-5 9-5 8 0 14 6 14 14 0 12-12 21-23 29z' fill='#9cff28'/><path d='M32 45c-7-5-13-10-13-16 0-4 3-7 7-7 3 0 5 2 6 4 1-2 3-4 6-4 4 0 7 3 7 7 0 6-6 11-13 16z' fill='#07301f'/></svg>"
+            "</span><span>Carelio <b>CONNECT</b></span></div>"
             "<div class='carelio-side-tagline'>People · Support · Stronger<br>Communities</div>",
             unsafe_allow_html=True
         )
@@ -2401,7 +2411,7 @@ def render_event_detail():
 
 
 def render_my_support():
-    """Community support history. A bad/old local DB row must never log the user out."""
+    """Community support hub: saved items, requests, appointments and registrations."""
     u=st.session_state.get("community")
     if not isinstance(u,dict) or not u.get("id"):
         st.warning("Your Carelio session is still open, but the profile record could not be read on this page.")
@@ -2418,29 +2428,27 @@ def render_my_support():
         with main:
             community_topbar("My Support")
             st.markdown("<div class='page-title'>"+esc(tr("My Support"))+"</div>",unsafe_allow_html=True)
-            st.markdown("<div class='page-sub'>Saved support, requests and appointments in one place.</div>",unsafe_allow_html=True)
-            tabs=st.tabs(["Saved Events","Saved Locations","Requests","Appointments"])
+            st.markdown("<div class='page-sub'>Saved support, requests, appointments and registrations in one place.</div>",unsafe_allow_html=True)
+            tabs=st.tabs(["Saved Events","Saved Locations","Requests","Appointments","Forms / Registration"])
 
             with tabs[0]:
                 try:
                     saved=rows("SELECT * FROM saved_events WHERE user_id=? ORDER BY created_at DESC",(u["id"],))
                     if not saved:
                         st.info("No saved events yet.")
-                    for s in saved:
-                        title="Saved Event"
-                        detail=str(s.get("created_at") or "")
+                    for sv in saved:
+                        title="Saved Event"; detail=str(sv.get("created_at") or "")
                         try:
-                            if s.get("event_type")=="org":
-                                ev=row("SELECT title,start_at,address,city,state,zip FROM org_events WHERE id=?",(s.get("event_id"),))
+                            if sv.get("event_type")=="org":
+                                ev=row("SELECT title,start_at,address,city,state,zip FROM org_events WHERE id=?",(sv.get("event_id"),))
                             else:
-                                ev=row("SELECT title,start_at,address,city,state,zip FROM public_events WHERE id=?",(s.get("event_id"),))
+                                ev=row("SELECT title,start_at,address,city,state,zip FROM public_events WHERE id=?",(sv.get("event_id"),))
                             if ev:
                                 title=ev.get("title") or title
                                 detail=(ev.get("start_at") or "")+" · "+", ".join([str(ev.get(k) or "") for k in ["address","city","state","zip"] if ev.get(k)])
                         except Exception:
                             pass
-                        st.markdown("<div class='result-card'><div class='result-title'>"+esc(title)+
-                                    "</div><div class='result-meta'>"+esc(detail)+"</div></div>",unsafe_allow_html=True)
+                        st.markdown("<div class='result-card'><div class='result-title'>"+esc(title)+"</div><div class='result-meta'>"+esc(detail)+"</div></div>",unsafe_allow_html=True)
                 except Exception as ex:
                     st.info("Saved Events are not available yet.")
                     with st.expander("Technical detail"): st.code(type(ex).__name__+": "+str(ex))
@@ -2450,12 +2458,8 @@ def render_my_support():
                     saved=rows("SELECT * FROM saved_locations WHERE user_id=? ORDER BY created_at DESC",(u["id"],))
                     if not saved:
                         st.info("No saved locations yet.")
-                    for s in saved:
-                        loc=None
-                        try:
-                            loc=row("SELECT * FROM locations WHERE id=?",(s.get("location_id"),))
-                        except Exception:
-                            loc=None
+                    for sv in saved:
+                        loc=row("SELECT * FROM locations WHERE id=?",(sv.get("location_id"),)) if sv.get("location_id") else None
                         if loc:
                             org_name=""
                             try:
@@ -2463,15 +2467,9 @@ def render_my_support():
                                 org_name=(org or {}).get("name","")
                             except Exception:
                                 pass
-                            st.markdown("<div class='result-card'><div class='result-title'>"+
-                                        esc((org_name+" · " if org_name else "")+(loc.get("name") or "Saved Location"))+
-                                        "</div><div class='result-meta'>"+
-                                        esc(", ".join([str(loc.get(k) or "") for k in ["address","city","state","zip"] if loc.get(k)]))+
-                                        "</div></div>",unsafe_allow_html=True)
+                            st.markdown("<div class='result-card'><div class='result-title'>"+esc((org_name+" · " if org_name else "")+(loc.get("name") or "Saved Location"))+"</div><div class='result-meta'>"+esc(", ".join([str(loc.get(k) or "") for k in ["address","city","state","zip"] if loc.get(k)]))+"</div></div>",unsafe_allow_html=True)
                         else:
-                            st.markdown("<div class='result-card'><div class='result-title'>Saved Location</div>"
-                                        "<div class='result-meta'>This saved location is no longer published.</div></div>",
-                                        unsafe_allow_html=True)
+                            st.markdown("<div class='result-card'><div class='result-title'>Saved Location</div><div class='result-meta'>This saved location is no longer published.</div></div>",unsafe_allow_html=True)
                 except Exception as ex:
                     st.info("Saved Locations are not available yet.")
                     with st.expander("Technical detail"): st.code(type(ex).__name__+": "+str(ex))
@@ -2482,37 +2480,116 @@ def render_my_support():
                     if not rr:
                         st.info("No requests yet.")
                     for r in rr:
-                        st.markdown("<div class='result-card'><div class='result-title'>"+
-                                    esc(r.get("request_type") or "Request")+" · "+esc(r.get("status") or "")+
-                                    "</div><div class='result-meta'>"+esc(r.get("details") or "")+
-                                    "<br>"+esc(r.get("created_at") or "")+"</div></div>",unsafe_allow_html=True)
+                        st.markdown("<div class='result-card'><div class='result-title'>"+esc(r.get("request_type") or "Request")+" · "+esc(r.get("status") or "")+"</div><div class='result-meta'>"+esc(r.get("details") or "")+"<br>"+esc(r.get("created_at") or "")+"</div></div>",unsafe_allow_html=True)
                 except Exception as ex:
                     st.info("Requests are not available yet.")
                     with st.expander("Technical detail"): st.code(type(ex).__name__+": "+str(ex))
 
             with tabs[3]:
+                st.markdown("<div class='mysupport-subtitle'>My Appointments</div>",unsafe_allow_html=True)
                 try:
-                    aa=rows("SELECT * FROM appointments WHERE user_id=? ORDER BY created_at DESC",(u["id"],))
+                    aa=rows("""SELECT a.*,sl.title,sl.start_at,l.name location_name,o.name org_name
+                               FROM appointments a
+                               LEFT JOIN appointment_slots sl ON sl.id=a.slot_id
+                               LEFT JOIN locations l ON l.id=sl.location_id
+                               LEFT JOIN organizations o ON o.id=a.org_id
+                               WHERE a.user_id=? ORDER BY datetime(sl.start_at) DESC, datetime(a.created_at) DESC""",(u["id"],))
                     if not aa:
-                        st.info("No appointments yet.")
+                        st.info("No appointments booked yet.")
                     for a in aa:
-                        title="Appointment"
-                        when=""
-                        try:
-                            slot=row("SELECT title,start_at FROM appointment_slots WHERE id=?",(a.get("slot_id"),))
-                            if slot:
-                                title=slot.get("title") or title
-                                when=slot.get("start_at") or ""
-                        except Exception:
-                            pass
-                        st.markdown("<div class='result-card'><div class='result-title'>"+esc(title)+
-                                    " · "+esc(a.get("status") or "")+"</div><div class='result-meta'>"+
-                                    esc(when)+"</div></div>",unsafe_allow_html=True)
+                        status=a.get("status") or "Booked"
+                        st.markdown("<div class='result-card'><div class='result-title'>"+esc(a.get("title") or "Appointment")+" · "+esc(status)+"</div><div class='result-meta'>"+esc(a.get("org_name") or "")+(" · "+esc(a.get("location_name")) if a.get("location_name") else "")+"<br>"+esc(str(a.get("start_at") or "").replace("T"," · "))+"</div></div>",unsafe_allow_html=True)
+                        if status not in ("Cancelled","Canceled","Completed"):
+                            if st.button("Cancel appointment",key="my_cancel_appt_"+str(a.get("id"))):
+                                run("UPDATE appointments SET status='Cancelled' WHERE id=? AND user_id=?",(a.get("id"),u["id"]))
+                                st.rerun()
                 except Exception as ex:
                     st.info("Appointments are not available yet.")
                     with st.expander("Technical detail"): st.code(type(ex).__name__+": "+str(ex))
+
+                st.markdown("<div class='mysupport-subtitle'>Book an Appointment</div>",unsafe_allow_html=True)
+                try:
+                    slots=rows("""SELECT sl.*,o.name org_name,l.name location_name,l.city,l.state,l.zip
+                                  FROM appointment_slots sl
+                                  JOIN organizations o ON o.id=sl.org_id
+                                  LEFT JOIN locations l ON l.id=sl.location_id
+                                  WHERE sl.active=1 AND o.verification_status='verified' AND COALESCE(o.is_test,0)=0
+                                  AND datetime(sl.start_at)>=datetime('now')
+                                  ORDER BY datetime(sl.start_at) LIMIT 40""")
+                    shown=0
+                    for sl in slots:
+                        booked=row("SELECT COUNT(*) c FROM appointments WHERE slot_id=? AND status NOT IN ('Cancelled','Canceled')",(sl["id"],)) or {"c":0}
+                        mine=row("SELECT id,status FROM appointments WHERE slot_id=? AND user_id=? AND status NOT IN ('Cancelled','Canceled') LIMIT 1",(sl["id"],u["id"]))
+                        remaining=max(0,int(sl.get("capacity") or 1)-int(booked.get("c") or 0))
+                        if remaining<=0 and not mine:
+                            continue
+                        shown+=1
+                        with st.container(border=True):
+                            st.markdown("**"+esc(sl.get("title") or "Support appointment")+"**")
+                            st.caption(esc(sl.get("org_name") or "")+(" · "+esc(sl.get("location_name")) if sl.get("location_name") else ""))
+                            st.write(str(sl.get("start_at") or "").replace("T"," · "))
+                            if mine:
+                                st.success("Already booked")
+                            elif st.button("Book appointment",key="my_book_appt_"+sl["id"]):
+                                run("INSERT INTO appointments(id,slot_id,org_id,user_id,status,created_at) VALUES(?,?,?,?,?,?)",(uid("appt"),sl["id"],sl.get("org_id"),u["id"],"Booked",now_iso()))
+                                st.success("Appointment booked and added to My Support.")
+                                st.rerun()
+                    if shown==0:
+                        st.info("No open appointment slots are published right now.")
+                except Exception as ex:
+                    st.info("Bookable appointments are not available yet.")
+                    with st.expander("Technical detail"): st.code(type(ex).__name__+": "+str(ex))
+
+            with tabs[4]:
+                st.markdown("<div class='mysupport-subtitle'>My Registrations</div>",unsafe_allow_html=True)
+                try:
+                    regs=rows("""SELECT fr.*,sf.title,sf.category,sf.description,sf.form_url,sf.start_at,sf.end_at,o.name org_name
+                                 FROM form_registrations fr
+                                 JOIN support_forms sf ON sf.id=fr.form_id
+                                 LEFT JOIN organizations o ON o.id=fr.org_id
+                                 WHERE fr.user_id=? ORDER BY datetime(fr.created_at) DESC""",(u["id"],))
+                    if not regs:
+                        st.info("No forms or registrations yet.")
+                    for r in regs:
+                        st.markdown("<div class='result-card'><div class='result-title'>"+esc(r.get("title") or "Registration")+" · "+esc(r.get("status") or "Registered")+"</div><div class='result-meta'>"+esc(r.get("org_name") or "")+(" · "+esc(r.get("category")) if r.get("category") else "")+("<br>"+esc(r.get("description")) if r.get("description") else "")+"</div></div>",unsafe_allow_html=True)
+                        if r.get("form_url"):
+                            st.markdown("<a class='action-link' target='_blank' href='"+esc(r.get("form_url"))+"'>Open registration form</a>",unsafe_allow_html=True)
+                        if (r.get("status") or "Registered") not in ("Withdrawn","Completed"):
+                            if st.button("Withdraw registration",key="withdraw_reg_"+r["id"]):
+                                run("UPDATE form_registrations SET status='Withdrawn' WHERE id=? AND user_id=?",(r["id"],u["id"]))
+                                st.rerun()
+                except Exception as ex:
+                    st.info("Registrations are not available yet.")
+                    with st.expander("Technical detail"): st.code(type(ex).__name__+": "+str(ex))
+
+                st.markdown("<div class='mysupport-subtitle'>Available Forms & Registration</div>",unsafe_allow_html=True)
+                try:
+                    forms=rows("""SELECT sf.*,o.name org_name
+                                  FROM support_forms sf JOIN organizations o ON o.id=sf.org_id
+                                  WHERE sf.active=1 AND o.verification_status='verified' AND COALESCE(o.is_test,0)=0
+                                  AND (sf.end_at IS NULL OR sf.end_at='' OR datetime(sf.end_at)>=datetime('now'))
+                                  ORDER BY datetime(sf.created_at) DESC LIMIT 40""")
+                    if not forms:
+                        st.info("No Carelio partner registration forms are published right now.")
+                    for f in forms:
+                        existing=row("SELECT id,status FROM form_registrations WHERE form_id=? AND user_id=? ORDER BY created_at DESC LIMIT 1",(f["id"],u["id"]))
+                        with st.container(border=True):
+                            st.markdown("**"+esc(f.get("title") or "Support registration")+"**")
+                            st.caption(esc(f.get("org_name") or "")+(" · "+esc(f.get("category")) if f.get("category") else ""))
+                            if f.get("description"): st.write(f.get("description"))
+                            if existing and existing.get("status")!="Withdrawn":
+                                st.success("Registered · "+str(existing.get("status") or "Registered"))
+                            else:
+                                if st.button("Register",key="register_form_"+f["id"]):
+                                    run("INSERT INTO form_registrations(id,form_id,org_id,user_id,status,response_note,created_at) VALUES(?,?,?,?,?,?,?)",(uid("reg"),f["id"],f.get("org_id"),u["id"],"Registered","",now_iso()))
+                                    st.success("Registration saved in My Support.")
+                                    st.rerun()
+                            if f.get("form_url"):
+                                st.markdown("<a class='action-link' target='_blank' href='"+esc(f.get("form_url"))+"'>Open official form</a>",unsafe_allow_html=True)
+                except Exception as ex:
+                    st.info("Available forms are not available yet.")
+                    with st.expander("Technical detail"): st.code(type(ex).__name__+": "+str(ex))
     except Exception as ex:
-        # Last-resort page shell: never call logout and never blank the whole app.
         st.markdown("<div class='page-title'>My Support</div>",unsafe_allow_html=True)
         st.warning("My Support could not finish loading, but you are still signed in.")
         with st.expander("Technical detail"):
@@ -2921,11 +2998,92 @@ def render_org_locations():
 
 
 def render_org_requests():
-    org_nav(); o=st.session_state.org
-    st.markdown("<div class='page-title'>Forms + Requests</div>",unsafe_allow_html=True)
-    rr=rows("SELECT * FROM requests WHERE org_id=? ORDER BY created_at DESC",(o["id"],))
-    if rr: st.dataframe(pd.DataFrame(rr),hide_index=True)
-    else: st.info("No requests yet.")
+    o=st.session_state.org or {}; staff=st.session_state.staff or {}
+    main=_org_shell_start()
+    with main:
+        org_topbar()
+        st.markdown("<div class='org-section-title'>Appointments, Requests & Registrations</div><div class='org-section-sub'>Review community requests, assisted-access requests, booked appointments and registration forms in one place.</div>",unsafe_allow_html=True)
+        t1,t2,t3,t4=st.tabs(["Community Requests","Assisted Access","Appointments","Forms & Registrations"])
+        with t1:
+            reqs=rows("SELECT r.*,u.name user_name,l.name location_name FROM requests r LEFT JOIN community_users u ON u.id=r.user_id LEFT JOIN locations l ON l.id=r.location_id WHERE r.org_id=? ORDER BY datetime(r.created_at) DESC",(o.get("id",""),))
+            if not reqs: st.info("No community requests yet.")
+            for r in reqs:
+                with st.container(border=True):
+                    st.markdown("**"+esc(r.get("user_name") or "Community member")+"** · "+esc(r.get("request_type") or "Support request"))
+                    st.caption((r.get("location_name") or "")+" · "+str(r.get("created_at") or ""))
+                    if r.get("details"): st.write(r.get("details"))
+                    if can("Staff"):
+                        opts=["New","In Progress","Completed","Closed"]
+                        cur=r.get("status") if r.get("status") in opts else opts[0]
+                        new=st.selectbox("Status",opts,index=opts.index(cur),key="org_req_status_"+r["id"])
+                        if st.button("Update",key="org_req_update_"+r["id"]):
+                            run("UPDATE requests SET status=? WHERE id=?",(new,r["id"])); audit(o["id"],staff,"Updated request status","request",r["id"],new); st.rerun()
+        with t2:
+            reqs=rows("SELECT a.*,u.name user_name,l.name location_name FROM assistance_requests a LEFT JOIN community_users u ON u.id=a.user_id LEFT JOIN locations l ON l.id=a.location_id WHERE a.org_id=? ORDER BY datetime(a.created_at) DESC",(o.get("id",""),))
+            if not reqs: st.info("No assisted-access requests yet.")
+            for r in reqs:
+                with st.container(border=True):
+                    try: items=", ".join(json.loads(r.get("items_json") or "[]"))
+                    except Exception: items=str(r.get("items_json") or "")
+                    st.markdown("**"+esc(r.get("user_name") or "Community member")+"** · "+esc(r.get("category") or "Support"))
+                    st.caption((r.get("location_name") or "")+" · "+str(r.get("created_at") or ""))
+                    st.write(items or r.get("assistance_type") or "Assistance request")
+                    if can("Staff"):
+                        statuses=["Submitted","Accepted","In Progress","Ready for Pickup","Out for Delivery","Delivered","Completed","Unable to Fulfill"]
+                        cur=r.get("status") if r.get("status") in statuses else statuses[0]
+                        new=st.selectbox("Status",statuses,index=statuses.index(cur),key="org_asst_status_"+r["id"])
+                        if st.button("Update",key="org_asst_update_"+r["id"]):
+                            run("UPDATE assistance_requests SET status=?,updated_at=? WHERE id=?",(new,now_iso(),r["id"])); assistance_history(r["id"],new,"Organization update","organization",staff.get("id","")); notify_user(r.get("user_id"),"Carelio request update",assistance_status_message(new),r["id"]); audit(o["id"],staff,"Updated assisted request","assistance_request",r["id"],new); st.rerun()
+        with t3:
+            appts=rows("SELECT a.*,u.name user_name,sl.title,sl.start_at,l.name location_name FROM appointments a JOIN appointment_slots sl ON sl.id=a.slot_id LEFT JOIN community_users u ON u.id=a.user_id LEFT JOIN locations l ON l.id=sl.location_id WHERE a.org_id=? ORDER BY sl.start_at",(o.get("id",""),))
+            if appts:
+                st.dataframe(pd.DataFrame([{"Name":r.get("user_name"),"Appointment":r.get("title"),"Location":r.get("location_name"),"Start":r.get("start_at"),"Status":r.get("status")} for r in appts]),hide_index=True,use_container_width=True)
+            else: st.info("No booked appointments yet.")
+            if st.button("Manage appointment slots",key="org_manage_slots_target"):
+                st.session_state.page="org_appointments"; st.rerun()
+        with t4:
+            if can("Manager"):
+                with st.expander("Create a Community form / registration",expanded=False):
+                    title=st.text_input("Form or registration title",key="org_form_title")
+                    category=st.selectbox("Category",ORG_CATEGORIES,key="org_form_category")
+                    description=st.text_area("What is this registration for?",key="org_form_description")
+                    form_url=st.text_input("Official form URL (optional)",key="org_form_url")
+                    capacity=st.number_input("Capacity (0 = no limit)",min_value=0,value=0,step=1,key="org_form_capacity")
+                    if st.button("Publish form / registration",type="primary",key="org_publish_form"):
+                        if not title.strip():
+                            st.error("Add a title before publishing.")
+                        elif form_url and not str(form_url).lower().startswith(("http://","https://")):
+                            st.error("Use a full official URL beginning with http:// or https://.")
+                        else:
+                            fid=uid("form")
+                            run("INSERT INTO support_forms(id,org_id,title,category,description,form_url,start_at,end_at,capacity,active,created_by,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",(fid,o.get("id"),title.strip(),category,description.strip(),form_url.strip(),"","",int(capacity),1,staff.get("id",""),now_iso()))
+                            audit(o.get("id",""),staff,"Published form / registration","support_form",fid,title.strip())
+                            st.success("Published. Community users can now register from My Support.")
+                            st.rerun()
+
+            forms=rows("SELECT * FROM support_forms WHERE org_id=? ORDER BY datetime(created_at) DESC",(o.get("id",""),))
+            if not forms:
+                st.info("No forms or registrations published yet.")
+            for f in forms:
+                regs=rows("""SELECT fr.*,u.name user_name,u.email user_email
+                           FROM form_registrations fr LEFT JOIN community_users u ON u.id=fr.user_id
+                           WHERE fr.form_id=? ORDER BY datetime(fr.created_at) DESC""",(f["id"],))
+                with st.container(border=True):
+                    c1,c2=st.columns([.75,.25])
+                    with c1:
+                        st.markdown("**"+esc(f.get("title") or "Registration")+"**")
+                        st.caption(esc(f.get("category") or "")+" · "+str(len(regs))+" registration(s)")
+                        if f.get("description"): st.write(f.get("description"))
+                    with c2:
+                        active=bool(f.get("active"))
+                        if can("Manager") and st.button("Unpublish" if active else "Republish",key="org_form_toggle_"+f["id"]):
+                            run("UPDATE support_forms SET active=? WHERE id=?",(0 if active else 1,f["id"]))
+                            audit(o.get("id",""),staff,"Unpublished form" if active else "Republished form","support_form",f["id"],f.get("title") or "")
+                            st.rerun()
+                    if f.get("form_url"):
+                        st.markdown("<a class='action-link' target='_blank' href='"+esc(f.get("form_url"))+"'>Open official form</a>",unsafe_allow_html=True)
+                    if regs:
+                        st.dataframe(pd.DataFrame([{"Name":r.get("user_name") or "Community member","Email":r.get("user_email") or "","Status":r.get("status"),"Registered":r.get("created_at")} for r in regs]),hide_index=True,use_container_width=True)
 
 def render_org_appointments():
     org_nav(); o=st.session_state.org; s=st.session_state.staff
@@ -3481,7 +3639,9 @@ def _org_status_badge(o):
 def org_sidebar():
     st.markdown("<span class='carelio-org-sidebar-marker'></span>",unsafe_allow_html=True)
     st.markdown(
-        "<div class='carelio-org-brand'><span class='carelio-org-leaf'>🌿</span><span>Carelio<small>CONNECT</small></span></div>"
+        "<div class='carelio-org-brand'><span class='carelio-org-leaf'>"
+        "<svg viewBox='0 0 64 64' aria-hidden='true'><circle cx='20' cy='14' r='7' fill='#9cff28'/><circle cx='44' cy='14' r='7' fill='#9cff28'/><path d='M32 58C21 50 9 41 9 29c0-8 6-14 14-14 4 0 7 2 9 5 2-3 5-5 9-5 8 0 14 6 14 14 0 12-12 21-23 29z' fill='#9cff28'/><path d='M32 45c-7-5-13-10-13-16 0-4 3-7 7-7 3 0 5 2 6 4 1-2 3-4 6-4 4 0 7 3 7 7 0 6-6 11-13 16z' fill='#07301f'/></svg>"
+        "</span><span>Carelio<small>CONNECT</small></span></div>"
         "<div class='carelio-org-tagline'>People · Support · Stronger Communities</div>",
         unsafe_allow_html=True,
     )
@@ -4088,6 +4248,147 @@ def render_admin():
         if aa: st.dataframe(pd.DataFrame(aa),hide_index=True)
         logs=rows("SELECT created_at,org_id,actor_name,action,entity_type,details FROM audit_logs ORDER BY created_at DESC LIMIT 300")
         if logs: st.dataframe(pd.DataFrame(logs),hide_index=True)
+
+
+# ------------------------------------------------------------
+# FINAL AUTHENTICATED THEME — dark Carelio background from the sign-in experience
+# ------------------------------------------------------------
+st.markdown(f"""
+<style>
+/* The signed-in Community and Organization workspaces share the same dark Carelio atmosphere. */
+[data-testid="stAppViewContainer"]:has(.carelio-community-page-marker),
+[data-testid="stAppViewContainer"]:has(.carelio-org-page-marker){{
+  background:
+    linear-gradient(115deg,rgba(5,16,20,.965) 0%,rgba(7,21,26,.945) 48%,rgba(14,27,30,.92) 100%),
+    url(data:image/jpeg;base64,{ASSETS['background']}) center center/cover fixed no-repeat!important;
+  color:#f4fbfc!important;
+}}
+[data-testid="stAppViewContainer"]:has(.carelio-community-page-marker)::before,
+[data-testid="stAppViewContainer"]:has(.carelio-org-page-marker)::before{{display:none!important}}
+
+/* Community page typography on dark background. */
+section.main:has(.carelio-community-page-marker) .carelio-hello,
+section.main:has(.carelio-community-page-marker) .page-title,
+section.main:has(.carelio-community-page-marker) .food-title,
+section.main:has(.carelio-community-page-marker) .carelio-home-section,
+section.main:has(.carelio-community-page-marker) .carelio-results-title,
+section.main:has(.carelio-community-page-marker) .section-title,
+section.main:has(.carelio-community-page-marker) .mysupport-subtitle{{color:#fff!important}}
+section.main:has(.carelio-community-page-marker) .carelio-hello-sub,
+section.main:has(.carelio-community-page-marker) .page-sub,
+section.main:has(.carelio-community-page-marker) .food-sub,
+section.main:has(.carelio-community-page-marker) .section-sub,
+section.main:has(.carelio-community-page-marker) .carelio-category-subline,
+section.main:has(.carelio-community-page-marker) .carelio-filter-label{{color:#c5d5d8!important}}
+section.main:has(.carelio-community-page-marker) .carelio-top-place,
+section.main:has(.carelio-community-page-marker) .carelio-top-name{{color:#eef8f9!important}}
+section.main:has(.carelio-community-page-marker) .carelio-home-quote,
+section.main:has(.carelio-community-page-marker) .carelio-home-quote span{{color:#d7e6e8!important}}
+section.main:has(.carelio-community-page-marker) .carelio-light-hero{{
+  background:linear-gradient(90deg,rgba(8,23,28,.86),rgba(8,23,28,.58)),url(data:image/jpeg;base64,{ASSETS['background']}) center 47%/cover no-repeat!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.18)!important;
+}}
+section.main:has(.carelio-community-page-marker) .carelio-light-hero:after{{display:none!important}}
+
+/* Keep cards readable while the page itself stays dark. */
+section.main:has(.carelio-community-page-marker) .result-card,
+[data-testid="stVerticalBlockBorderWrapper"]:has(.home-category-card-marker),
+[data-testid="stVerticalBlockBorderWrapper"]:has(.home-nearby-card-marker){{
+  background:rgba(246,251,252,.97)!important;
+}}
+section.main:has(.carelio-community-page-marker) [data-testid="stVerticalBlockBorderWrapper"]{{
+  border-color:rgba(210,228,233,.72)!important;
+}}
+section.main:has(.carelio-community-page-marker) [data-testid="stTabs"] [data-baseweb="tab-list"]{{
+  background:rgba(7,27,33,.72)!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:12px!important;padding:4px!important
+}}
+section.main:has(.carelio-community-page-marker) [data-baseweb="tab"]{{color:#eaf5f6!important}}
+section.main:has(.carelio-community-page-marker) [data-baseweb="tab"] *{{color:#eaf5f6!important}}
+section.main:has(.carelio-community-page-marker) [data-baseweb="tab"][aria-selected="true"]{{background:#2f8b61!important;border-radius:9px!important}}
+.mysupport-subtitle{{font-size:1.05rem;font-weight:900;margin:18px 0 8px}}
+
+/* Search / controls use dark glass like the sign-in form. */
+section.main:has(.carelio-community-page-marker) [data-testid="stTextInput"] input,
+section.main:has(.carelio-community-page-marker) [data-testid="stTextArea"] textarea,
+section.main:has(.carelio-community-page-marker) [data-baseweb="select"] > div{{
+  background:rgba(18,38,43,.94)!important;color:#f4fbfc!important;-webkit-text-fill-color:#f4fbfc!important;
+  border:1px solid #45656d!important;box-shadow:none!important
+}}
+section.main:has(.carelio-community-page-marker) [data-testid="stTextInput"] input::placeholder{{color:#afc2c6!important;-webkit-text-fill-color:#afc2c6!important}}
+section.main:has(.carelio-community-page-marker) label,
+section.main:has(.carelio-community-page-marker) label *{{color:#e2eef0!important}}
+section.main:has(.carelio-community-page-marker) .stButton>button{{
+  background:rgba(17,37,42,.96)!important;color:#f5fbfc!important;border:1px solid #5c7a80!important
+}}
+section.main:has(.carelio-community-page-marker) .stButton>button *{{color:#f5fbfc!important}}
+section.main:has(.carelio-community-page-marker) .stButton>button[kind="primary"]{{background:#9aeb40!important;color:#071417!important;border-color:#9aeb40!important}}
+section.main:has(.carelio-community-page-marker) .stButton>button[kind="primary"] *{{color:#071417!important}}
+
+/* Exact same Carelio heart/people mark as the sign-in screen. */
+.carelio-side-mark svg,.carelio-org-leaf svg{{width:40px!important;height:40px!important;display:block!important}}
+.carelio-side-mark,.carelio-org-leaf{{width:42px!important;height:42px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;background:transparent!important}}
+
+/* Organization shell: dark page, bright readable titles, light functional cards. */
+section.main:has(.carelio-org-page-marker) .org-section-title,
+section.main:has(.carelio-org-page-marker) .page-title{{color:#fff!important}}
+section.main:has(.carelio-org-page-marker) .org-section-sub,
+section.main:has(.carelio-org-page-marker) .page-sub{{color:#c8d8db!important}}
+section.main:has(.carelio-org-page-marker) .carelio-org-topbar{{
+  background:rgba(10,30,35,.88)!important;border:1px solid rgba(255,255,255,.13)!important;box-shadow:0 10px 28px rgba(0,0,0,.16)!important
+}}
+section.main:has(.carelio-org-page-marker) .carelio-org-top-left,
+section.main:has(.carelio-org-page-marker) .carelio-org-top-left *,
+section.main:has(.carelio-org-page-marker) .carelio-org-top-right,
+section.main:has(.carelio-org-page-marker) .carelio-org-top-right *{{color:#f0f8f9!important}}
+section.main:has(.carelio-org-page-marker) .carelio-org-hero{{
+  background:linear-gradient(90deg,rgba(8,23,28,.88),rgba(8,23,28,.60)),url(data:image/jpeg;base64,{ASSETS['background']}) center 47%/cover no-repeat!important;
+  border:1px solid rgba(255,255,255,.12)!important
+}}
+section.main:has(.carelio-org-page-marker) .carelio-org-hero:after{{display:none!important}}
+section.main:has(.carelio-org-page-marker) .carelio-org-greeting{{color:#fff!important}}
+section.main:has(.carelio-org-page-marker) .carelio-org-greeting-sub,
+section.main:has(.carelio-org-page-marker) .carelio-org-hero-quote{{color:#d5e4e6!important}}
+section.main:has(.carelio-org-page-marker) .org-panel,
+section.main:has(.carelio-org-page-marker) .org-metric,
+section.main:has(.carelio-org-page-marker) [data-testid="stVerticalBlockBorderWrapper"]{{
+  background:rgba(248,252,253,.97)!important;border-color:#d2e1e6!important;color:#173e52!important
+}}
+section.main:has(.carelio-org-page-marker) .org-panel *,
+section.main:has(.carelio-org-page-marker) .org-metric *,
+section.main:has(.carelio-org-page-marker) [data-testid="stVerticalBlockBorderWrapper"] p{{color:#173e52!important}}
+section.main:has(.carelio-org-page-marker) [data-testid="stTabs"] [data-baseweb="tab-list"]{{
+  background:rgba(7,27,33,.72)!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:12px!important;padding:4px!important
+}}
+section.main:has(.carelio-org-page-marker) [data-baseweb="tab"],
+section.main:has(.carelio-org-page-marker) [data-baseweb="tab"] *{{color:#edf7f8!important}}
+section.main:has(.carelio-org-page-marker) [data-baseweb="tab"][aria-selected="true"]{{background:#2f8b61!important;border-radius:9px!important}}
+section.main:has(.carelio-org-page-marker) [data-testid="stTextInput"] input,
+section.main:has(.carelio-org-page-marker) [data-testid="stTextArea"] textarea,
+section.main:has(.carelio-org-page-marker) [data-baseweb="select"] > div{{background:#fff!important;color:#173e52!important;-webkit-text-fill-color:#173e52!important;border:1px solid #b9cfd7!important}}
+section.main:has(.carelio-org-page-marker) label,
+section.main:has(.carelio-org-page-marker) label *{{color:#e5f0f2!important}}
+section.main:has(.carelio-org-page-marker) .stButton>button{{background:rgba(17,37,42,.96)!important;color:#f4fbfc!important;border:1px solid #638087!important}}
+section.main:has(.carelio-org-page-marker) .stButton>button *{{color:#f4fbfc!important}}
+section.main:has(.carelio-org-page-marker) .stButton>button[kind="primary"]{{background:#9aeb40!important;color:#071417!important;border-color:#9aeb40!important}}
+section.main:has(.carelio-org-page-marker) .stButton>button[kind="primary"] *{{color:#071417!important}}
+section.main:has(.carelio-org-page-marker) [data-testid="stDataFrame"]{{background:#fff!important;border-radius:12px!important}}
+
+/* Sidebar stays dark teal, but use the restored Carelio mark on both sides. */
+[data-testid="column"]:has(.carelio-community-sidebar-marker),
+[data-testid="column"]:has(.carelio-org-sidebar-marker){{
+  background:linear-gradient(180deg,#0a2e3d 0%,#09283a 62%,#071d29 100%)!important;
+  border-right:1px solid rgba(156,255,40,.12)!important
+}}
+
+@media(max-width:700px){{
+  [data-testid="stAppViewContainer"]:has(.carelio-community-page-marker),
+  [data-testid="stAppViewContainer"]:has(.carelio-org-page-marker){{
+    background:linear-gradient(160deg,#071317 0%,#0a1d22 100%)!important;
+  }}
+}}
+</style>
+""",unsafe_allow_html=True)
 
 # ------------------------------------------------------------
 # Community session integrity
