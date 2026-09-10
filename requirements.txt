@@ -3,3 +3,9 @@ pandas
 altair
 plotly
 requests
+streamlit>=1.40
+pandas>=2.0
+Pillow>=10.0
+requests>=2.31
+beautifulsoup4>=4.12
+tzdata>=2025.2
