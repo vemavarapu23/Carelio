@@ -17,7 +17,11 @@ import re
 import smtplib
 import sqlite3
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None
 from email.message import EmailMessage
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -38,7 +42,7 @@ from PIL import Image, ImageOps
 
 APP_DIR = Path(__file__).resolve().parent
 DB_PATH = APP_DIR / "carelio_connect_single.db"
-CARELIO_BUILD_ID = "TARGET-UI-COMMUNITY-ORG-ADMIN-2026-09-09"
+CARELIO_BUILD_ID = "CENTRAL-TIME-ORG-LOCATION-FIX-2026-09-09"
 
 st.set_page_config(page_title="Carelio Connect", page_icon="💚", layout="wide", initial_sidebar_state="expanded")
 
@@ -53,6 +57,30 @@ SUPPORT_VISUALS = {"Health": {"Medical Care": "🩺", "First Aid": "🩹", "Medi
 # ------------------------------------------------------------
 def uid(prefix):
     return prefix + "_" + uuid.uuid4().hex[:14]
+
+def carelio_local_now():
+    """Return Minnesota/Central time independent of the Streamlit server timezone.
+
+    Streamlit Cloud/server processes commonly run in UTC, so datetime.now() can
+    show the wrong greeting. Prefer America/Chicago and keep a DST-aware fallback.
+    """
+    utc_now = datetime.now(timezone.utc)
+    if ZoneInfo is not None:
+        try:
+            return utc_now.astimezone(ZoneInfo("America/Chicago"))
+        except Exception:
+            pass
+
+    year = utc_now.year
+    march_first = date(year, 3, 1)
+    first_sunday_march = 1 + ((6 - march_first.weekday()) % 7)
+    second_sunday_march = first_sunday_march + 7
+    nov_first = date(year, 11, 1)
+    first_sunday_nov = 1 + ((6 - nov_first.weekday()) % 7)
+    dst_start_utc = datetime(year, 3, second_sunday_march, 8, 0, tzinfo=timezone.utc)
+    dst_end_utc = datetime(year, 11, first_sunday_nov, 7, 0, tzinfo=timezone.utc)
+    central_offset = -5 if dst_start_utc <= utc_now < dst_end_utc else -6
+    return utc_now + timedelta(hours=central_offset)
 
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
@@ -225,6 +253,13 @@ def ensure_schema():
         volunteer_cols={r[1] for r in con.execute("PRAGMA table_info(volunteers)").fetchall()}
         if "user_id" not in volunteer_cols:
             con.execute("ALTER TABLE volunteers ADD COLUMN user_id TEXT")
+
+        # Organization profile/HQ address. Existing databases are migrated safely.
+        org_cols={r[1] for r in con.execute("PRAGMA table_info(organizations)").fetchall()}
+        for coldef in ["address TEXT","city TEXT","state TEXT","zip TEXT"]:
+            colname=coldef.split()[0]
+            if colname not in org_cols:
+                con.execute("ALTER TABLE organizations ADD COLUMN "+coldef)
         con.commit()
 
 ensure_schema()
@@ -1403,7 +1438,11 @@ def render_org_register():
         website=st.text_input("Official website")
         official_email=st.text_input("Official organization email")
         ophone=st.text_input("Organization phone")
+        org_address=st.text_input("Organization address")
+        org_city=st.text_input("City")
     with c2:
+        org_state=st.text_input("State", value="MN")
+        org_zip=st.text_input("ZIP")
         owner=st.text_input("Owner / contact name")
         owner_email=st.text_input("Owner work email")
         owner_phone=st.text_input("Owner phone")
@@ -1413,8 +1452,8 @@ def render_org_register():
             st.error("Complete all fields.")
         else:
             oid=uid("org"); sid=uid("staff")
-            run("INSERT INTO organizations(id,name,official_email,website,phone,verification_status,is_test,created_at) VALUES(?,?,?,?,?,'pending',0,?)",
-                (oid,oname.strip(),norm_email(official_email),website.strip(),ophone.strip(),now_iso()))
+            run("INSERT INTO organizations(id,name,official_email,website,phone,address,city,state,zip,verification_status,is_test,created_at) VALUES(?,?,?,?,?,?,?,?,?,'pending',0,?)",
+                (oid,oname.strip(),norm_email(official_email),website.strip(),ophone.strip(),org_address.strip(),org_city.strip(),org_state.strip(),org_zip.strip(),now_iso()))
             run("INSERT INTO org_staff(id,org_id,name,email,phone,password_hash,role,email_verified,active,created_at) VALUES(?,?,?,?,?,?,'Owner',0,1,?)",
                 (sid,oid,owner.strip(),norm_email(owner_email),owner_phone.strip(),pw_hash(pwd),now_iso()))
             st.success("Registration submitted. Owner must verify work email, then Carelio Admin reviews the organization.")
@@ -3481,10 +3520,18 @@ def render_org_profile():
         em=st.text_input("Official email",value=o.get("official_email",""))
         web=st.text_input("Website",value=o.get("website",""))
         ph=st.text_input("Phone",value=o.get("phone",""))
+        org_address=st.text_input("Organization address",value=o.get("address","") or "")
+        org_city=st.text_input("City",value=o.get("city","") or "",key="org_profile_city")
+        a1,a2=st.columns(2)
+        with a1:
+            org_state=st.text_input("State",value=o.get("state","") or "MN",key="org_profile_state")
+        with a2:
+            org_zip=st.text_input("ZIP",value=o.get("zip","") or "",key="org_profile_zip")
+        st.caption("This is your organization profile/HQ address. Add actual service sites under Locations so Community users can find them.")
         if can("Admin") and st.button("Save Organization Profile",type="primary"):
             run(
-                "UPDATE organizations SET name=?,official_email=?,website=?,phone=? WHERE id=?",
-                (name,norm_email(em),web,ph,o["id"])
+                "UPDATE organizations SET name=?,official_email=?,website=?,phone=?,address=?,city=?,state=?,zip=? WHERE id=?",
+                (name,norm_email(em),web,ph,org_address.strip(),org_city.strip(),org_state.strip(),org_zip.strip(),o["id"])
             )
             st.session_state.org=row("SELECT * FROM organizations WHERE id=?",(o["id"],))
             st.rerun()
@@ -3666,10 +3713,34 @@ def org_sidebar():
 
 def org_topbar():
     st.markdown("<span class='carelio-org-page-marker'></span>",unsafe_allow_html=True)
-    o=st.session_state.org or {}
+    # Read the organization fresh on every render so saved profile/HQ address
+    # changes are reflected immediately in the workspace header.
+    session_org = st.session_state.org or {}
+    org_id = session_org.get("id", "")
+    fresh_org = row("SELECT * FROM organizations WHERE id=?", (org_id,)) if org_id else None
+    if fresh_org:
+        st.session_state.org = fresh_org
+        o = fresh_org
+    else:
+        o = session_org
     s=st.session_state.staff or {}
-    loc=row("SELECT city,state FROM locations WHERE org_id=? AND active=1 ORDER BY created_at LIMIT 1",(o.get("id",""),)) if o.get("id") else None
-    place=", ".join([x for x in [(loc or {}).get("city",""),(loc or {}).get("state","")] if x]) or "Location not set"
+    loc=row("SELECT address,city,state,zip FROM locations WHERE org_id=? AND active=1 ORDER BY created_at LIMIT 1",(o.get("id",""),)) if o.get("id") else None
+    # The workspace header reflects the saved organization profile immediately.
+    # A service location is only a fallback; service locations themselves stay managed under Locations.
+    profile_city=str(o.get("city") or "").strip()
+    profile_state=str(o.get("state") or "").strip()
+    profile_zip=str(o.get("zip") or "").strip()
+    profile_address=str(o.get("address") or "").strip()
+    if profile_city or profile_state:
+        place=", ".join([x for x in [profile_city,profile_state] if x]) + ((" "+profile_zip) if profile_zip else "")
+    elif profile_zip:
+        place=profile_zip
+    elif profile_address:
+        place=profile_address
+    else:
+        place=", ".join([x for x in [(loc or {}).get("city",""),(loc or {}).get("state","")] if x])
+        if not place:
+            place=str((loc or {}).get("zip") or (loc or {}).get("address") or "").strip() or "Location not set"
     initial=esc(((o.get("name") or "O")[:2]).upper())
     st.markdown(
         "<div class='carelio-org-topbar'><div class='carelio-org-top-left'>"
@@ -3828,7 +3899,7 @@ def render_org_dashboard():
     main=_org_shell_start()
     with main:
         org_topbar()
-        hour=datetime.now().hour
+        hour=carelio_local_now().hour
         greeting="Good morning" if hour<12 else ("Good afternoon" if hour<18 else "Good evening")
         st.markdown(
             "<div class='carelio-org-hero'><div class='carelio-org-greeting'>"+greeting+", "+esc(o.get("name") or "Organization")+"!</div>"
