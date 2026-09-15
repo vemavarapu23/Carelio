@@ -82,6 +82,35 @@ def carelio_local_now():
     central_offset = -5 if dst_start_utc <= utc_now < dst_end_utc else -6
     return utc_now + timedelta(hours=central_offset)
 
+MINNESOTA_COUNTIES = [
+    "Aitkin", "Anoka", "Becker", "Beltrami", "Benton", "Big Stone", "Blue Earth",
+    "Brown", "Carlton", "Carver", "Cass", "Chippewa", "Chisago", "Clay", "Clearwater",
+    "Cook", "Cottonwood", "Crow Wing", "Dakota", "Dodge", "Douglas", "Faribault",
+    "Fillmore", "Freeborn", "Goodhue", "Grant", "Hennepin", "Houston", "Hubbard",
+    "Isanti", "Itasca", "Jackson", "Kanabec", "Kandiyohi", "Kittson", "Koochiching",
+    "Lac qui Parle", "Lake", "Lake of the Woods", "Le Sueur", "Lincoln", "Lyon",
+    "Mahnomen", "Marshall", "Martin", "McLeod", "Meeker", "Mille Lacs", "Morrison",
+    "Mower", "Murray", "Nicollet", "Nobles", "Norman", "Olmsted", "Otter Tail",
+    "Pennington", "Pine", "Pipestone", "Polk", "Pope", "Ramsey", "Red Lake",
+    "Redwood", "Renville", "Rice", "Rock", "Roseau", "Scott", "Sherburne", "Sibley",
+    "St. Louis", "Stearns", "Steele", "Stevens", "Swift", "Todd", "Traverse", "Wabasha",
+    "Wadena", "Waseca", "Washington", "Watonwan", "Wilkin", "Winona", "Wright",
+    "Yellow Medicine"
+]
+
+def county_options():
+    """All 87 Minnesota counties plus any extra county labels already present in loaded records.
+
+    Carelio never invents resources for a county. This list controls navigation only;
+    result cards still come exclusively from reviewed public records or verified partners.
+    """
+    loaded=set()
+    for r in (PUBLIC_FOOD + PUBLIC_RESOURCES) if 'PUBLIC_FOOD' in globals() and 'PUBLIC_RESOURCES' in globals() else []:
+        c=str((r or {}).get("county") or "").strip()
+        if c:
+            loaded.add(c)
+    return ["All Minnesota"] + sorted(set(MINNESOTA_COUNTIES) | loaded)
+
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
 
@@ -889,7 +918,7 @@ st.markdown("""
 defaults={
  "auth":None,"community":None,"community_user_id":None,"staff":None,"org":None,"admin":None,"language":"en",
  "page":"landing","category":None,"food_group":None,"selected":[],"selected_needs":[],
- "active_food_group":"Dairy","search_text":"","search_zip":"","geo_label":"","last_explore":False,"last_explore_category":None,
+ "active_food_group":"Dairy","search_text":"","search_zip":"","selected_county":"","geo_label":"","last_explore":False,"last_explore_category":None,
  "food_active_filters":[],"food_search_text":"","food_near_me":False,
  "event_filter":"Today","profile_edit":False,"login_mode":"Community","pending_action":"","return_page":"home"
 }
@@ -1329,7 +1358,13 @@ def community_topbar(title=None):
     st.markdown("<span class='carelio-community-page-marker'></span>",unsafe_allow_html=True)
     u=st.session_state.get("community") or {}
     signed_in=st.session_state.get("auth")=="community"
-    place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x]) or "Minnesota"
+    selected_county=str(st.session_state.get("selected_county") or "").strip()
+    if signed_in and (u.get("city") or u.get("state")):
+        place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x])
+    elif selected_county:
+        place=selected_county+" County"
+    else:
+        place="Minnesota"
     name=(u.get("name") or "Guest").split()[0]
     pb=u.get("profile_b64") if signed_in else None
     if pb:
@@ -1393,7 +1428,7 @@ def render_landing():
     st.markdown("""
     <div style='max-width:980px;margin:6px auto 12px;text-align:center'>
       <div class='page-title' style='font-size:3.35rem;line-height:1.08'>Welcome to <span style='color:#9cff28'>Carelio Connect</span></div>
-      <div class='page-sub' style='font-size:1.15rem;margin-top:12px'>Find support. Stay connected. Strengthen communities.</div>
+      <div class='page-sub' style='font-size:1.15rem;margin-top:12px;font-weight:800'>Find support. <span style='color:#19c37d'>Stay connected.</span> Strengthen communities.</div>
       <div style='color:#d8e7e9;max-width:760px;margin:14px auto 0;font-size:1rem;line-height:1.6'>
       Explore community resources without creating an account. Sign in only when you want to save support, book an appointment, register for a program, or manage an organization.</div>
     </div>
@@ -1611,6 +1646,13 @@ def render_home():
         with s3:
             use_location=st.button("⌖  Use my location",use_container_width=True,key="home_target_location_btn")
 
+        # County choice persists when a guest opens Food, Health, or another category.
+        counties=county_options()
+        current_county=str(st.session_state.get("selected_county") or "").strip()
+        current_label=current_county if current_county in counties else "All Minnesota"
+        chosen_county=st.selectbox("Browse by county",counties,index=counties.index(current_label),key="home_county_selector")
+        st.session_state.selected_county="" if chosen_county=="All Minnesota" else chosen_county
+
         if use_location:
             if st.session_state.get("auth")!="community":
                 st.info("You can browse without an account. Enter a city or ZIP after opening a support category, or sign in to reuse your saved profile location.")
@@ -1668,13 +1710,17 @@ def render_home():
         h1,h2=st.columns([5,1],gap="small")
         with h1:
             st.markdown("<div class='carelio-home-section' style='margin-bottom:0'>Nearby Support</div>",unsafe_allow_html=True)
-            st.markdown("<div class='carelio-category-subline'>Organizations near "+esc(", ".join([x for x in [u.get('city',''),u.get('state','')] if x]) or 'Minneapolis, MN')+"</div>",unsafe_allow_html=True)
+            nearby_label=(str(st.session_state.get("selected_county") or "").strip()+" County") if str(st.session_state.get("selected_county") or "").strip() else (", ".join([x for x in [u.get('city',''),u.get('state','')] if x]) or 'Minneapolis, MN')
+            st.markdown("<div class='carelio-category-subline'>Organizations near "+esc(nearby_label)+"</div>",unsafe_allow_html=True)
         with h2:
             st.button("View all results →",key="home_all_food_results",use_container_width=True,on_click=_community_nav,args=("category","Food"))
 
         user_city=str(u.get("city") or "Minneapolis").strip().lower()
+        home_county=str(st.session_state.get("selected_county") or "").strip().lower()
         def pick_public(category, pool):
             valid=[r for r in pool if isinstance(r,dict) and r.get("category")==category and public_location_is_valid(r)]
+            if home_county:
+                valid=[r for r in valid if str(r.get("county") or "").strip().lower()==home_county]
             same=[r for r in valid if str(r.get("city") or "").strip().lower()==user_city]
             return (same or valid or [None])[0]
 
@@ -1768,6 +1814,12 @@ def render_category():
         with s4:
             use_location=st.button("⌖  Use my location",use_container_width=True,key="target_category_location_"+keycat)
 
+        counties=county_options()
+        current_county=str(st.session_state.get("selected_county") or "").strip()
+        current_label=current_county if current_county in counties else "All Minnesota"
+        chosen_county=st.selectbox("County",counties,index=counties.index(current_label),key="category_county_"+keycat)
+        st.session_state.selected_county="" if chosen_county=="All Minnesota" else chosen_county
+
         if use_location:
             u=st.session_state.get("community") or {}
             if st.session_state.get("auth")!="community":
@@ -1814,7 +1866,7 @@ def render_category():
             q=str(u.get("city") or "").strip()
 
         st.markdown("<div class='carelio-results-title'>Nearby "+esc(cat)+" Support</div>",unsafe_allow_html=True)
-        render_location_results(cat,[],q,z,[x for x in active if x!="Near Me"])
+        render_location_results(cat,[],q,z,[x for x in active if x!="Near Me"],st.session_state.get("selected_county",""))
 
 def access(label,value):
     value=(value or "").strip()
@@ -2081,7 +2133,8 @@ def _apply_quick_filters(records,filters,category):
     return out
 
 
-def render_location_results(category, selected, q, zipc, quick_filters=None):
+def render_location_results(category, selected, q, zipc, quick_filters=None, county=""):
+    county=(county or "").strip()
     qlow=(q or "").strip().lower()
     z=(zipc or "").strip()
     quick_filters=list(quick_filters or [])
@@ -2108,6 +2161,10 @@ def render_location_results(category, selected, q, zipc, quick_filters=None):
             if not selected_set or (selected_set & items):
                 candidates.append(dict(r))
 
+    # County selection is persistent across category navigation.
+    if county:
+        candidates=[r for r in candidates if str(r.get("county") or "").strip().lower()==county.lower()]
+
     # Search is a narrowing tool, not a prerequisite for seeing locations.
     if z:
         candidates=[r for r in candidates if str(r.get("zip","")).strip()==z]
@@ -2132,6 +2189,8 @@ def render_location_results(category, selected, q, zipc, quick_filters=None):
                  WHERE l.active=1
                    AND o.verification_status='verified'
                    AND COALESCE(o.is_test,0)=0""")
+    if county:
+        locs=[l for l in locs if str(l.get("county") or "").strip().lower()==county.lower()]
     if z:
         locs=[l for l in locs if str(l.get("zip","")).strip()==z]
     elif qlow:
@@ -2168,8 +2227,11 @@ def render_location_results(category, selected, q, zipc, quick_filters=None):
             shown+=1
 
     if shown==0:
+        county_label=(county+" County") if county else "Minnesota"
         if q or z or quick_filters or selected:
-            st.info("No locations match the current search and filters. Remove a filter, clear the location search, or choose a broader need.")
+            st.info("No "+category+" locations match the current search and filters in "+county_label+". Remove a filter, clear the location search, or choose a broader need.")
+        elif county:
+            st.info("No reviewed public or verified Carelio "+category+" resources are currently loaded for "+county_label+". Carelio does not invent organizations or addresses. Try All Minnesota or another category.")
         else:
             st.info("No reviewed public or verified Carelio locations are available for this category right now.")
 
