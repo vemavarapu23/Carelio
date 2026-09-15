@@ -891,7 +891,7 @@ defaults={
  "page":"landing","category":None,"food_group":None,"selected":[],"selected_needs":[],
  "active_food_group":"Dairy","search_text":"","search_zip":"","geo_label":"","last_explore":False,"last_explore_category":None,
  "food_active_filters":[],"food_search_text":"","food_near_me":False,
- "event_filter":"Today","profile_edit":False
+ "event_filter":"Today","profile_edit":False,"login_mode":"Community","pending_action":"","return_page":"home"
 }
 for k,v in defaults.items():
     if k not in st.session_state:
@@ -1251,6 +1251,12 @@ def inject_community_runtime_css():
 
 def _community_nav(target, target_cat=""):
     """Navigate inside the current Streamlit session; never use browser href reloads."""
+    if target in {"my_support","profile"} and st.session_state.get("auth")!="community":
+        st.session_state.pending_action = "Sign in to access "+("My Support" if target=="my_support" else "your Profile")+"."
+        st.session_state.return_page = target
+        st.session_state.login_mode = "Community"
+        st.session_state.page = "signin"
+        return
     if target=="category":
         changing = st.session_state.get("category") != target_cat or st.session_state.get("page") != "category"
         if changing:
@@ -1262,7 +1268,6 @@ def _community_nav(target, target_cat=""):
             st.session_state.geo_label=""
             st.session_state.last_explore=False
             st.session_state.last_explore_category=None
-        # A category opened from navigation starts with no accidental stacked quick filters.
         keycat=re.sub(r"\W+","_",target_cat)
         st.session_state["target_filters_v2_"+keycat]=[]
         st.session_state.category=target_cat
@@ -1270,10 +1275,18 @@ def _community_nav(target, target_cat=""):
     st.session_state.page=target
 
 
+def _guest_signin(action="continue", return_page=None):
+    st.session_state.pending_action = "Sign in to "+action+"."
+    st.session_state.return_page = return_page or st.session_state.get("page","home")
+    st.session_state.login_mode = "Community"
+    st.session_state.page = "signin"
+
+
 def community_sidebar():
-    """Session-safe Carelio navigation in Streamlit's native left sidebar."""
+    """Carelio navigation. Guests may browse; account-only actions are gated at action time."""
     page=st.session_state.get("page","home")
     cat=st.session_state.get("category") or ""
+    signed_in=st.session_state.get("auth")=="community"
     nav=[
         ("⌂","Home","home",""),
         ("🍴","Food","category","Food"),
@@ -1294,37 +1307,42 @@ def community_sidebar():
             "<div class='carelio-side-tagline'>People · Support · Stronger<br>Communities</div>",
             unsafe_allow_html=True
         )
+        if not signed_in:
+            st.markdown("<div style='padding:8px 10px 12px;color:#cfe0e3;font-size:.78rem'>Explore freely. Sign in only when you want to save, book or register.</div>",unsafe_allow_html=True)
         for i,(icon,label,target,target_cat) in enumerate(nav):
             active=(page==target and (target!="category" or cat==target_cat))
-            st.button(
-                icon+"  "+label,
-                key=f"community_nav_{i}_{target}_{target_cat}",
-                use_container_width=True,
-                type="primary" if active else "secondary",
-                on_click=_community_nav,
-                args=(target,target_cat),
-            )
+            st.button(icon+"  "+label,key=f"community_nav_{i}_{target}_{target_cat}",use_container_width=True,
+                      type="primary" if active else "secondary",on_click=_community_nav,args=(target,target_cat))
+        st.markdown("<div style='height:6px'></div>",unsafe_allow_html=True)
+        if signed_in:
+            if st.button("Sign out",key="community_sidebar_signout",use_container_width=True):
+                logout()
+        else:
+            if st.button("Sign In",key="guest_sidebar_signin",use_container_width=True,type="primary"):
+                st.session_state.login_mode="Community"; st.session_state.return_page=page; st.session_state.page="signin"; st.rerun()
+            if st.button("Create Free Account",key="guest_sidebar_create",use_container_width=True):
+                st.session_state.return_page=page; goto("community_register")
         st.markdown("<div class='carelio-side-footer'>A stronger Minnesota,<br>together.</div>",unsafe_allow_html=True)
 
 def community_topbar(title=None):
     inject_community_runtime_css()
     st.markdown("<span class='carelio-community-page-marker'></span>",unsafe_allow_html=True)
-    u=st.session_state.community or {}
-    place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x]) or "Minneapolis, MN"
-    name=(u.get("name") or "Community").split()[0]
-    pb=u.get("profile_b64")
+    u=st.session_state.get("community") or {}
+    signed_in=st.session_state.get("auth")=="community"
+    place=", ".join([x for x in [u.get("city",""),u.get("state","")] if x]) or "Minnesota"
+    name=(u.get("name") or "Guest").split()[0]
+    pb=u.get("profile_b64") if signed_in else None
     if pb:
         avatar="<img class='carelio-top-avatar' src='"+img_data_uri(pb)+"'>"
     else:
-        initial=esc((name[:1] or "U").upper())
+        initial=esc((name[:1] or "G").upper())
         avatar="<span class='carelio-top-avatar carelio-top-initial'>"+initial+"</span>"
+    account_label=esc(name) if signed_in else "Guest · Explore"
     st.markdown(
         "<div class='carelio-top-utility'><div></div><div class='carelio-top-right'>"
         "<span class='carelio-top-place'>⌖ "+esc(place)+"</span>"
         "<span class='carelio-top-bell'>●</span>"+avatar+
-        "<span class='carelio-top-name'>"+esc(name)+"⌄</span></div></div>",
-        unsafe_allow_html=True
-    )
+        "<span class='carelio-top-name'>"+account_label+"</span></div></div>",unsafe_allow_html=True)
 
 def render_daily_note():
     notes=[
@@ -1370,44 +1388,128 @@ def save_search(category, selected, q, zipc):
 # Landing / auth
 # ------------------------------------------------------------
 def render_landing():
+    """Browse-first landing page based on external product feedback."""
     st.markdown(LOGO_HTML,unsafe_allow_html=True)
-    a,b=st.columns([1.15,.85],gap="large")
+    st.markdown("""
+    <div style='max-width:980px;margin:6px auto 12px;text-align:center'>
+      <div class='page-title' style='font-size:3.35rem;line-height:1.08'>Welcome to <span style='color:#9cff28'>Carelio Connect</span></div>
+      <div class='page-sub' style='font-size:1.15rem;margin-top:12px'>Find support. Stay connected. Strengthen communities.</div>
+      <div style='color:#d8e7e9;max-width:760px;margin:14px auto 0;font-size:1rem;line-height:1.6'>
+      Explore community resources without creating an account. Sign in only when you want to save support, book an appointment, register for a program, or manage an organization.</div>
+    </div>
+    """,unsafe_allow_html=True)
+
+    c1,c2=st.columns(2,gap="large")
+    with c1:
+        with st.container(border=True):
+            st.markdown("<div style='font-size:2rem'>♡</div><div class='section-title'>I’m looking for support</div>",unsafe_allow_html=True)
+            st.markdown("Search Food, Health, Baby & Family, Clothing, Hygiene and Community Services by city or ZIP. View real organizations, hours, eligibility, access details and public events before signing in.")
+            if st.button("Explore Support →",type="primary",use_container_width=True,key="landing_explore_support"):
+                st.session_state.auth="guest"; st.session_state.community=None; goto("home")
+            st.caption("No account required to browse.")
+    with c2:
+        with st.container(border=True):
+            st.markdown("<div style='font-size:2rem'>⌂</div><div class='section-title'>I represent an organization</div>",unsafe_allow_html=True)
+            st.markdown("See how Carelio helps providers manage locations, service availability, appointments, registrations, events, requests and Demand vs. Coverage insights.")
+            if st.button("Explore Organization Tools →",type="primary",use_container_width=True,key="landing_explore_org"):
+                goto("org_explore")
+            st.caption("See the value first. Sign in only when you’re ready to manage.")
+
+    a,b=st.columns(2,gap="small")
     with a:
-        st.markdown("<div class='page-title' style='font-size:4rem;line-height:1.06'>Find Support.<br><span style='color:#9cff28'>Stay Connected.</span><br>Stronger Communities.</div>",unsafe_allow_html=True)
-        st.markdown("<div class='page-sub' style='max-width:620px;margin-top:18px'>Carelio Connect brings trusted community support, verified partner availability and practical access information together in one place.</div>",unsafe_allow_html=True)
-        st.markdown("<div style='font-size:1.45rem;font-style:italic;color:#f5faf8;margin-top:35px'>“When support is easy to find,<br>hope feels closer to home.”</div><div style='color:#9cff28;font-weight:800;margin-top:8px'>— Sruthi Vemavarapu</div>",unsafe_allow_html=True)
+        if st.button("Sign In",use_container_width=True,key="landing_signin"):
+            st.session_state.login_mode="Community"; goto("signin")
     with b:
-        st.markdown("<div class='section-title'>Welcome Back</div><div class='section-sub'>Sign in to Carelio Connect</div>",unsafe_allow_html=True)
-        mode=st.radio("Account",["Community","Organization"],horizontal=True,label_visibility="collapsed")
-        email=st.text_input("Email",placeholder="Enter your email",key="login_email")
-        password=st.text_input("Password",type="password",placeholder="Enter your password",key="login_pwd")
-        if st.button("Sign In",type="primary",key="signin"):
-            if mode=="Community":
-                u=row("SELECT * FROM community_users WHERE lower(email)=? AND COALESCE(active,1)=1",(norm_email(email),))
-                if u and hmac.compare_digest(u["password_hash"],pw_hash(password)):
-                    st.session_state.auth="community"; st.session_state.community=u; st.session_state.community_user_id=u.get("id"); goto("home")
-                st.error("Incorrect Community email or password.")
+        if st.button("Create Account / Register Organization",use_container_width=True,key="landing_register"):
+            goto("register_choice")
+
+    st.markdown("<div class='section-title' style='margin-top:34px'>More than a resource directory</div>",unsafe_allow_html=True)
+    st.markdown("<div class='result-card'><div class='result-meta'>Carelio Connect combines resource discovery with provider-managed service information, availability, appointments, registrations, events and <b>Demand vs. Coverage</b> insights. Public information is clearly separated from live updates published by verified Carelio partners.</div></div>",unsafe_allow_html=True)
+
+    st.markdown("<div class='section-title'>How it works</div>",unsafe_allow_html=True)
+    h1,h2,h3=st.columns(3,gap="small")
+    for col,title,body in [(h1,"1 · Search for support","Browse by need, city or ZIP without creating an account."),(h2,"2 · Understand before you go","See hours, eligibility, ID, walk-in and appointment information."),(h3,"3 · Sign in when needed","Save support, book appointments, register, submit requests or manage an organization.")]:
+        with col:
+            st.markdown("<div class='result-card'><div class='result-title'>"+title+"</div><div class='result-meta'>"+body+"</div></div>",unsafe_allow_html=True)
+
+
+def render_signin():
+    st.markdown(LOGO_HTML,unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Sign in to Carelio Connect</div><div class='section-sub'>Browse without signing in. Use your account only when you need saved or management features.</div>",unsafe_allow_html=True)
+    pending=st.session_state.get("pending_action","")
+    if pending:
+        st.info(pending)
+    default_mode=st.session_state.get("login_mode","Community")
+    idx=1 if default_mode=="Organization" else 0
+    mode=st.radio("Account",["Community","Organization"],index=idx,horizontal=True)
+    email=st.text_input("Email",placeholder="Enter your email",key="signin_email")
+    password=st.text_input("Password",type="password",placeholder="Enter your password",key="signin_pwd")
+    if st.button("Sign In",type="primary",key="signin_action",use_container_width=True):
+        if mode=="Community":
+            u=row("SELECT * FROM community_users WHERE lower(email)=? AND COALESCE(active,1)=1",(norm_email(email),))
+            if u and hmac.compare_digest(u["password_hash"],pw_hash(password)):
+                st.session_state.auth="community"; st.session_state.community=u; st.session_state.community_user_id=u.get("id")
+                dest=st.session_state.get("return_page") or "home"
+                st.session_state.pending_action=""; st.session_state.return_page="home"; goto(dest if dest not in {"signin","landing"} else "home")
+            st.error("Incorrect Community email or password.")
+        else:
+            s=row("""SELECT s.*,o.name org_name,o.is_test,o.verification_status FROM org_staff s JOIN organizations o ON o.id=s.org_id WHERE lower(s.email)=? AND s.active=1""",(norm_email(email),))
+            if not s or not hmac.compare_digest(s["password_hash"],pw_hash(password)):
+                st.error("Incorrect Organization email or password.")
+            elif s.get("is_test"):
+                st.session_state.auth="organization"; st.session_state.staff=s; st.session_state.org=row("SELECT * FROM organizations WHERE id=?",(s["org_id"],)); goto("org_dashboard")
             else:
-                s=row("""SELECT s.*,o.name org_name,o.is_test,o.verification_status FROM org_staff s
-                         JOIN organizations o ON o.id=s.org_id
-                         WHERE lower(s.email)=? AND s.active=1""",(norm_email(email),))
-                if not s or not hmac.compare_digest(s["password_hash"],pw_hash(password)):
-                    st.error("Incorrect Organization email or password.")
-                elif s.get("is_test"):
-                    st.session_state.auth="organization"; st.session_state.staff=s
-                    st.session_state.org=row("SELECT * FROM organizations WHERE id=?",(s["org_id"],))
-                    goto("org_dashboard")
-                else:
-                    ok,msg=issue_otp(s)
-                    if ok:
-                        st.session_state.otp_staff=s["id"]; goto("otp")
-                    else:
-                        st.error("Real organization login requires email OTP. "+msg)
-        c1,c2=st.columns(2)
-        with c1:
-            if st.button("Create Community Account"): goto("community_register")
-        with c2:
-            if st.button("Register Organization"): goto("org_register")
+                ok,msg=issue_otp(s)
+                if ok: st.session_state.otp_staff=s["id"]; goto("otp")
+                else: st.error("Real organization login requires email OTP. "+msg)
+    c1,c2,c3=st.columns(3)
+    with c1:
+        if st.button("Create Community Account",use_container_width=True): goto("community_register")
+    with c2:
+        if st.button("Register Organization",use_container_width=True): goto("org_register")
+    with c3:
+        if st.button("← Back",use_container_width=True): goto("landing")
+
+
+def render_register_choice():
+    st.markdown(LOGO_HTML,unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Choose how you’ll use Carelio</div>",unsafe_allow_html=True)
+    c1,c2=st.columns(2,gap="large")
+    with c1:
+        st.markdown("<div class='result-card'><div class='result-title'>Community account</div><div class='result-meta'>Save locations and events, book appointments, register for programs, submit requests and use My Support.</div></div>",unsafe_allow_html=True)
+        if st.button("Create Community Account",type="primary",use_container_width=True): goto("community_register")
+    with c2:
+        st.markdown("<div class='result-card'><div class='result-title'>Organization account</div><div class='result-meta'>Register your organization to publish services, availability, events, appointments and access organization insights after verification.</div></div>",unsafe_allow_html=True)
+        if st.button("Register Organization",type="primary",use_container_width=True): goto("org_register")
+    if st.button("← Back to Carelio"): goto("landing")
+
+
+def render_org_explore():
+    st.markdown(LOGO_HTML,unsafe_allow_html=True)
+    st.markdown("<div class='page-title'>Carelio Connect for Organizations</div><div class='page-sub'>See what the workspace can do before you create an account.</div>",unsafe_allow_html=True)
+    st.markdown("<div class='carelio-org-hero'><div class='carelio-org-greeting'>Help your community find the right support — and understand where more support is needed.</div><div class='carelio-org-greeting-sub'>Manage services, access information and community demand in one connected workspace.</div></div>",unsafe_allow_html=True)
+    features=[
+      ("Service Availability","Publish Available, Low or Out status for services and essential items."),
+      ("Locations & Services","Keep addresses, hours, eligibility, ID and walk-in information current."),
+      ("Appointments & Registrations","Create appointment slots and publish program registration opportunities."),
+      ("Events","Publish support events that appear on the Community Events page."),
+      ("Requests","Review community requests and assisted-access needs."),
+      ("Demand vs. Coverage","Compare observed Carelio demand with verified and reviewed resource coverage."),
+      ("Community Insights","Understand what people are searching for and where service gaps may deserve investigation."),
+      ("Staff & Access","Manage organization staff with Owner, Admin, Manager, Staff and Viewer roles.")]
+    cols=st.columns(2,gap="small")
+    for i,(title,body) in enumerate(features):
+        with cols[i%2]:
+            st.markdown("<div class='result-card'><div class='result-title'>"+title+"</div><div class='result-meta'>"+body+"</div></div>",unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>When do I need to sign in?</div>",unsafe_allow_html=True)
+    st.markdown("<div class='result-card'><div class='result-meta'>You can understand Carelio before signing in. An organization account is required only to create or claim an organization, edit locations and services, publish availability, create events or appointment slots, manage registrations and requests, invite staff, or access its real workspace analytics.</div></div>",unsafe_allow_html=True)
+    b1,b2,b3=st.columns(3)
+    with b1:
+        if st.button("Organization Sign In",type="primary",use_container_width=True): st.session_state.login_mode="Organization"; goto("signin")
+    with b2:
+        if st.button("Register Organization",use_container_width=True): goto("org_register")
+    with b3:
+        if st.button("Explore Community Support",use_container_width=True): st.session_state.auth="guest"; goto("home")
 
 def render_community_register():
     st.markdown(LOGO_HTML,unsafe_allow_html=True)
@@ -1426,7 +1528,7 @@ def render_community_register():
             run("INSERT INTO community_users(id,name,email,password_hash,phone,created_at) VALUES(?,?,?,?,?,?)",
                 (uid("u"),name.strip(),norm_email(email),pw_hash(pwd),phone.strip(),now_iso()))
             st.success("Account created. Return to sign in.")
-    if st.button("Back to Sign In"): goto("landing")
+    if st.button("Back to Sign In"): st.session_state.login_mode="Community"; goto("signin")
 
 def render_org_register():
     st.markdown(LOGO_HTML,unsafe_allow_html=True)
@@ -1457,7 +1559,7 @@ def render_org_register():
             run("INSERT INTO org_staff(id,org_id,name,email,phone,password_hash,role,email_verified,active,created_at) VALUES(?,?,?,?,?,?,'Owner',0,1,?)",
                 (sid,oid,owner.strip(),norm_email(owner_email),owner_phone.strip(),pw_hash(pwd),now_iso()))
             st.success("Registration submitted. Owner must verify work email, then Carelio Admin reviews the organization.")
-    if st.button("Back to Sign In",key="orgback"): goto("landing")
+    if st.button("Back to Sign In",key="orgback"): st.session_state.login_mode="Organization"; goto("signin")
 
 def render_otp():
     st.markdown(LOGO_HTML,unsafe_allow_html=True)
@@ -1484,11 +1586,11 @@ def render_home():
         community_sidebar()
     with main:
         community_topbar("Home")
-        first=(u.get("name") or "there").split()[0]
+        first=(u.get("name") or "Neighbor").split()[0]
 
         # Light skyline hero matching the approved mockup.
         st.markdown(
-            "<div class='carelio-light-hero'><div class='carelio-hello'>Hello, "+esc(first)+"</div>"
+            "<div class='carelio-light-hero'><div class='carelio-hello'>"+("Hello, "+esc(first) if st.session_state.get("auth")=="community" else "Welcome to Carelio Connect")+"</div>"
             "<div class='carelio-hello-sub'>How can we support you today?</div>"
             "<div class='carelio-home-quote' style='position:absolute;right:24px;top:18px'>"
             "Stronger Communities<br>Brighter Tomorrows ♡</div></div>",
@@ -1510,11 +1612,14 @@ def render_home():
             use_location=st.button("⌖  Use my location",use_container_width=True,key="home_target_location_btn")
 
         if use_location:
-            city=str(u.get("city") or "").strip(); state=str(u.get("state") or "").strip(); z=str(u.get("zip") or u.get("zip_code") or "").strip()
-            st.session_state.geo_label=", ".join([x for x in [city,state,z] if x]) or "Current profile location"
-            st.session_state.search_text=city
-            st.session_state.search_zip=z
-            st.success("Using "+st.session_state.geo_label+" for support searches.")
+            if st.session_state.get("auth")!="community":
+                st.info("You can browse without an account. Enter a city or ZIP after opening a support category, or sign in to reuse your saved profile location.")
+            else:
+                city=str(u.get("city") or "").strip(); state=str(u.get("state") or "").strip(); z=str(u.get("zip") or u.get("zip_code") or "").strip()
+                st.session_state.geo_label=", ".join([x for x in [city,state,z] if x]) or "Current profile location"
+                st.session_state.search_text=city
+                st.session_state.search_zip=z
+                st.success("Using "+st.session_state.geo_label+" for support searches.")
 
         if do_search:
             raw_query=query.strip()
@@ -1665,11 +1770,14 @@ def render_category():
 
         if use_location:
             u=st.session_state.get("community") or {}
-            city=str(u.get("city") or "").strip(); z=str(u.get("zip") or u.get("zip_code") or "").strip(); state=str(u.get("state") or "").strip()
-            st.session_state.search_text=city
-            st.session_state.search_zip=z
-            st.session_state.geo_label=", ".join([x for x in [city,state,z] if x]) or "Current profile location"
-            st.rerun()
+            if st.session_state.get("auth")!="community":
+                st.info("No account is required to browse. Enter a city or ZIP in the search boxes. Sign in only if you want Carelio to reuse your saved profile location.")
+            else:
+                city=str(u.get("city") or "").strip(); z=str(u.get("zip") or u.get("zip_code") or "").strip(); state=str(u.get("state") or "").strip()
+                st.session_state.search_text=city
+                st.session_state.search_zip=z
+                st.session_state.geo_label=", ".join([x for x in [city,state,z] if x]) or "Current profile location"
+                st.rerun()
 
         if do_search:
             st.session_state.search_text=text.strip(); st.session_state.search_zip=zip_code.strip()
@@ -2082,18 +2190,15 @@ def render_location_detail():
         st.info("Select a location to view details.")
         return
 
-    # Keep normal Community layout when user is signed in.
-    if st.session_state.get("community"):
-        left,main=st.columns([0.001,0.999],gap="small")
-        with left:
-            st.markdown("<span class='carelio-community-sidebar-dummy'></span>",unsafe_allow_html=True)
-            community_sidebar()
-        content_ctx=main
-    else:
-        content_ctx=st.container()
+    # Keep the Community shell for both signed-in users and browse-only guests.
+    left,main=st.columns([0.001,0.999],gap="small")
+    with left:
+        st.markdown("<span class='carelio-community-sidebar-dummy'></span>",unsafe_allow_html=True)
+        community_sidebar()
+    content_ctx=main
 
     with content_ctx:
-        community_topbar("Location Details") if st.session_state.get("community") else None
+        community_topbar("Location Details")
 
         if kind=="partner":
             if isinstance(payload,dict):
@@ -2390,11 +2495,17 @@ def render_event_card(e,key,compact=False):
             st.session_state.event_detail=e
             goto("event_detail")
         if st.button("Save Event",key=key+"_save"):
-            u=st.session_state.community
-            if not row("SELECT id FROM saved_events WHERE user_id=? AND event_id=?",(u["id"],e["id"])):
-                run("INSERT INTO saved_events(id,user_id,event_id,event_type,created_at) VALUES(?,?,?,?,?)",
-                    (uid("se"),u["id"],e["id"],e.get("kind","public"),now_iso()))
-                st.success("Event saved.")
+            if st.session_state.get("auth")!="community":
+                st.session_state.pending_action="Sign in to save this event to My Support."
+                st.session_state.return_page="events"
+                st.session_state.login_mode="Community"
+                goto("signin")
+            else:
+                u=st.session_state.community
+                if not row("SELECT id FROM saved_events WHERE user_id=? AND event_id=?",(u["id"],e["id"])):
+                    run("INSERT INTO saved_events(id,user_id,event_id,event_type,created_at) VALUES(?,?,?,?,?)",
+                        (uid("se"),u["id"],e["id"],e.get("kind","public"),now_iso()))
+                    st.success("Event saved.")
 
 
 def render_events():
@@ -4504,15 +4615,20 @@ if admin_route():
 
 p=st.session_state.page
 
-if st.session_state.auth=="community":
+if st.session_state.auth in {"community","guest"}:
     if p=="home": render_home()
     elif p=="support_hub": render_support_hub()
     elif p=="category": render_category()
     elif p=="events": render_events()
     elif p=="event_detail": render_event_detail()
     elif p=="location_detail": render_location_detail()
-    elif p=="my_support": render_my_support()
-    elif p=="profile": render_profile()
+    elif p=="my_support":
+        if st.session_state.auth=="community": render_my_support()
+        else: st.session_state.pending_action="Sign in to use My Support."; st.session_state.return_page="my_support"; st.session_state.login_mode="Community"; goto("signin")
+    elif p=="profile":
+        if st.session_state.auth=="community": render_profile()
+        else: st.session_state.pending_action="Sign in to view and manage your profile."; st.session_state.return_page="profile"; st.session_state.login_mode="Community"; goto("signin")
+    elif p=="signin": render_signin()
     else: goto("home")
 elif st.session_state.auth=="organization":
     if p=="org_dashboard": render_org_dashboard()
@@ -4530,4 +4646,7 @@ else:
     if p=="community_register": render_community_register()
     elif p=="org_register": render_org_register()
     elif p=="otp": render_otp()
+    elif p=="signin": render_signin()
+    elif p=="register_choice": render_register_choice()
+    elif p=="org_explore": render_org_explore()
     else: render_landing()
