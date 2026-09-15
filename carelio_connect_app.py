@@ -42,7 +42,7 @@ from PIL import Image, ImageOps
 
 APP_DIR = Path(__file__).resolve().parent
 DB_PATH = APP_DIR / "carelio_connect_single.db"
-CARELIO_BUILD_ID = "CENTRAL-TIME-ORG-LOCATION-FIX-2026-09-09"
+CARELIO_BUILD_ID = "BROWSE-FIRST-FEEDBACK-FIX-2026-09-15"
 
 st.set_page_config(page_title="Carelio Connect", page_icon="💚", layout="wide", initial_sidebar_state="expanded")
 
@@ -768,6 +768,27 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* Carelio support-details dialog: readable on the dark Carelio experience */
+div[data-testid="stDialog"] > div,
+[data-testid="stDialog"] [role="dialog"]{
+  background:#07141d!important;
+  color:#dce8ef!important;
+  border:1px solid rgba(156,255,40,.28)!important;
+}
+[data-testid="stDialog"] h1,
+[data-testid="stDialog"] h2,
+[data-testid="stDialog"] h3,
+[data-testid="stDialog"] p,
+[data-testid="stDialog"] label,
+[data-testid="stDialog"] span:not(.badge-public):not(.badge-live){color:#dce8ef!important}
+[data-testid="stDialog"] [data-testid="stCaptionContainer"]{color:#b9c9d1!important}
+[data-testid="stDialog"] .stButton>button,
+[data-testid="stDialog"] a[data-testid="stLinkButton"]{border-color:#9cff28!important}
+</style>
+""", unsafe_allow_html=True)
+
 LOGO_HTML = """
 <div class='brand'>
 <svg viewBox='0 0 64 64'><circle cx='20' cy='14' r='7' fill='#9cff28'/><circle cx='44' cy='14' r='7' fill='#9cff28'/><path d='M32 58C21 50 9 41 9 29c0-8 6-14 14-14 4 0 7 2 9 5 2-3 5-5 9-5 8 0 14 6 14 14 0 12-12 21-23 29z' fill='#9cff28'/><path d='M32 45c-7-5-13-10-13-16 0-4 3-7 7-7 3 0 5 2 6 4 1-2 3-4 6-4 4 0 7 3 7 7 0 6-6 11-13 16z' fill='#07301f'/></svg>
@@ -1428,9 +1449,13 @@ def render_landing():
     st.markdown("""
     <div style='max-width:980px;margin:6px auto 12px;text-align:center'>
       <div class='page-title' style='font-size:3.35rem;line-height:1.08'>Welcome to <span style='color:#9cff28'>Carelio Connect</span></div>
-      <div class='page-sub' style='font-size:1.15rem;margin-top:12px;font-weight:800'>Find support. <span style='color:#19c37d'>Stay connected.</span> Strengthen communities.</div>
+      <div class='page-sub' style='font-size:1.22rem;margin-top:12px;font-weight:900;color:#ffffff!important'>Find support. <span style='color:#9cff28!important'>Stay connected.</span> Strengthen communities.</div>
       <div style='color:#d8e7e9;max-width:760px;margin:14px auto 0;font-size:1rem;line-height:1.6'>
       Explore community resources without creating an account. Sign in only when you want to save support, book an appointment, register for a program, or manage an organization.</div>
+      <div style='max-width:760px;margin:22px auto 2px;padding:14px 18px;border-left:4px solid #9cff28;text-align:left;background:rgba(4,20,27,.48);border-radius:0 12px 12px 0'>
+        <div style='font-size:1.18rem;line-height:1.55;color:#f7fbfc;font-style:italic;font-weight:700'>“When support is easy to find, hope feels closer to home.”</div>
+        <div style='margin-top:8px;color:#9cff28;font-weight:900'>— Sruthi Vemavarapu</div>
+      </div>
     </div>
     """,unsafe_allow_html=True)
 
@@ -1492,7 +1517,10 @@ def render_signin():
             if not s or not hmac.compare_digest(s["password_hash"],pw_hash(password)):
                 st.error("Incorrect Organization email or password.")
             elif s.get("is_test"):
-                st.session_state.auth="organization"; st.session_state.staff=s; st.session_state.org=row("SELECT * FROM organizations WHERE id=?",(s["org_id"],)); goto("org_dashboard")
+                st.session_state.auth="organization"; st.session_state.staff=s; st.session_state.org=row("SELECT * FROM organizations WHERE id=?",(s["org_id"],))
+                dest=st.session_state.get("return_page") or "org_dashboard"
+                st.session_state.pending_action=""; st.session_state.return_page="org_dashboard"
+                goto(dest if str(dest).startswith("org_") else "org_dashboard")
             else:
                 ok,msg=issue_otp(s)
                 if ok: st.session_state.otp_staff=s["id"]; goto("otp")
@@ -1519,32 +1547,93 @@ def render_register_choice():
     if st.button("← Back to Carelio"): goto("landing")
 
 
+def _org_preview_requires_signin(action_label, destination="org_dashboard"):
+    """Send a preview visitor to Organization sign-in only when they try to manage data."""
+    st.session_state.login_mode="Organization"
+    st.session_state.pending_action="Sign in to "+action_label+". You can continue exploring Carelio without an account."
+    st.session_state.return_page=destination
+    goto("signin")
+
+
 def render_org_explore():
+    """Public organization preview. Reading/exploring is open; management actions require sign-in."""
     st.markdown(LOGO_HTML,unsafe_allow_html=True)
-    st.markdown("<div class='page-title'>Carelio Connect for Organizations</div><div class='page-sub'>See what the workspace can do before you create an account.</div>",unsafe_allow_html=True)
-    st.markdown("<div class='carelio-org-hero'><div class='carelio-org-greeting'>Help your community find the right support — and understand where more support is needed.</div><div class='carelio-org-greeting-sub'>Manage services, access information and community demand in one connected workspace.</div></div>",unsafe_allow_html=True)
+    st.markdown(
+        "<div class='page-title'>Carelio Connect for Organizations</div>"
+        "<div class='page-sub'>Explore the organization experience before you create an account or sign in.</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='carelio-org-hero'>"
+        "<div class='carelio-org-greeting'>Help your community find the right support — and understand where more support is needed.</div>"
+        "<div class='carelio-org-greeting-sub'>Preview services, availability, appointments, requests, events and Demand vs. Coverage first. Sign in only when you are ready to publish or manage information.</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("<div class='section-title'>What an organization can explore</div>",unsafe_allow_html=True)
     features=[
-      ("Service Availability","Publish Available, Low or Out status for services and essential items."),
-      ("Locations & Services","Keep addresses, hours, eligibility, ID and walk-in information current."),
-      ("Appointments & Registrations","Create appointment slots and publish program registration opportunities."),
-      ("Events","Publish support events that appear on the Community Events page."),
-      ("Requests","Review community requests and assisted-access needs."),
-      ("Demand vs. Coverage","Compare observed Carelio demand with verified and reviewed resource coverage."),
-      ("Community Insights","Understand what people are searching for and where service gaps may deserve investigation."),
-      ("Staff & Access","Manage organization staff with Owner, Admin, Manager, Staff and Viewer roles.")]
-    cols=st.columns(2,gap="small")
+      ("Overview","See how the organization workspace brings services, requests, events and community demand together."),
+      ("Locations & Services","Understand how Carelio presents addresses, hours, eligibility, ID requirements and walk-in details."),
+      ("Service Availability","Preview how Available, Low and Out statuses can be communicated to the community."),
+      ("Appointments & Registrations","See how appointment slots and program registrations fit into the community experience."),
+      ("Events","Preview how support events are published to the public Events page."),
+      ("Requests","Understand how community requests can be received and tracked."),
+      ("Demand vs. Coverage","See the concept of comparing community searches with currently published services."),
+      ("Community Insights","Explore the kinds of demand signals that can help organizations investigate service gaps."),
+      ("Staff & Access","See the Owner, Admin, Manager, Staff and Viewer role model before inviting anyone."),
+    ]
+    cols=st.columns(3,gap="small")
     for i,(title,body) in enumerate(features):
-        with cols[i%2]:
-            st.markdown("<div class='result-card'><div class='result-title'>"+title+"</div><div class='result-meta'>"+body+"</div></div>",unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>When do I need to sign in?</div>",unsafe_allow_html=True)
-    st.markdown("<div class='result-card'><div class='result-meta'>You can understand Carelio before signing in. An organization account is required only to create or claim an organization, edit locations and services, publish availability, create events or appointment slots, manage registrations and requests, invite staff, or access its real workspace analytics.</div></div>",unsafe_allow_html=True)
-    b1,b2,b3=st.columns(3)
+        with cols[i%3]:
+            st.markdown(
+                "<div class='result-card' style='min-height:156px'>"
+                "<div class='result-title'>"+esc(title)+"</div>"
+                "<div class='result-meta'>"+esc(body)+"</div>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("<div class='section-title'>Preview the workspace</div>",unsafe_allow_html=True)
+    p1,p2,p3,p4=st.columns(4,gap="small")
+    with p1:
+        st.markdown("<div class='result-card'><div class='result-title'>Services</div><div class='result-meta'>Food · Health · Baby & Family · Clothing · Hygiene · Community Services</div></div>",unsafe_allow_html=True)
+    with p2:
+        st.markdown("<div class='result-card'><div class='result-title'>Availability</div><div class='result-meta'>Available · Low · Out · last updated · location-specific details</div></div>",unsafe_allow_html=True)
+    with p3:
+        st.markdown("<div class='result-card'><div class='result-title'>Community activity</div><div class='result-meta'>Requests · appointments · registrations · events</div></div>",unsafe_allow_html=True)
+    with p4:
+        st.markdown("<div class='result-card'><div class='result-title'>Insights</div><div class='result-meta'>Demand vs. Coverage · category demand · potential service gaps</div></div>",unsafe_allow_html=True)
+
+    st.markdown("<div class='section-title'>Sign in only when you want to manage something</div>",unsafe_allow_html=True)
+    st.markdown(
+        "<div class='result-card'><div class='result-meta'>"
+        "Browsing and learning about the organization workspace is public. An organization account is required only when you want to <b>add or edit locations, publish availability, create events, create appointment slots or registration forms, manage requests, add staff, change organization details, or view your organization’s real private analytics.</b>"
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
+
+    a1,a2,a3=st.columns(3,gap="small")
+    with a1:
+        if st.button("Add / update availability",type="primary",use_container_width=True,key="org_preview_availability"):
+            _org_preview_requires_signin("add or update service availability","org_services")
+    with a2:
+        if st.button("Create an event",use_container_width=True,key="org_preview_event"):
+            _org_preview_requires_signin("create and manage organization events","org_events")
+    with a3:
+        if st.button("Add staff",use_container_width=True,key="org_preview_staff"):
+            _org_preview_requires_signin("invite or manage organization staff","org_staff")
+
+    b1,b2,b3=st.columns(3,gap="small")
     with b1:
-        if st.button("Organization Sign In",type="primary",use_container_width=True): st.session_state.login_mode="Organization"; goto("signin")
+        if st.button("Organization Sign In",use_container_width=True,key="org_preview_signin"):
+            st.session_state.login_mode="Organization"; st.session_state.return_page="org_dashboard"; goto("signin")
     with b2:
-        if st.button("Register Organization",use_container_width=True): goto("org_register")
+        if st.button("Register Organization",use_container_width=True,key="org_preview_register"):
+            goto("org_register")
     with b3:
-        if st.button("Explore Community Support",use_container_width=True): st.session_state.auth="guest"; goto("home")
+        if st.button("Explore Community Support",use_container_width=True,key="org_preview_community"):
+            st.session_state.auth="guest"; st.session_state.community=None; goto("home")
 
 def render_community_register():
     st.markdown(LOGO_HTML,unsafe_allow_html=True)
@@ -1965,8 +2054,9 @@ def show_support_popup(payload, kind="public"):
         badge="Public information · not live-confirmed"
         badge_cls="badge-public"
         source_url=source_url_for(l)
+    st.markdown("<span class='carelio-support-dialog-marker'></span>",unsafe_allow_html=True)
     st.markdown("<span class='"+badge_cls+"'>"+esc(badge)+"</span>",unsafe_allow_html=True)
-    st.markdown("<div class='page-title' style='font-size:1.45rem;margin-top:10px'>"+esc(title)+"</div>",unsafe_allow_html=True)
+    st.markdown("<div style='font-size:1.45rem;margin-top:12px;color:#f8fbff!important;font-weight:950;line-height:1.25'>"+esc(title)+"</div>",unsafe_allow_html=True)
     addr=exact_address(l)
     details=[]
     if addr: details.append(("Address",addr))
@@ -1975,9 +2065,9 @@ def show_support_popup(payload, kind="public"):
         if val and val.lower() not in {"not published","not confirmed","n/a","na"}:
             details.append((label,val))
     for label,val in details:
-        st.markdown("<div style='padding:7px 0;border-bottom:1px solid #e2edf1;color:#355d70'><b style='color:#163e52'>"+esc(label)+":</b> "+esc(val)+"</div>",unsafe_allow_html=True)
+        st.markdown("<div style='padding:8px 0;border-bottom:1px solid rgba(220,235,241,.34);color:#dce8ef!important;line-height:1.5'><b style='color:#9cff28!important'>"+esc(label)+":</b> "+esc(val)+"</div>",unsafe_allow_html=True)
     if kind!="partner":
-        st.caption("Public discovery information is not live inventory. Contact the organization before visiting when details can change.")
+        st.markdown("<div style='margin-top:10px;color:#b9c9d1!important;font-size:.88rem;line-height:1.5'>Public discovery information is not live inventory. Contact the organization before visiting when details can change.</div>",unsafe_allow_html=True)
     c1,c2,c3=st.columns(3,gap="small")
     with c1:
         if addr:
