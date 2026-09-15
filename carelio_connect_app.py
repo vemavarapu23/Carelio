@@ -1555,85 +1555,198 @@ def _org_preview_requires_signin(action_label, destination="org_dashboard"):
     goto("signin")
 
 
-def render_org_explore():
-    """Public organization preview. Reading/exploring is open; management actions require sign-in."""
-    st.markdown(LOGO_HTML,unsafe_allow_html=True)
-    st.markdown(
-        "<div class='page-title'>Carelio Connect for Organizations</div>"
-        "<div class='page-sub'>Explore the organization experience before you create an account or sign in.</div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        "<div class='carelio-org-hero'>"
-        "<div class='carelio-org-greeting'>Help your community find the right support — and understand where more support is needed.</div>"
-        "<div class='carelio-org-greeting-sub'>Preview services, availability, appointments, requests, events and Demand vs. Coverage first. Sign in only when you are ready to publish or manage information.</div>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+def _org_preview_set(section):
+    st.session_state.org_preview_section=section
 
-    st.markdown("<div class='section-title'>What an organization can explore</div>",unsafe_allow_html=True)
-    features=[
-      ("Overview","See how the organization workspace brings services, requests, events and community demand together."),
-      ("Locations & Services","Understand how Carelio presents addresses, hours, eligibility, ID requirements and walk-in details."),
-      ("Service Availability","Preview how Available, Low and Out statuses can be communicated to the community."),
-      ("Appointments & Registrations","See how appointment slots and program registrations fit into the community experience."),
-      ("Events","Preview how support events are published to the public Events page."),
-      ("Requests","Understand how community requests can be received and tracked."),
-      ("Demand vs. Coverage","See the concept of comparing community searches with currently published services."),
-      ("Community Insights","Explore the kinds of demand signals that can help organizations investigate service gaps."),
-      ("Staff & Access","See the Owner, Admin, Manager, Staff and Viewer role model before inviting anyone."),
+
+def _org_preview_sidebar():
+    st.markdown("<span class='carelio-org-sidebar-marker'></span>",unsafe_allow_html=True)
+    st.markdown(
+        "<div class='carelio-org-brand'><span class='carelio-org-leaf'>"
+        "<svg viewBox='0 0 64 64' aria-hidden='true'><circle cx='20' cy='14' r='7' fill='#9cff28'/><circle cx='44' cy='14' r='7' fill='#9cff28'/><path d='M32 58C21 50 9 41 9 29c0-8 6-14 14-14 4 0 7 2 9 5 2-3 5-5 9-5 8 0 14 6 14 14 0 12-12 21-23 29z' fill='#9cff28'/><path d='M32 45c-7-5-13-10-13-16 0-4 3-7 7-7 3 0 5 2 6 4 1-2 3-4 6-4 4 0 7 3 7 7 0 6-6 11-13 16z' fill='#07301f'/></svg>"
+        "</span><span>Carelio<small>CONNECT</small></span></div>"
+        "<div class='carelio-org-tagline'>People · Support · Stronger Communities</div>",
+        unsafe_allow_html=True,
+    )
+    section=st.session_state.get('org_preview_section','Overview')
+    nav=[
+        ('⌂  Overview','Overview'),
+        ('▥  My Organization','My Organization'),
+        ('⌖  Locations','Locations'),
+        ('✣  Services & Availability','Services & Availability'),
+        ('▣  Appointments & Requests','Appointments & Requests'),
+        ('▦  Events','Events'),
+        ('♣  Staff & Access','Staff & Access'),
+        ('▥  Insights & Reports','Insights & Reports'),
+        ('⚙  Settings','Settings'),
     ]
-    cols=st.columns(3,gap="small")
-    for i,(title,body) in enumerate(features):
-        with cols[i%3]:
-            st.markdown(
-                "<div class='result-card' style='min-height:156px'>"
-                "<div class='result-title'>"+esc(title)+"</div>"
-                "<div class='result-meta'>"+esc(body)+"</div>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
+    for i,(label,target) in enumerate(nav):
+        st.button(label,key=f'org_preview_nav_{i}',use_container_width=True,
+                  type='primary' if section==target else 'secondary',
+                  on_click=_org_preview_set,args=(target,))
+    st.markdown("<div class='carelio-org-side-footer'>A stronger<br>Minnesota,<br>together.</div>",unsafe_allow_html=True)
+    st.markdown("<div class='carelio-org-help'><b>Preview mode</b><br>Explore first. Sign in only when you want to manage real organization data.</div>",unsafe_allow_html=True)
 
-    st.markdown("<div class='section-title'>Preview the workspace</div>",unsafe_allow_html=True)
-    p1,p2,p3,p4=st.columns(4,gap="small")
-    with p1:
-        st.markdown("<div class='result-card'><div class='result-title'>Services</div><div class='result-meta'>Food · Health · Baby & Family · Clothing · Hygiene · Community Services</div></div>",unsafe_allow_html=True)
-    with p2:
-        st.markdown("<div class='result-card'><div class='result-title'>Availability</div><div class='result-meta'>Available · Low · Out · last updated · location-specific details</div></div>",unsafe_allow_html=True)
-    with p3:
-        st.markdown("<div class='result-card'><div class='result-title'>Community activity</div><div class='result-meta'>Requests · appointments · registrations · events</div></div>",unsafe_allow_html=True)
-    with p4:
-        st.markdown("<div class='result-card'><div class='result-title'>Insights</div><div class='result-meta'>Demand vs. Coverage · category demand · potential service gaps</div></div>",unsafe_allow_html=True)
 
-    st.markdown("<div class='section-title'>Sign in only when you want to manage something</div>",unsafe_allow_html=True)
+def _org_preview_topbar():
+    st.markdown("<span class='carelio-org-page-marker'></span>",unsafe_allow_html=True)
     st.markdown(
-        "<div class='result-card'><div class='result-meta'>"
-        "Browsing and learning about the organization workspace is public. An organization account is required only when you want to <b>add or edit locations, publish availability, create events, create appointment slots or registration forms, manage requests, add staff, change organization details, or view your organization’s real private analytics.</b>"
-        "</div></div>",
+        "<div class='carelio-org-topbar'>"
+        "<div class='carelio-org-top-left'><span>Organization Workspace</span><span class='carelio-org-verified test'>● PREVIEW</span></div>"
+        "<div class='carelio-org-top-right'><span class='org-place'>⌖ Minnesota</span><span>🔔</span>"
+        "<span class='carelio-org-avatar'>C</span><span>Carelio Organization Preview⌄</span></div></div>",
         unsafe_allow_html=True,
     )
 
-    a1,a2,a3=st.columns(3,gap="small")
-    with a1:
-        if st.button("Add / update availability",type="primary",use_container_width=True,key="org_preview_availability"):
-            _org_preview_requires_signin("add or update service availability","org_services")
-    with a2:
-        if st.button("Create an event",use_container_width=True,key="org_preview_event"):
-            _org_preview_requires_signin("create and manage organization events","org_events")
-    with a3:
-        if st.button("Add staff",use_container_width=True,key="org_preview_staff"):
-            _org_preview_requires_signin("invite or manage organization staff","org_staff")
 
-    b1,b2,b3=st.columns(3,gap="small")
+def _org_preview_manage_button(label, action, destination='org_dashboard', primary=False, key=None):
+    if st.button(label,type='primary' if primary else 'secondary',use_container_width=True,key=key):
+        _org_preview_requires_signin(action,destination)
+
+
+def _org_preview_overview():
+    # This is intentionally sample data. It lets an organization see the actual workspace
+    # before creating an account, without pretending these numbers belong to a real provider.
+    st.markdown(
+        "<div class='carelio-org-hero'><div class='carelio-org-greeting'>See the Organization Workspace before you sign in.</div>"
+        "<div class='carelio-org-greeting-sub'>This preview uses sample data so you can understand the value first. Sign in only when you want to publish or manage real information.</div>"
+        "<div class='carelio-org-hero-quote'>Stronger<br>Communities<br>Brighter Tomorrows ♡</div></div>",
+        unsafe_allow_html=True,
+    )
+    vals=[
+        ('👥','People Served','1,248','Sample completed support records','green'),
+        ('🧺','Active Services','6','Sample categories','green'),
+        ('📅','Upcoming Events','4','Sample events','blue'),
+        ('📄','Open Requests','18','Sample requests','red'),
+        ('📍','Active Locations','3','Sample service sites','gold'),
+    ]
+    cols=st.columns(5,gap='small')
+    for i,(icon,label,value,note,tone) in enumerate(vals):
+        with cols[i]:
+            cls='org-metric-icon '+({'blue':'blue','red':'red','gold':'gold'}.get(tone,''))
+            notecls='good' if tone=='green' else ('alert' if tone=='red' else '')
+            st.markdown("<div class='org-metric'><div class='org-metric-row'><div class='"+cls+"'>"+icon+"</div><div><div class='org-metric-label'>"+label+"</div><div class='org-metric-value'>"+value+"</div><div class='org-metric-note "+notecls+"'>"+note+"</div></div></div></div>",unsafe_allow_html=True)
+
+    c1,c2,c3=st.columns([1.02,1.42,1.08],gap='small')
+    with c1:
+        demo=[('🍎 Food Support','Available','12 items'),('🩺 Health Support','Available','8 services'),('👶 Baby & Family','Low','3 items'),('👕 Clothing','Available','6 items'),('🧴 Hygiene','Available','5 items'),('👥 Community Services','Available','7 services')]
+        body=[]
+        for name,status,count in demo:
+            sc=' low' if status=='Low' else ''
+            body.append("<div class='org-service-row'><div class='org-service-name'>"+name+"</div><div><span class='org-service-status"+sc+"'>"+status+"</span></div><div class='org-service-count'>"+count+"</div></div>")
+        st.markdown("<div class='org-panel'><div class='org-panel-head'><div class='org-panel-title'>Service Availability</div><div class='org-panel-link'>Preview</div></div>"+''.join(body)+"</div>",unsafe_allow_html=True)
+        _org_preview_manage_button('Manage Services','add or update service availability','org_services',key='preview_manage_services')
+    with c2:
+        demand={'Food':1800,'Health':1200,'Baby & Family':950,'Clothing':780,'Hygiene':620,'Community Services':1100}
+        cover={'Food':12,'Health':8,'Baby & Family':3,'Clothing':6,'Hygiene':5,'Community Services':7}
+        st.markdown("<div class='org-panel'><div class='org-panel-head'><div class='org-panel-title'>Demand vs. Coverage ⓘ</div><div class='org-panel-link'>Sample · This Month</div></div>"+_org_chart_html(demand,cover)+"</div>",unsafe_allow_html=True)
+    with c3:
+        demand={'Food':1800,'Health':1200,'Baby & Family':950,'Clothing':780,'Hygiene':620,'Community Services':1100}
+        st.markdown("<div class='org-panel'><div class='org-panel-head'><div class='org-panel-title'>Community Insights</div><div class='org-panel-link'>Sample preview</div></div>"+_org_insights_html(demand)+"<div class='org-opportunity'><b>💡 High Demand Opportunity</b>Food and Health are the most searched categories in this sample preview. Your real workspace uses actual Carelio activity in your service area.</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('View private insights','access your organization analytics','org_insights',key='preview_private_insights')
+
+    b1,b2,b3=st.columns([1.65,1.18,.75],gap='small')
     with b1:
-        if st.button("Organization Sign In",use_container_width=True,key="org_preview_signin"):
-            st.session_state.login_mode="Organization"; st.session_state.return_page="org_dashboard"; goto("signin")
+        st.markdown("""<div class='org-panel'><div class='org-panel-head'><div class='org-panel-title'>Recent Requests</div><div class='org-panel-link'>Sample</div></div>
+        <table class='org-request-table'><thead><tr><th>Date</th><th>Name</th><th>Request</th><th>Category</th><th>Status</th></tr></thead><tbody>
+        <tr><td>Sep 9</td><td>Community member</td><td>Groceries</td><td>Food</td><td><span class='org-pill new'>New</span></td></tr>
+        <tr><td>Sep 9</td><td>Community member</td><td>Diapers</td><td>Baby & Family</td><td><span class='org-pill progress'>In Progress</span></td></tr>
+        <tr><td>Sep 8</td><td>Community member</td><td>Health check-up</td><td>Health</td><td><span class='org-pill new'>New</span></td></tr>
+        </tbody></table></div>""",unsafe_allow_html=True)
+        _org_preview_manage_button('View / manage requests','manage community requests','org_requests',key='preview_requests')
     with b2:
-        if st.button("Register Organization",use_container_width=True,key="org_preview_register"):
-            goto("org_register")
+        st.markdown("""<div class='org-panel'><div class='org-panel-head'><div class='org-panel-title'>Upcoming Events</div><div class='org-panel-link'>Sample</div></div>
+        <div class='org-event-item'><div class='org-event-thumb' style='display:flex;align-items:center;justify-content:center;background:#eaf8ee;font-size:1.6rem'>🥕</div><div><div class='org-event-title'>Community Food Distribution</div><div class='org-event-meta'>▣ Sep 12 · 10 AM–1 PM<br>⌖ Minneapolis</div></div><span class='org-event-state'>Published</span></div>
+        <div class='org-event-item'><div class='org-event-thumb' style='display:flex;align-items:center;justify-content:center;background:#e7f2ff;font-size:1.6rem'>🩺</div><div><div class='org-event-title'>Community Health Fair</div><div class='org-event-meta'>▣ Sep 16 · 9 AM–2 PM<br>⌖ Minneapolis</div></div><span class='org-event-state'>Published</span></div>
+        </div>""",unsafe_allow_html=True)
+        _org_preview_manage_button('Create / manage events','create and manage organization events','org_events',key='preview_events')
     with b3:
-        if st.button("Explore Community Support",use_container_width=True,key="org_preview_community"):
-            st.session_state.auth="guest"; st.session_state.community=None; goto("home")
+        st.markdown("<div class='org-panel'><div class='org-panel-title' style='margin-bottom:12px'>Quick Actions</div><div class='org-section-sub'>Management actions require an organization account.</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('＋ Update Availability','update service availability','org_services',key='preview_qa_avail')
+        _org_preview_manage_button('▦ Create Event','create an event','org_events',key='preview_qa_event')
+        _org_preview_manage_button('♣ Add Staff','add organization staff','org_staff',key='preview_qa_staff')
+
+
+def _org_preview_section(section):
+    titles={
+        'My Organization':('My Organization','Preview the public organization profile, verification status and contact information.'),
+        'Locations':('Locations','See how real service locations, addresses, hours and access details are managed.'),
+        'Services & Availability':('Services & Availability','Preview category-level services and Available / Low / Out updates.'),
+        'Appointments & Requests':('Appointments & Requests','See how organizations can offer appointment slots and manage incoming support requests.'),
+        'Events':('Events','See how organization events appear before you publish one.'),
+        'Staff & Access':('Staff & Access','Preview Owner, Admin, Manager, Staff and Viewer roles.'),
+        'Insights & Reports':('Insights & Reports','Preview Demand vs. Coverage and community search patterns.'),
+        'Settings':('Settings','See the kinds of organization and notification settings Carelio supports.'),
+    }
+    title,sub=titles.get(section,(section,'Organization preview'))
+    st.markdown("<div class='carelio-org-hero'><div class='carelio-org-greeting'>"+esc(title)+"</div><div class='carelio-org-greeting-sub'>"+esc(sub)+"</div><div class='carelio-org-hero-quote'>Preview Mode</div></div>",unsafe_allow_html=True)
+
+    if section=='My Organization':
+        c1,c2=st.columns(2,gap='small')
+        with c1:
+            st.markdown("<div class='org-panel'><div class='org-panel-title'>Public profile preview</div><div class='org-section-sub'>Organization name<br>Official website<br>Phone & email<br>HQ address<br>Verification status<br>Support categories</div></div>",unsafe_allow_html=True)
+        with c2:
+            st.markdown("<div class='org-panel'><div class='org-panel-title'>Why it matters</div><div class='org-section-sub'>Community users can understand who is providing the service and where the information comes from before visiting.</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('Edit organization profile','edit organization details','org_profile',True,'preview_edit_org')
+    elif section=='Locations':
+        st.markdown("<div class='org-panel'><div class='org-panel-title'>Sample locations</div><div class='org-section-sub'>Central Service Site · Minneapolis, MN<br>North Service Site · Brooklyn Center, MN<br>Each location can have its own hours, eligibility, ID requirements, walk-in rules and service availability.</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('＋ Add Location','add a service location','org_locations',True,'preview_add_loc')
+    elif section=='Services & Availability':
+        demo=[('Food','Available','Milk, rice, produce'),('Health','Available','Screenings, dental referrals'),('Baby & Family','Low','Diapers'),('Clothing','Available','Coats, shoes'),('Hygiene','Available','Personal-care kits'),('Community Services','Available','Transportation help')]
+        html=''.join("<div class='org-service-row'><div class='org-service-name'>"+ORG_ICONS[c]+" "+c+"</div><div><span class='org-service-status"+(' low' if s=='Low' else '')+"'>"+s+"</span></div><div class='org-service-count'>"+d+"</div></div>" for c,s,d in demo)
+        st.markdown("<div class='org-panel'><div class='org-panel-head'><div class='org-panel-title'>Service Availability</div><div class='org-panel-link'>Sample preview</div></div>"+html+"</div>",unsafe_allow_html=True)
+        _org_preview_manage_button('Update Service Availability','publish or update service availability','org_services',True,'preview_update_avail')
+    elif section=='Appointments & Requests':
+        c1,c2=st.columns(2,gap='small')
+        with c1:
+            st.markdown("<div class='org-panel'><div class='org-panel-title'>Appointment slots</div><div class='org-section-sub'>Publish future appointment times for eligible services. Community users can book after signing in.</div></div>",unsafe_allow_html=True)
+            _org_preview_manage_button('Create appointment slots','create appointment slots','org_appointments',key='preview_slots')
+        with c2:
+            st.markdown("<div class='org-panel'><div class='org-panel-title'>Community requests</div><div class='org-section-sub'>Review submitted support requests, update status and keep the community member informed.</div></div>",unsafe_allow_html=True)
+            _org_preview_manage_button('Manage requests','manage community requests','org_requests',key='preview_manage_req')
+    elif section=='Events':
+        st.markdown("<div class='org-panel'><div class='org-panel-title'>Organization Events</div><div class='org-section-sub'>Preview how food distributions, health fairs, clothing drives and other support events can be published to the public Events page.</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('Create New Event','create and publish an event','org_events',True,'preview_create_event')
+    elif section=='Staff & Access':
+        st.markdown("<div class='org-panel'><div class='org-panel-title'>Role-based access</div><div class='org-section-sub'><b>Owner</b> · full workspace control<br><b>Admin</b> · manage services, people and settings<br><b>Manager</b> · manage operations<br><b>Staff</b> · update assigned work<br><b>Viewer</b> · read-only access</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('＋ Add Staff','invite or manage organization staff','org_staff',True,'preview_add_staff')
+    elif section=='Insights & Reports':
+        demand={'Food':1800,'Health':1200,'Baby & Family':950,'Clothing':780,'Hygiene':620,'Community Services':1100}
+        cover={'Food':12,'Health':8,'Baby & Family':3,'Clothing':6,'Hygiene':5,'Community Services':7}
+        c1,c2=st.columns([1.4,1],gap='small')
+        with c1: st.markdown("<div class='org-panel'><div class='org-panel-title'>Demand vs. Coverage · Sample</div>"+_org_chart_html(demand,cover)+"</div>",unsafe_allow_html=True)
+        with c2: st.markdown("<div class='org-panel'><div class='org-panel-title'>What this can reveal</div><div class='org-section-sub'>Which support categories people search for most, where coverage is thin, and where an organization may want to investigate additional services, hours or events.</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('Open private organization insights','access your organization analytics','org_insights',True,'preview_open_insights')
+    else:
+        st.markdown("<div class='org-panel'><div class='org-panel-title'>Workspace Settings</div><div class='org-section-sub'>Organization preferences, notifications, support contacts and workspace controls become available after sign-in.</div></div>",unsafe_allow_html=True)
+        _org_preview_manage_button('Sign in to manage settings','manage organization settings','org_settings',True,'preview_settings')
+
+
+def render_org_explore():
+    """Public, browse-first organization workspace preview."""
+    if 'org_preview_section' not in st.session_state:
+        st.session_state.org_preview_section='Overview'
+    left,main=st.columns([.16,.84],gap='small')
+    with left:
+        _org_preview_sidebar()
+    with main:
+        _org_preview_topbar()
+        section=st.session_state.get('org_preview_section','Overview')
+        if section=='Overview':
+            _org_preview_overview()
+        else:
+            _org_preview_section(section)
+        st.markdown("<div style='height:10px'></div>",unsafe_allow_html=True)
+        c1,c2,c3=st.columns([1,1,1],gap='small')
+        with c1:
+            if st.button('Organization Sign In',use_container_width=True,key='org_preview_footer_signin'):
+                st.session_state.login_mode='Organization'; st.session_state.return_page='org_dashboard'; goto('signin')
+        with c2:
+            if st.button('Register Organization',type='primary',use_container_width=True,key='org_preview_footer_register'):
+                goto('org_register')
+        with c3:
+            if st.button('Explore Community Support',use_container_width=True,key='org_preview_footer_community'):
+                st.session_state.auth='guest'; st.session_state.community=None; goto('home')
 
 def render_community_register():
     st.markdown(LOGO_HTML,unsafe_allow_html=True)
