@@ -1205,6 +1205,22 @@ def inject_community_runtime_css():
       background:linear-gradient(180deg,#07394e 0%,#063247 58%,#082f43 100%)!important;
       border-right:0!important;box-shadow:8px 0 28px rgba(30,62,76,.11)!important;
     }
+    /* Desktop navigation must always remain visible. Streamlit remembers a
+       collapsed sidebar in browser local storage; that was why normal Chrome
+       hid it while Incognito (fresh browser state) showed it. Override that
+       persisted collapsed state on desktop. */
+    @media (min-width:851px){
+      section[data-testid="stSidebar"],
+      [data-testid="stSidebar"]{
+        transform:translateX(0)!important;
+        visibility:visible!important;
+        display:flex!important;
+        opacity:1!important;
+        margin-left:0!important;
+      }
+      [data-testid="stSidebarCollapsedControl"],
+      [data-testid="collapsedControl"]{display:none!important;}
+    }
     [data-testid="stSidebar"] > div:first-child{
       background:
         linear-gradient(180deg,rgba(7,57,78,.02) 0%,rgba(6,50,71,.15) 68%,rgba(7,47,67,.40) 100%),
