@@ -1448,7 +1448,7 @@ def render_daily_note():
       "One useful connection can make a hard day lighter.",
       "Small support can create meaningful change."
     ]
-    local_day=mn_now().date()
+    local_day=carelio_local_now().date()
     note=notes[local_day.toordinal()%len(notes)]
     st.markdown(
         "<div class='carelio-note-card'><div><div class='carelio-note-kicker'>🌱 CARELIO DAILY NOTE</div>"
@@ -4669,27 +4669,32 @@ def _feedback_rating_summary():
     return int(r.get("n") or 0), float(r.get("avg_rating") or 0)
 
 def render_public_feedback_trust(compact=False):
-    count,avg=_feedback_rating_summary()
+    # Keep the landing/home page clean until there is at least one
+    # contributor-approved, Carelio-approved public comment to show.
+    # Ratings can still be submitted by everyone from Help & Feedback.
     reviews=_public_feedback_rows(5)
+    if not reviews:
+        return
+
+    count,avg=_feedback_rating_summary()
     title="What people are saying"
     if compact:
         st.markdown("### "+title)
     else:
         st.markdown("<div class='section-title' style='margin-top:28px'>"+title+"</div>",unsafe_allow_html=True)
+
     if count:
         rounded=max(1,min(5,int(round(avg))))
         st.markdown("<div class='result-card'><div class='result-title'>"+("★"*rounded)+("☆"*(5-rounded))+" &nbsp; "+f"{avg:.1f} / 5"+"</div><div class='result-meta'>Based on "+str(count)+" Carelio experience rating"+("s" if count!=1 else "")+". Public comments are shown only with the contributor’s permission and Carelio review.</div></div>",unsafe_allow_html=True)
-    else:
-        st.markdown("<div class='result-card'><div class='result-title'>Be among the first to rate Carelio</div><div class='result-meta'>Ratings are open to everyone. Public comments appear here only after the contributor agrees to share them and Carelio reviews them.</div></div>",unsafe_allow_html=True)
-    if reviews:
-        cols=st.columns(min(len(reviews),5)) if len(reviews)>1 else [st.container()]
-        for i,fb in enumerate(reviews):
-            holder=cols[i] if len(reviews)>1 else cols[0]
-            with holder:
-                stars="★"*int(fb.get("rating") or 0)
-                who=(fb.get("public_name") or "Carelio user").strip()
-                role="Organization" if str(fb.get("actor_type") or "").lower().startswith("org") else "Community"
-                st.markdown("<div class='result-card' style='height:100%'><div style='color:#9cff28;font-size:1.05rem'>"+esc(stars)+"</div><div class='result-meta' style='margin-top:7px'>“"+esc(fb.get("message") or "")+"”</div><div style='margin-top:10px;font-weight:850;color:#16394a'>"+esc(who)+"</div><div class='result-meta'>"+esc(role)+" feedback</div></div>",unsafe_allow_html=True)
+
+    cols=st.columns(min(len(reviews),5)) if len(reviews)>1 else [st.container()]
+    for i,fb in enumerate(reviews):
+        holder=cols[i] if len(reviews)>1 else cols[0]
+        with holder:
+            stars="★"*int(fb.get("rating") or 0)
+            who=(fb.get("public_name") or "Carelio user").strip()
+            role="Organization" if str(fb.get("actor_type") or "").lower().startswith("org") else "Community"
+            st.markdown("<div class='result-card' style='height:100%'><div style='color:#9cff28;font-size:1.05rem'>"+esc(stars)+"</div><div class='result-meta' style='margin-top:7px'>“"+esc(fb.get("message") or "")+"”</div><div style='margin-top:10px;font-weight:850;color:#16394a'>"+esc(who)+"</div><div class='result-meta'>"+esc(role)+" feedback</div></div>",unsafe_allow_html=True)
 
 def render_help_feedback(actor_type="Community"):
     if actor_type=="Organization":
