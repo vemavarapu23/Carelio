@@ -265,6 +265,11 @@ def ensure_schema():
           id TEXT PRIMARY KEY,user_id TEXT,title TEXT,message TEXT,
           request_id TEXT,is_read INTEGER DEFAULT 0,created_at TEXT
         );
+        CREATE TABLE IF NOT EXISTS feedback(
+          id TEXT PRIMARY KEY,actor_type TEXT,user_id TEXT,org_id TEXT,email TEXT,
+          page TEXT,feedback_type TEXT,rating INTEGER,message TEXT,wants_response INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'New',admin_note TEXT,created_at TEXT,updated_at TEXT
+        );
         """)
         # Safe migrations for service-level access rules.
         existing_cols={r[1] for r in con.execute("PRAGMA table_info(service_updates)").fetchall()}
@@ -1347,6 +1352,7 @@ def community_sidebar():
         ("👥","Community Services","category","Community Services"),
         ("▦","Events","events",""),
         ("♥","My Support","my_support",""),
+        ("?","Help & Feedback","help_feedback",""),
         ("●","Profile","profile","")
     ]
     with st.sidebar:
@@ -4078,6 +4084,7 @@ def org_sidebar():
         ("▦  Events","org_events"),
         ("♣  Staff & Access","org_staff"),
         ("▥  Insights & Reports","org_insights"),
+        ("?  Help & Feedback","org_help_feedback"),
         ("⚙  Settings","org_settings"),
     ]
     for i,(label,target) in enumerate(nav):
@@ -4085,7 +4092,7 @@ def org_sidebar():
                   type="primary" if page==target or (target=="org_requests" and page=="org_appointments") else "secondary",
                   on_click=_org_nav_to,args=(target,))
     st.markdown("<div class='carelio-org-side-footer'>A stronger<br>Minnesota,<br>together.</div>",unsafe_allow_html=True)
-    st.markdown("<div class='carelio-org-help'><b>Need Help?</b><br>Open Carelio support from Settings.</div>",unsafe_allow_html=True)
+    st.markdown("<div class='carelio-org-help'><b>Need Help?</b><br>Open Help & Feedback from the menu.</div>",unsafe_allow_html=True)
 
 def org_topbar():
     st.markdown("<span class='carelio-org-page-marker'></span>",unsafe_allow_html=True)
@@ -4547,6 +4554,118 @@ def render_org_settings():
             logout()
 
 # ------------------------------------------------------------
+
+# ------------------------------------------------------------
+# Help & Feedback
+# ------------------------------------------------------------
+def _carelio_help_answer(question, actor_type="Community"):
+    q=(question or "").strip().lower()
+    if not q:
+        return "Ask me how to find support, use ZIP/county search, save a location, book an appointment, register for a program, or use the organization workspace."
+    if any(x in q for x in ["emergency","911","danger","suicide","crisis"]):
+        return "Carelio is not an emergency service. If there is immediate danger, call 911. For urgent health or crisis support, use the appropriate official crisis or healthcare service."
+    if "public information" in q or "live-confirmed" in q or "live confirmed" in q:
+        return "‘Public information · not live-confirmed’ means Carelio found the listing from a public source, but the organization has not confirmed current inventory or availability in Carelio. Contact the organization before visiting when details can change."
+    if "verified" in q or "partner" in q:
+        return "A Verified Carelio Partner is an organization Carelio has approved to manage its own profile and publish service updates. Live status is shown only when the verified organization has actually published it."
+    if "county" in q or "zip" in q or "near me" in q or "location" in q:
+        return "Choose a county or enter a city/ZIP on a support category page. Carelio filters the real reviewed or verified resources loaded for that area. If none are loaded, Carelio will say so rather than invent a location."
+    if "food" in q or "food shelf" in q or "food bank" in q:
+        return "Open Food, choose your county or enter a ZIP/city, and review the matching food shelves, markets, meal programs or partner locations. Open a result for hours, ID, eligibility, walk-in and source details."
+    if "health" in q or "clinic" in q or "medical" in q or "dental" in q:
+        return "Open Health and filter by county, ZIP or city. Carelio can show reviewed clinics and health-support resources plus verified partner updates when available. Always check the access details before visiting."
+    if "save" in q and ("event" in q or "location" in q):
+        return "You can browse without an account. When you choose Save Event or Save Location, Carelio asks you to sign in or create a Community account, then the saved item appears in My Support."
+    if "appointment" in q or "book" in q:
+        if actor_type.lower().startswith("org"):
+            return "Organizations create appointment slots from Appointments & Requests. Community users can book only slots that a verified organization has published."
+        return "Browse support without signing in. When a verified Carelio partner publishes appointment slots, choose Book Appointment. Carelio will ask you to sign in, then the booking appears in My Support → Appointments."
+    if "register" in q or "registration" in q or "form" in q:
+        if actor_type.lower().startswith("org"):
+            return "Organizations can publish program or registration forms from Appointments & Requests. Community registrations then appear in the organization workspace."
+        return "When an organization publishes a Carelio registration or official form, you can register from the relevant action or My Support. Sign-in is required so Carelio can keep the registration with your account."
+    if "staff" in q or "role" in q:
+        return "Organization staff access is role-based: Owner, Admin, Manager, Staff and Viewer. Sign in to the organization workspace before adding staff or changing permissions."
+    if "availability" in q or "available" in q or "low" in q or "out" in q:
+        return "Verified organizations can publish service availability such as Available, Low or Out. Community users see those updates as partner-managed information; public listings are never presented as live inventory."
+    if "demand" in q or "coverage" in q or "insight" in q:
+        return "Demand vs. Coverage compares Community search demand with services your organization has published in Carelio. It is designed to highlight possible gaps, not to claim total community need."
+    if "event" in q:
+        return "Open Events to browse public and partner events. Browsing is open to everyone; saving an event requires a Community account. Organizations sign in to create or manage their own events."
+    if "feedback" in q or "bug" in q or "wrong" in q or "incorrect" in q:
+        return "Use the Share Feedback tab on this page. Choose the type, add a rating if you want, describe what happened, and optionally leave an email if you want a response. Reports of outdated or incorrect resource information are especially helpful."
+    if "organization" in q or "provider" in q:
+        return "Organizations can explore Carelio before signing in. Sign-in is required only to manage real organization data—such as locations, availability, appointments, registrations, events, requests, staff and private insights."
+    if "sign in" in q or "login" in q or "account" in q:
+        return "Community visitors do not need an account to browse. Sign in only to save, book, register, submit/manage requests or use My Support. Organizations can preview the tools first and sign in when they are ready to manage their workspace."
+    return "I can help with Carelio navigation, county/ZIP search, Food or Health resources, saved support, appointments, registrations, events, organization availability, staff access and Demand vs. Coverage. For a specific resource’s current service status, use its official source or contact the organization."
+
+def _feedback_identity(actor_type):
+    if actor_type=="Organization":
+        o=st.session_state.get("org") or {}
+        staff=st.session_state.get("staff") or {}
+        return staff.get("id", ""), o.get("id", ""), staff.get("email", "") or o.get("official_email", "")
+    if st.session_state.get("auth")=="community":
+        u=st.session_state.get("community") or {}
+        return u.get("id", ""), "", u.get("email", "")
+    return "", "", ""
+
+def _submit_feedback(actor_type, feedback_type, rating, message, wants_response, email):
+    user_id,org_id,known_email=_feedback_identity(actor_type)
+    email=(email or known_email or "").strip()
+    run("""INSERT INTO feedback(id,actor_type,user_id,org_id,email,page,feedback_type,rating,message,wants_response,status,created_at,updated_at)
+           VALUES(?,?,?,?,?,?,?,?,?,?,'New',?,?)""",
+        (uid("fb"),actor_type,user_id,org_id,email,st.session_state.get("page",""),feedback_type,int(rating or 0),message.strip(),1 if wants_response else 0,now_iso(),now_iso()))
+
+def render_help_feedback(actor_type="Community"):
+    if actor_type=="Organization":
+        org_sidebar(); org_topbar()
+        st.markdown("<div class='page-title'>Help & Feedback</div><div class='page-sub'>Get help using the organization workspace or tell Carelio what could be better.</div>",unsafe_allow_html=True)
+    else:
+        side,main=st.columns([.17,.83],gap="large")
+        with side: community_sidebar()
+        with main:
+            community_topbar("Help & Feedback")
+            st.markdown("<div class='page-title'>Help & Feedback</div><div class='page-sub'>Ask how Carelio works, report incorrect information, or share your experience.</div>",unsafe_allow_html=True)
+    tabs=st.tabs(["Ask Carelio Assistant","Share Feedback"])
+    with tabs[0]:
+        st.markdown("### Carelio Assistant")
+        st.caption("Answers common questions about using Carelio. It does not replace an organization, healthcare professional, emergency service, or official source.")
+        q=st.text_input("What can I help you with?",placeholder="Example: How do I find a food shelf by ZIP?",key=f"help_q_{actor_type}")
+        c1,c2=st.columns([.2,.8])
+        with c1:
+            ask=st.button("Ask",type="primary",key=f"help_ask_{actor_type}",use_container_width=True)
+        if ask and q.strip():
+            st.session_state[f"help_answer_{actor_type}"]=_carelio_help_answer(q,actor_type)
+        ans=st.session_state.get(f"help_answer_{actor_type}")
+        if ans:
+            st.markdown("<div class='result-card'><div class='result-title'>Carelio Assistant</div><div class='result-meta'>"+esc(ans)+"</div></div>",unsafe_allow_html=True)
+        st.markdown("#### Try asking")
+        examples = ["How do I search by ZIP?","What does not live-confirmed mean?","How do appointments work?"] if actor_type!="Organization" else ["How do I update availability?","How do appointments work?","What is Demand vs. Coverage?"]
+        cols=st.columns(3)
+        for i,text in enumerate(examples):
+            with cols[i]:
+                if st.button(text,key=f"help_example_{actor_type}_{i}",use_container_width=True):
+                    st.session_state[f"help_answer_{actor_type}"]=_carelio_help_answer(text,actor_type); st.rerun()
+    with tabs[1]:
+        st.markdown("### Share Feedback")
+        st.caption("Feedback goes to the private Carelio Admin inbox. Do not include passwords, medical records, or other sensitive information.")
+        ftype=st.selectbox("Feedback type",["General feedback","Something confusing","Incorrect or outdated resource information","Feature request","Technical issue / bug"],key=f"fb_type_{actor_type}")
+        rating=st.select_slider("How was your experience?",options=[0,1,2,3,4,5],value=0,format_func=lambda x:"Not rated" if x==0 else "★"*x,key=f"fb_rating_{actor_type}")
+        msg=st.text_area("Your feedback",height=150,placeholder="Tell us what worked, what was confusing, or what should change.",key=f"fb_msg_{actor_type}")
+        uid_,oid_,known_email=_feedback_identity(actor_type)
+        wants=st.checkbox("I would like a response",key=f"fb_response_{actor_type}")
+        email=st.text_input("Email (optional)",value=known_email if wants else "",disabled=not wants,key=f"fb_email_{actor_type}")
+        if st.button("Submit Feedback",type="primary",key=f"fb_submit_{actor_type}"):
+            if not msg.strip():
+                st.error("Please add a short message before submitting.")
+            elif wants and not email.strip():
+                st.error("Add an email if you would like a response.")
+            else:
+                _submit_feedback(actor_type,ftype,rating,msg,wants,email)
+                st.success("Thank you. Your feedback was sent to Carelio.")
+                st.session_state[f"fb_msg_{actor_type}"]=""
+
 # Owner Admin
 # ------------------------------------------------------------
 def admin_route():
@@ -4577,7 +4696,7 @@ def render_admin_login():
 
 def admin_nav():
     items=[("Dashboard","admin_dashboard"),("Pending Approvals","admin_pending"),("Organizations","admin_orgs"),
-           ("Community Accounts","admin_community"),("TEST Organizations","admin_tests"),("Sources","admin_sources"),("Audit & Safety","admin_audit")]
+           ("Community Accounts","admin_community"),("TEST Organizations","admin_tests"),("Sources","admin_sources"),("Feedback Inbox","admin_feedback"),("Audit & Safety","admin_audit")]
     cols=st.columns(len(items)+1)
     for i,(lab,p) in enumerate(items):
         with cols[i]:
@@ -4652,6 +4771,32 @@ def render_admin():
                 if st.button("Suspend",key="cs_"+u["id"]): run("UPDATE community_users SET active=0 WHERE id=?",(u["id"],)); admin_action(a,"Suspended community account","community",u["id"]); st.rerun()
             else:
                 if st.button("Restore",key="cr_"+u["id"]): run("UPDATE community_users SET active=1 WHERE id=?",(u["id"],)); admin_action(a,"Restored community account","community",u["id"]); st.rerun()
+    elif p=="admin_feedback":
+        st.markdown("<div class='page-title'>Feedback Inbox</div>",unsafe_allow_html=True)
+        f1,f2=st.columns([.25,.75])
+        with f1:
+            status_filter=st.selectbox("Status",["All","New","Reviewing","Resolved"],key="admin_fb_status")
+        sql="SELECT * FROM feedback"
+        params=()
+        if status_filter!="All":
+            sql+=" WHERE status=?"; params=(status_filter,)
+        sql+=" ORDER BY created_at DESC"
+        feedback_rows=rows(sql,params)
+        if not feedback_rows:
+            st.info("No feedback matches this filter yet.")
+        for fb in feedback_rows:
+            title=(fb.get("feedback_type") or "Feedback")+" · "+(fb.get("actor_type") or "Visitor")
+            stars=("★"*int(fb.get("rating") or 0)) or "Not rated"
+            st.markdown("<div class='result-card'><div class='result-title'>"+esc(title)+"</div><div class='result-meta'><b>Status:</b> "+esc(fb.get("status") or "New")+" · <b>Rating:</b> "+esc(stars)+"<br><b>Page:</b> "+esc(fb.get("page") or "")+" · <b>Email:</b> "+esc(fb.get("email") or "Not provided")+"<br><br>"+esc(fb.get("message") or "")+"<br><br><small>"+esc(fb.get("created_at") or "")+"</small></div></div>",unsafe_allow_html=True)
+            c1,c2=st.columns([.25,.75])
+            with c1:
+                new_status=st.selectbox("Update status",["New","Reviewing","Resolved"],index=["New","Reviewing","Resolved"].index(fb.get("status") if fb.get("status") in ["New","Reviewing","Resolved"] else "New"),key="fbs_"+fb["id"])
+            with c2:
+                note=st.text_input("Admin note",value=fb.get("admin_note") or "",key="fbn_"+fb["id"])
+            if st.button("Save feedback update",key="fbu_"+fb["id"]):
+                run("UPDATE feedback SET status=?,admin_note=?,updated_at=? WHERE id=?",(new_status,note,now_iso(),fb["id"]))
+                st.success("Feedback updated."); st.rerun()
+
     elif p=="admin_tests":
         st.markdown("<div class='page-title'>TEST Organizations</div>",unsafe_allow_html=True)
         with st.expander("Create TEST Organization",expanded=True):
@@ -4887,6 +5032,7 @@ if st.session_state.auth in {"community","guest"}:
     elif p=="events": render_events()
     elif p=="event_detail": render_event_detail()
     elif p=="location_detail": render_location_detail()
+    elif p=="help_feedback": render_help_feedback("Community")
     elif p=="my_support":
         if st.session_state.auth=="community": render_my_support()
         else: st.session_state.pending_action="Sign in to use My Support."; st.session_state.return_page="my_support"; st.session_state.login_mode="Community"; goto("signin")
@@ -4905,6 +5051,7 @@ elif st.session_state.auth=="organization":
     elif p=="org_staff": render_org_staff()
     elif p=="org_insights": render_org_insights()
     elif p=="org_profile": render_org_profile()
+    elif p=="org_help_feedback": render_help_feedback("Organization")
     elif p=="org_settings": render_org_settings()
     else: goto("org_dashboard")
 else:
