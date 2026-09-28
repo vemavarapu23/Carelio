@@ -4697,18 +4697,30 @@ def render_public_feedback_trust(compact=False):
             st.markdown("<div class='result-card' style='height:100%'><div style='color:#9cff28;font-size:1.05rem'>"+esc(stars)+"</div><div class='result-meta' style='margin-top:7px'>“"+esc(fb.get("message") or "")+"”</div><div style='margin-top:10px;font-weight:850;color:#16394a'>"+esc(who)+"</div><div class='result-meta'>"+esc(role)+" feedback</div></div>",unsafe_allow_html=True)
 
 def render_help_feedback(actor_type="Community"):
+    # Render Help & Feedback inside the same navigation shell as the rest of
+    # each workspace. This keeps the Organization sidebar visible here too.
     if actor_type=="Organization":
-        org_sidebar(); org_topbar()
-        st.markdown("<div class='page-title'>Help & Feedback</div><div class='page-sub'>Get help using the organization workspace or tell Carelio what could be better.</div>",unsafe_allow_html=True)
+        main=_org_shell_start()
+        with main:
+            org_topbar()
+            st.markdown("<div class='page-title'>Help & Feedback</div><div class='page-sub'>Get help using the organization workspace or tell Carelio what could be better.</div>",unsafe_allow_html=True)
+            _render_help_feedback_body(actor_type)
+        return
     else:
         side,main=st.columns([.17,.83],gap="large")
-        with side: community_sidebar()
+        with side:
+            community_sidebar()
         with main:
             community_topbar("Help & Feedback")
             st.markdown("<div class='page-title'>Help & Feedback</div><div class='page-sub'>Ask how Carelio works, report incorrect information, or share your experience.</div>",unsafe_allow_html=True)
+            _render_help_feedback_body(actor_type)
+        return
+
+def _render_help_feedback_body(actor_type="Community"):
     tabs=st.tabs(["Ask Carelio Assistant","Share Feedback"])
     with tabs[0]:
-        st.markdown("### Carelio Assistant")
+        # HTML titles avoid Streamlit's automatic heading-anchor/link icon.
+        st.markdown("<div style='font-size:1.65rem;font-weight:850;color:#f7fbff;margin:18px 0 8px'>Carelio Assistant</div>",unsafe_allow_html=True)
         st.caption("Answers common questions about using Carelio. It does not replace an organization, healthcare professional, emergency service, or official source.")
         q=st.text_input("What can I help you with?",placeholder="Example: How do I find a food shelf by ZIP?",key=f"help_q_{actor_type}")
         c1,c2=st.columns([.2,.8])
@@ -4719,7 +4731,7 @@ def render_help_feedback(actor_type="Community"):
         ans=st.session_state.get(f"help_answer_{actor_type}")
         if ans:
             st.markdown("<div class='result-card'><div class='result-title'>Carelio Assistant</div><div class='result-meta'>"+esc(ans)+"</div></div>",unsafe_allow_html=True)
-        st.markdown("#### Quick questions")
+        st.markdown("<div style='font-size:1.35rem;font-weight:850;color:#f7fbff;margin:18px 0 6px'>Quick questions</div>",unsafe_allow_html=True)
         st.caption("Choose one of these examples and Carelio will answer it immediately.")
         examples = ["How do I search by ZIP?","How do I save a location?","How do appointments work?"] if actor_type!="Organization" else ["How do I update availability?","How do I add staff?","What is Demand vs. Coverage?"]
         cols=st.columns(3)
@@ -4730,7 +4742,7 @@ def render_help_feedback(actor_type="Community"):
                     st.session_state[f"help_example_selected_{actor_type}"]=text
                     st.rerun()
     with tabs[1]:
-        st.markdown("### Share Feedback")
+        st.markdown("<div style='font-size:1.65rem;font-weight:850;color:#f7fbff;margin:18px 0 8px'>Share Feedback</div>",unsafe_allow_html=True)
         st.caption("Anyone can rate Carelio, including guests. Do not include passwords, medical records, or other sensitive information.")
         ftype=st.selectbox("Feedback type",["General feedback","Something confusing","Incorrect or outdated resource information","Feature request","Technical issue / bug"],key=f"fb_type_{actor_type}")
         rating=st.select_slider("How was your experience?",options=[0,1,2,3,4,5],value=0,format_func=lambda x:"Not rated" if x==0 else "★"*x,key=f"fb_rating_{actor_type}")
