@@ -268,6 +268,7 @@ def ensure_schema():
         CREATE TABLE IF NOT EXISTS feedback(
           id TEXT PRIMARY KEY,actor_type TEXT,user_id TEXT,org_id TEXT,email TEXT,
           page TEXT,feedback_type TEXT,rating INTEGER,message TEXT,wants_response INTEGER DEFAULT 0,
+          public_name TEXT,share_public INTEGER DEFAULT 0,public_approved INTEGER DEFAULT 0,
           status TEXT DEFAULT 'New',admin_note TEXT,created_at TEXT,updated_at TEXT
         );
         """)
@@ -287,6 +288,18 @@ def ensure_schema():
         volunteer_cols={r[1] for r in con.execute("PRAGMA table_info(volunteers)").fetchall()}
         if "user_id" not in volunteer_cols:
             con.execute("ALTER TABLE volunteers ADD COLUMN user_id TEXT")
+
+        # Safe migrations for public feedback / ratings. Existing feedback remains private
+        # until the contributor consents and the Owner Admin approves it for display.
+        feedback_cols={r[1] for r in con.execute("PRAGMA table_info(feedback)").fetchall()}
+        for coldef in [
+            "public_name TEXT",
+            "share_public INTEGER DEFAULT 0",
+            "public_approved INTEGER DEFAULT 0"
+        ]:
+            colname=coldef.split()[0]
+            if colname not in feedback_cols:
+                con.execute("ALTER TABLE feedback ADD COLUMN "+coldef)
 
         # Organization profile/HQ address. Existing databases are migrated safely.
         org_cols={r[1] for r in con.execute("PRAGMA table_info(organizations)").fetchall()}
@@ -1392,7 +1405,7 @@ def community_sidebar():
         else:
             if st.button("Sign In",key="guest_sidebar_signin",use_container_width=True,type="primary"):
                 st.session_state.login_mode="Community"; st.session_state.return_page=page; st.session_state.page="signin"; st.rerun()
-            if st.button("Create Free Account",key="guest_sidebar_create",use_container_width=True):
+            if st.button("Create Account",key="guest_sidebar_create",use_container_width=True):
                 st.session_state.return_page=page; goto("community_register")
         st.markdown("<div class='carelio-side-footer'>A stronger Minnesota,<br>together.</div>",unsafe_allow_html=True)
 
@@ -1423,17 +1436,24 @@ def community_topbar(title=None):
         "<span class='carelio-top-name'>"+account_label+"</span></div></div>",unsafe_allow_html=True)
 
 def render_daily_note():
+    """Show one short Carelio Daily Note on Community Home only.
+
+    The note rotates using Minnesota/Central local date so visitors in Minnesota
+    see the same note for the entire local day, regardless of Streamlit server time.
+    """
     notes=[
-      "A little support at the right time can change the direction of a whole day.",
-      "Small support, big change. One step at a time, care gets closer to home.",
-      "Strong communities begin when support is easier to find.",
-      "You do not have to search alone. Carelio brings trusted options closer."
+      "A little support at the right time can change a day.",
+      "Knowing where to turn can make the next step easier.",
+      "Support is strongest when people can find it clearly.",
+      "One useful connection can make a hard day lighter.",
+      "Small support can create meaningful change."
     ]
-    note=notes[date.today().toordinal()%len(notes)]
+    local_day=mn_now().date()
+    note=notes[local_day.toordinal()%len(notes)]
     st.markdown(
-        "<div class='carelio-note-card'><div><div class='carelio-note-kicker'>☘ CARELIO CONNECT NOTE</div>"
+        "<div class='carelio-note-card'><div><div class='carelio-note-kicker'>🌱 CARELIO DAILY NOTE</div>"
         "<div class='carelio-note-text'>“"+esc(note)+"”</div></div>"
-        "<div class='carelio-note-sprout'>🌱</div></div>",
+        "<div class='carelio-note-sprout'>♡</div></div>",
         unsafe_allow_html=True
     )
 
@@ -1513,6 +1533,8 @@ def render_landing():
     for col,title,body in [(h1,"1 · Search for support","Browse by need, city or ZIP without creating an account."),(h2,"2 · Understand before you go","See hours, eligibility, ID, walk-in and appointment information."),(h3,"3 · Sign in when needed","Save support, book appointments, register, submit requests or manage an organization.")]:
         with col:
             st.markdown("<div class='result-card'><div class='result-title'>"+title+"</div><div class='result-meta'>"+body+"</div></div>",unsafe_allow_html=True)
+
+    render_public_feedback_trust(compact=False)
 
 
 def render_signin():
@@ -4626,12 +4648,48 @@ def _feedback_identity(actor_type):
         return u.get("id", ""), "", u.get("email", "")
     return "", "", ""
 
-def _submit_feedback(actor_type, feedback_type, rating, message, wants_response, email):
+def _submit_feedback(actor_type, feedback_type, rating, message, wants_response, email, public_name="", share_public=False):
     user_id,org_id,known_email=_feedback_identity(actor_type)
     email=(email or known_email or "").strip()
-    run("""INSERT INTO feedback(id,actor_type,user_id,org_id,email,page,feedback_type,rating,message,wants_response,status,created_at,updated_at)
-           VALUES(?,?,?,?,?,?,?,?,?,?,'New',?,?)""",
-        (uid("fb"),actor_type,user_id,org_id,email,st.session_state.get("page",""),feedback_type,int(rating or 0),message.strip(),1 if wants_response else 0,now_iso(),now_iso()))
+    public_name=(public_name or "").strip()
+    run("""INSERT INTO feedback(id,actor_type,user_id,org_id,email,page,feedback_type,rating,message,wants_response,public_name,share_public,public_approved,status,created_at,updated_at)
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,'New',?,?)""",
+        (uid("fb"),actor_type,user_id,org_id,email,st.session_state.get("page",""),feedback_type,int(rating or 0),(message or "").strip(),1 if wants_response else 0,public_name,1 if share_public else 0,now_iso(),now_iso()))
+
+def _public_feedback_rows(limit=5):
+    return rows("""SELECT public_name,actor_type,rating,message,created_at
+                   FROM feedback
+                   WHERE COALESCE(public_approved,0)=1 AND COALESCE(share_public,0)=1
+                     AND COALESCE(rating,0)>0 AND trim(COALESCE(message,''))<>''
+                   ORDER BY rating DESC, created_at DESC LIMIT ?""",(int(limit),))
+
+def _feedback_rating_summary():
+    r=row("""SELECT COUNT(*) AS n, AVG(CASE WHEN rating BETWEEN 1 AND 5 THEN rating END) AS avg_rating
+             FROM feedback WHERE rating BETWEEN 1 AND 5""") or {}
+    return int(r.get("n") or 0), float(r.get("avg_rating") or 0)
+
+def render_public_feedback_trust(compact=False):
+    count,avg=_feedback_rating_summary()
+    reviews=_public_feedback_rows(5)
+    title="What people are saying"
+    if compact:
+        st.markdown("### "+title)
+    else:
+        st.markdown("<div class='section-title' style='margin-top:28px'>"+title+"</div>",unsafe_allow_html=True)
+    if count:
+        rounded=max(1,min(5,int(round(avg))))
+        st.markdown("<div class='result-card'><div class='result-title'>"+("★"*rounded)+("☆"*(5-rounded))+" &nbsp; "+f"{avg:.1f} / 5"+"</div><div class='result-meta'>Based on "+str(count)+" Carelio experience rating"+("s" if count!=1 else "")+". Public comments are shown only with the contributor’s permission and Carelio review.</div></div>",unsafe_allow_html=True)
+    else:
+        st.markdown("<div class='result-card'><div class='result-title'>Be among the first to rate Carelio</div><div class='result-meta'>Ratings are open to everyone. Public comments appear here only after the contributor agrees to share them and Carelio reviews them.</div></div>",unsafe_allow_html=True)
+    if reviews:
+        cols=st.columns(min(len(reviews),5)) if len(reviews)>1 else [st.container()]
+        for i,fb in enumerate(reviews):
+            holder=cols[i] if len(reviews)>1 else cols[0]
+            with holder:
+                stars="★"*int(fb.get("rating") or 0)
+                who=(fb.get("public_name") or "Carelio user").strip()
+                role="Organization" if str(fb.get("actor_type") or "").lower().startswith("org") else "Community"
+                st.markdown("<div class='result-card' style='height:100%'><div style='color:#9cff28;font-size:1.05rem'>"+esc(stars)+"</div><div class='result-meta' style='margin-top:7px'>“"+esc(fb.get("message") or "")+"”</div><div style='margin-top:10px;font-weight:850;color:#16394a'>"+esc(who)+"</div><div class='result-meta'>"+esc(role)+" feedback</div></div>",unsafe_allow_html=True)
 
 def render_help_feedback(actor_type="Community"):
     if actor_type=="Organization":
@@ -4656,31 +4714,49 @@ def render_help_feedback(actor_type="Community"):
         ans=st.session_state.get(f"help_answer_{actor_type}")
         if ans:
             st.markdown("<div class='result-card'><div class='result-title'>Carelio Assistant</div><div class='result-meta'>"+esc(ans)+"</div></div>",unsafe_allow_html=True)
-        st.markdown("#### Try asking")
-        examples = ["How do I search by ZIP?","What does not live-confirmed mean?","How do appointments work?"] if actor_type!="Organization" else ["How do I update availability?","How do appointments work?","What is Demand vs. Coverage?"]
+        st.markdown("#### Quick questions")
+        st.caption("Choose one of these examples and Carelio will answer it immediately.")
+        examples = ["How do I search by ZIP?","How do I save a location?","How do appointments work?"] if actor_type!="Organization" else ["How do I update availability?","How do I add staff?","What is Demand vs. Coverage?"]
         cols=st.columns(3)
         for i,text in enumerate(examples):
             with cols[i]:
-                if st.button(text,key=f"help_example_{actor_type}_{i}",use_container_width=True):
-                    st.session_state[f"help_answer_{actor_type}"]=_carelio_help_answer(text,actor_type); st.rerun()
+                if st.button("→  "+text,key=f"help_example_{actor_type}_{i}",use_container_width=True,type="primary"):
+                    st.session_state[f"help_answer_{actor_type}"]=_carelio_help_answer(text,actor_type)
+                    st.session_state[f"help_example_selected_{actor_type}"]=text
+                    st.rerun()
     with tabs[1]:
         st.markdown("### Share Feedback")
-        st.caption("Feedback goes to the private Carelio Admin inbox. Do not include passwords, medical records, or other sensitive information.")
+        st.caption("Anyone can rate Carelio, including guests. Do not include passwords, medical records, or other sensitive information.")
         ftype=st.selectbox("Feedback type",["General feedback","Something confusing","Incorrect or outdated resource information","Feature request","Technical issue / bug"],key=f"fb_type_{actor_type}")
         rating=st.select_slider("How was your experience?",options=[0,1,2,3,4,5],value=0,format_func=lambda x:"Not rated" if x==0 else "★"*x,key=f"fb_rating_{actor_type}")
-        msg=st.text_area("Your feedback",height=150,placeholder="Tell us what worked, what was confusing, or what should change.",key=f"fb_msg_{actor_type}")
+        msg=st.text_area("Your feedback (optional for a simple rating)",height=150,placeholder="Tell us what worked, what was confusing, or what should change.",key=f"fb_msg_{actor_type}")
         uid_,oid_,known_email=_feedback_identity(actor_type)
+        default_name=""
+        if actor_type=="Organization":
+            default_name=(st.session_state.get("org") or {}).get("name","")
+        elif st.session_state.get("auth")=="community":
+            default_name=(st.session_state.get("community") or {}).get("name","")
+        public_name=st.text_input("Name shown with public feedback (optional)",value=default_name,key=f"fb_public_name_{actor_type}",placeholder="Example: Sruthi or Community member")
+        share_public=st.checkbox("I’m okay with Carelio showing my feedback publicly",key=f"fb_public_{actor_type}")
+        if share_public:
+            st.caption("Your email is never shown publicly. Carelio reviews public comments before they appear in the Top 5 feedback section.")
         wants=st.checkbox("I would like a response",key=f"fb_response_{actor_type}")
         email=st.text_input("Email (optional)",value=known_email if wants else "",disabled=not wants,key=f"fb_email_{actor_type}")
         if st.button("Submit Feedback",type="primary",key=f"fb_submit_{actor_type}"):
-            if not msg.strip():
-                st.error("Please add a short message before submitting.")
+            needs_message=ftype in ["Something confusing","Incorrect or outdated resource information","Feature request","Technical issue / bug"]
+            if int(rating or 0)==0 and not msg.strip():
+                st.error("Add a rating or a short feedback message before submitting.")
+            elif needs_message and not msg.strip():
+                st.error("Please describe the issue or request so Carelio can review it.")
             elif wants and not email.strip():
                 st.error("Add an email if you would like a response.")
             else:
-                _submit_feedback(actor_type,ftype,rating,msg,wants,email)
-                st.success("Thank you. Your feedback was sent to Carelio.")
-                st.session_state[f"fb_msg_{actor_type}"]=""
+                _submit_feedback(actor_type,ftype,rating,msg,wants,email,public_name,share_public)
+                st.success("Thank you. Your rating and feedback were sent to Carelio.")
+                if share_public and msg.strip():
+                    st.info("You allowed public sharing. Carelio will review the comment before it can appear publicly.")
+        st.markdown("---")
+        render_public_feedback_trust(compact=True)
 
 # Owner Admin
 # ------------------------------------------------------------
@@ -4803,14 +4879,23 @@ def render_admin():
         for fb in feedback_rows:
             title=(fb.get("feedback_type") or "Feedback")+" · "+(fb.get("actor_type") or "Visitor")
             stars=("★"*int(fb.get("rating") or 0)) or "Not rated"
-            st.markdown("<div class='result-card'><div class='result-title'>"+esc(title)+"</div><div class='result-meta'><b>Status:</b> "+esc(fb.get("status") or "New")+" · <b>Rating:</b> "+esc(stars)+"<br><b>Page:</b> "+esc(fb.get("page") or "")+" · <b>Email:</b> "+esc(fb.get("email") or "Not provided")+"<br><br>"+esc(fb.get("message") or "")+"<br><br><small>"+esc(fb.get("created_at") or "")+"</small></div></div>",unsafe_allow_html=True)
-            c1,c2=st.columns([.25,.75])
+            consent="Yes" if int(fb.get("share_public") or 0) else "No"
+            visible="Yes" if int(fb.get("public_approved") or 0) else "No"
+            st.markdown("<div class='result-card'><div class='result-title'>"+esc(title)+"</div><div class='result-meta'><b>Status:</b> "+esc(fb.get("status") or "New")+" · <b>Rating:</b> "+esc(stars)+"<br><b>Page:</b> "+esc(fb.get("page") or "")+" · <b>Email:</b> "+esc(fb.get("email") or "Not provided")+"<br><b>Public name:</b> "+esc(fb.get("public_name") or "Carelio user")+" · <b>Permission to share:</b> "+consent+" · <b>Visible publicly:</b> "+visible+"<br><br>"+esc(fb.get("message") or "Rating only")+"<br><br><small>"+esc(fb.get("created_at") or "")+"</small></div></div>",unsafe_allow_html=True)
+            c1,c2,c3=st.columns([.22,.50,.28])
             with c1:
                 new_status=st.selectbox("Update status",["New","Reviewing","Resolved"],index=["New","Reviewing","Resolved"].index(fb.get("status") if fb.get("status") in ["New","Reviewing","Resolved"] else "New"),key="fbs_"+fb["id"])
             with c2:
                 note=st.text_input("Admin note",value=fb.get("admin_note") or "",key="fbn_"+fb["id"])
+            with c3:
+                allow_public=bool(int(fb.get("public_approved") or 0))
+                if int(fb.get("share_public") or 0) and (fb.get("message") or "").strip() and int(fb.get("rating") or 0)>0:
+                    allow_public=st.checkbox("Show publicly",value=allow_public,key="fbpub_"+fb["id"])
+                else:
+                    st.caption("Public display unavailable: contributor consent, rating and comment are required.")
+                    allow_public=False
             if st.button("Save feedback update",key="fbu_"+fb["id"]):
-                run("UPDATE feedback SET status=?,admin_note=?,updated_at=? WHERE id=?",(new_status,note,now_iso(),fb["id"]))
+                run("UPDATE feedback SET status=?,admin_note=?,public_approved=?,updated_at=? WHERE id=?",(new_status,note,1 if allow_public else 0,now_iso(),fb["id"]))
                 st.success("Feedback updated."); st.rerun()
 
     elif p=="admin_tests":
